@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
             SettingSeeder::class,
             ExtraSeeder::class,
             FormSeeder::class,
+            ScheduleSeeder::class,
+            ConsentSeeder::class,
         ]);
     }
 }

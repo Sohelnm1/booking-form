@@ -3,6 +3,7 @@ import { Head, useForm, router } from "@inertiajs/react";
 import { Form, Input, Button, Card, Typography, Space, Alert } from "antd";
 import { UserOutlined, LockOutlined, PhoneOutlined } from "@ant-design/icons";
 import AppLayout from "../../Layouts/AppLayout";
+import Logo from "../../Components/Logo";
 
 const { Title, Text } = Typography;
 
@@ -40,6 +41,14 @@ export default function Login() {
                     styles={{ body: { padding: "40px" } }}
                 >
                     <div style={{ textAlign: "center", marginBottom: 32 }}>
+                        <div style={{ marginBottom: 24 }}>
+                            <Logo
+                                variant="tertiary"
+                                color="gradient"
+                                background="white"
+                                size="medium"
+                            />
+                        </div>
                         <Title
                             level={2}
                             style={{ marginBottom: 8, color: "#1f1f1f" }}
@@ -47,7 +56,7 @@ export default function Login() {
                             Welcome Back
                         </Title>
                         <Text type="secondary">
-                            Sign in to your account to continue
+                            Sign in to your HospiPal account
                         </Text>
                     </div>
 

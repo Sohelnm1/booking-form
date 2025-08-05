@@ -84,6 +84,27 @@ class SettingSeeder extends Seeder
                 'description' => 'Razorpay API secret',
             ],
             [
+                'key' => 'twilio_sid',
+                'value' => '',
+                'type' => 'string',
+                'group' => 'notification',
+                'description' => 'Twilio Account SID for SMS',
+            ],
+            [
+                'key' => 'twilio_token',
+                'value' => '',
+                'type' => 'string',
+                'group' => 'notification',
+                'description' => 'Twilio Auth Token for SMS',
+            ],
+            [
+                'key' => 'twilio_phone',
+                'value' => '',
+                'type' => 'string',
+                'group' => 'notification',
+                'description' => 'Twilio Phone Number for SMS',
+            ],
+            [
                 'key' => 'otp_enabled',
                 'value' => 'true',
                 'type' => 'boolean',

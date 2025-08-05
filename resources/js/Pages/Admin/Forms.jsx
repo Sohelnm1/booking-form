@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Head } from "@inertiajs/react";
 import {
     Card,
     Button,
@@ -25,11 +26,12 @@ import {
     SettingOutlined,
 } from "@ant-design/icons";
 import { router } from "@inertiajs/react";
+import AdminLayout from "../../Layouts/AdminLayout";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-export default function Forms({ forms, services, fieldTypes }) {
+export default function Forms({ auth, forms, services, fieldTypes }) {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isFieldModalVisible, setIsFieldModalVisible] = useState(false);
     const [isViewMode, setIsViewMode] = useState(false);
@@ -370,253 +372,265 @@ export default function Forms({ forms, services, fieldTypes }) {
     ];
 
     return (
-        <div>
-            <Card
-                title={
-                    <div
-                        style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                        }}
-                    >
-                        <Title level={3} style={{ margin: 0 }}>
-                            Forms Management
-                        </Title>
-                        <Button
-                            type="primary"
-                            icon={<PlusOutlined />}
-                            onClick={handleAdd}
+        <AdminLayout>
+            <Head title="Forms" />
+            <div>
+                <Card
+                    title={
+                        <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                            }}
                         >
-                            Add Form
-                        </Button>
-                    </div>
-                }
-            >
-                <Tabs
-                    activeKey={activeTab}
-                    onChange={setActiveTab}
-                    items={[
-                        {
-                            key: "1",
-                            label: "Forms",
-                            children: (
-                                <Table
-                                    columns={columns}
-                                    dataSource={forms}
-                                    rowKey="id"
-                                    pagination={{
-                                        pageSize: 10,
-                                        showSizeChanger: true,
-                                        showQuickJumper: true,
-                                    }}
-                                />
-                            ),
-                        },
-                        ...(editingForm
-                            ? [
-                                  {
-                                      key: "2",
-                                      label: "Form Fields",
-                                      children: (
-                                          <div>
-                                              <div style={{ marginBottom: 16 }}>
-                                                  <Title level={4}>
-                                                      Fields for:{" "}
-                                                      {editingForm.name}
-                                                  </Title>
-                                                  <Button
-                                                      type="primary"
-                                                      icon={<PlusOutlined />}
-                                                      onClick={handleAddField}
+                            <Title level={3} style={{ margin: 0 }}>
+                                Forms Management
+                            </Title>
+                            <Button
+                                type="primary"
+                                icon={<PlusOutlined />}
+                                onClick={handleAdd}
+                            >
+                                Add Form
+                            </Button>
+                        </div>
+                    }
+                >
+                    <Tabs
+                        activeKey={activeTab}
+                        onChange={setActiveTab}
+                        items={[
+                            {
+                                key: "1",
+                                label: "Forms",
+                                children: (
+                                    <Table
+                                        columns={columns}
+                                        dataSource={forms}
+                                        rowKey="id"
+                                        pagination={{
+                                            pageSize: 10,
+                                            showSizeChanger: true,
+                                            showQuickJumper: true,
+                                        }}
+                                    />
+                                ),
+                            },
+                            ...(editingForm
+                                ? [
+                                      {
+                                          key: "2",
+                                          label: "Form Fields",
+                                          children: (
+                                              <div>
+                                                  <div
+                                                      style={{
+                                                          marginBottom: 16,
+                                                      }}
                                                   >
-                                                      Add Field
-                                                  </Button>
+                                                      <Title level={4}>
+                                                          Fields for:{" "}
+                                                          {editingForm.name}
+                                                      </Title>
+                                                      <Button
+                                                          type="primary"
+                                                          icon={
+                                                              <PlusOutlined />
+                                                          }
+                                                          onClick={
+                                                              handleAddField
+                                                          }
+                                                      >
+                                                          Add Field
+                                                      </Button>
+                                                  </div>
+                                                  <Table
+                                                      columns={fieldColumns}
+                                                      dataSource={
+                                                          editingForm.fields ||
+                                                          []
+                                                      }
+                                                      rowKey="id"
+                                                      pagination={{
+                                                          pageSize: 10,
+                                                          showSizeChanger: true,
+                                                          showQuickJumper: true,
+                                                      }}
+                                                  />
                                               </div>
-                                              <Table
-                                                  columns={fieldColumns}
-                                                  dataSource={
-                                                      editingForm.fields || []
-                                                  }
-                                                  rowKey="id"
-                                                  pagination={{
-                                                      pageSize: 10,
-                                                      showSizeChanger: true,
-                                                      showQuickJumper: true,
-                                                  }}
-                                              />
-                                          </div>
-                                      ),
-                                  },
-                              ]
-                            : []),
-                    ]}
-                />
-            </Card>
-
-            {/* Form Modal */}
-            <Modal
-                title={
-                    isViewMode
-                        ? "View Form"
-                        : editingForm
-                        ? "Edit Form"
-                        : "Add Form"
-                }
-                open={isModalVisible}
-                onOk={isViewMode ? handleModalCancel : handleModalOk}
-                onCancel={handleModalCancel}
-                width={600}
-                okText={
-                    isViewMode ? "Close" : editingForm ? "Update" : "Create"
-                }
-                cancelText="Cancel"
-            >
-                <Form form={form} layout="vertical" disabled={isViewMode}>
-                    <Form.Item
-                        name="name"
-                        label="Form Name"
-                        rules={[
-                            {
-                                required: true,
-                                message: "Please enter form name",
-                            },
+                                          ),
+                                      },
+                                  ]
+                                : []),
                         ]}
-                    >
-                        <Input placeholder="Enter form name" />
-                    </Form.Item>
+                    />
+                </Card>
 
-                    <Form.Item name="description" label="Description">
-                        <TextArea
-                            rows={3}
-                            placeholder="Enter form description"
-                        />
-                    </Form.Item>
+                {/* Form Modal */}
+                <Modal
+                    title={
+                        isViewMode
+                            ? "View Form"
+                            : editingForm
+                            ? "Edit Form"
+                            : "Add Form"
+                    }
+                    open={isModalVisible}
+                    onOk={isViewMode ? handleModalCancel : handleModalOk}
+                    onCancel={handleModalCancel}
+                    width={600}
+                    okText={
+                        isViewMode ? "Close" : editingForm ? "Update" : "Create"
+                    }
+                    cancelText="Cancel"
+                >
+                    <Form form={form} layout="vertical" disabled={isViewMode}>
+                        <Form.Item
+                            name="name"
+                            label="Form Name"
+                            rules={[
+                                {
+                                    required: true,
+                                    message: "Please enter form name",
+                                },
+                            ]}
+                        >
+                            <Input placeholder="Enter form name" />
+                        </Form.Item>
 
-                    <Form.Item name="services" label="Associated Services">
-                        <Select
-                            mode="multiple"
-                            placeholder="Select services"
-                            options={services.map((service) => ({
-                                label: service.name,
-                                value: service.id,
-                            }))}
-                        />
-                    </Form.Item>
+                        <Form.Item name="description" label="Description">
+                            <TextArea
+                                rows={3}
+                                placeholder="Enter form description"
+                            />
+                        </Form.Item>
 
-                    <Form.Item name="sort_order" label="Sort Order">
-                        <InputNumber
-                            min={0}
-                            placeholder="Enter sort order"
-                            style={{ width: "100%" }}
-                        />
-                    </Form.Item>
+                        <Form.Item name="services" label="Associated Services">
+                            <Select
+                                mode="multiple"
+                                placeholder="Select services"
+                                options={services.map((service) => ({
+                                    label: service.name,
+                                    value: service.id,
+                                }))}
+                            />
+                        </Form.Item>
 
-                    <Form.Item
-                        name="is_active"
-                        label="Active"
-                        valuePropName="checked"
-                    >
-                        <Switch />
-                    </Form.Item>
-                </Form>
-            </Modal>
+                        <Form.Item name="sort_order" label="Sort Order">
+                            <InputNumber
+                                min={0}
+                                placeholder="Enter sort order"
+                                style={{ width: "100%" }}
+                            />
+                        </Form.Item>
 
-            {/* Field Modal */}
-            <Modal
-                title={editingField ? "Edit Field" : "Add Field"}
-                open={isFieldModalVisible}
-                onOk={handleFieldModalOk}
-                onCancel={handleFieldModalCancel}
-                width={600}
-                okText={editingField ? "Update" : "Create"}
-                cancelText="Cancel"
-            >
-                <Form form={fieldForm} layout="vertical">
-                    <Form.Item name="form_id" hidden>
-                        <Input />
-                    </Form.Item>
+                        <Form.Item
+                            name="is_active"
+                            label="Active"
+                            valuePropName="checked"
+                        >
+                            <Switch />
+                        </Form.Item>
+                    </Form>
+                </Modal>
 
-                    <Form.Item
-                        name="label"
-                        label="Field Label"
-                        rules={[
-                            {
-                                required: true,
-                                message: "Please enter field label",
-                            },
-                        ]}
-                    >
-                        <Input placeholder="Enter field label" />
-                    </Form.Item>
+                {/* Field Modal */}
+                <Modal
+                    title={editingField ? "Edit Field" : "Add Field"}
+                    open={isFieldModalVisible}
+                    onOk={handleFieldModalOk}
+                    onCancel={handleFieldModalCancel}
+                    width={600}
+                    okText={editingField ? "Update" : "Create"}
+                    cancelText="Cancel"
+                >
+                    <Form form={fieldForm} layout="vertical">
+                        <Form.Item name="form_id" hidden>
+                            <Input />
+                        </Form.Item>
 
-                    <Form.Item
-                        name="name"
-                        label="Field Name"
-                        rules={[
-                            {
-                                required: true,
-                                message: "Please enter field name",
-                            },
-                        ]}
-                    >
-                        <Input placeholder="Enter field name (e.g., phone_number)" />
-                    </Form.Item>
+                        <Form.Item
+                            name="label"
+                            label="Field Label"
+                            rules={[
+                                {
+                                    required: true,
+                                    message: "Please enter field label",
+                                },
+                            ]}
+                        >
+                            <Input placeholder="Enter field label" />
+                        </Form.Item>
 
-                    <Form.Item
-                        name="type"
-                        label="Field Type"
-                        rules={[
-                            {
-                                required: true,
-                                message: "Please select field type",
-                            },
-                        ]}
-                    >
-                        <Select
-                            placeholder="Select field type"
-                            options={Object.entries(fieldTypes).map(
-                                ([key, value]) => ({
-                                    label: value,
-                                    value: key,
-                                })
-                            )}
-                        />
-                    </Form.Item>
+                        <Form.Item
+                            name="name"
+                            label="Field Name"
+                            rules={[
+                                {
+                                    required: true,
+                                    message: "Please enter field name",
+                                },
+                            ]}
+                        >
+                            <Input placeholder="Enter field name (e.g., phone_number)" />
+                        </Form.Item>
 
-                    <Form.Item name="placeholder" label="Placeholder">
-                        <Input placeholder="Enter placeholder text" />
-                    </Form.Item>
+                        <Form.Item
+                            name="type"
+                            label="Field Type"
+                            rules={[
+                                {
+                                    required: true,
+                                    message: "Please select field type",
+                                },
+                            ]}
+                        >
+                            <Select
+                                placeholder="Select field type"
+                                options={Object.entries(fieldTypes).map(
+                                    ([key, value]) => ({
+                                        label: value,
+                                        value: key,
+                                    })
+                                )}
+                            />
+                        </Form.Item>
 
-                    <Form.Item name="help_text" label="Help Text">
-                        <TextArea rows={2} placeholder="Enter help text" />
-                    </Form.Item>
+                        <Form.Item name="placeholder" label="Placeholder">
+                            <Input placeholder="Enter placeholder text" />
+                        </Form.Item>
 
-                    <Form.Item
-                        name="is_required"
-                        label="Required"
-                        valuePropName="checked"
-                    >
-                        <Switch />
-                    </Form.Item>
+                        <Form.Item name="help_text" label="Help Text">
+                            <TextArea rows={2} placeholder="Enter help text" />
+                        </Form.Item>
 
-                    <Form.Item
-                        name="is_primary"
-                        label="Primary Field (Phone, Name, Email)"
-                        valuePropName="checked"
-                    >
-                        <Switch />
-                    </Form.Item>
+                        <Form.Item
+                            name="is_required"
+                            label="Required"
+                            valuePropName="checked"
+                        >
+                            <Switch />
+                        </Form.Item>
 
-                    <Form.Item name="sort_order" label="Sort Order">
-                        <InputNumber
-                            min={0}
-                            placeholder="Enter sort order"
-                            style={{ width: "100%" }}
-                        />
-                    </Form.Item>
-                </Form>
-            </Modal>
-        </div>
+                        <Form.Item
+                            name="is_primary"
+                            label="Primary Field (Phone, Name, Email)"
+                            valuePropName="checked"
+                        >
+                            <Switch />
+                        </Form.Item>
+
+                        <Form.Item name="sort_order" label="Sort Order">
+                            <InputNumber
+                                min={0}
+                                placeholder="Enter sort order"
+                                style={{ width: "100%" }}
+                            />
+                        </Form.Item>
+                    </Form>
+                </Modal>
+            </div>
+        </AdminLayout>
     );
 }

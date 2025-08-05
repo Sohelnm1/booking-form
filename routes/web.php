@@ -6,11 +6,26 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\BookingController;
 
 // Public routes
 Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('welcome');
+
+// Booking routes
+Route::prefix('booking')->name('booking.')->group(function () {
+    Route::get('/select-service', [BookingController::class, 'selectService'])->name('select-service');
+    Route::get('/select-extras', [BookingController::class, 'selectExtras'])->name('select-extras');
+    Route::get('/select-datetime', [BookingController::class, 'selectDateTime'])->name('select-datetime');
+    Route::get('/consent', [BookingController::class, 'consent'])->name('consent');
+    Route::get('/confirm', [BookingController::class, 'confirm'])->name('confirm');
+    Route::post('/process', [BookingController::class, 'processBooking'])->name('process');
+    Route::get('/success', [BookingController::class, 'success'])->name('success');
+    Route::get('/available-slots', [BookingController::class, 'getAvailableSlots'])->name('available-slots');
+    Route::post('/send-otp', [BookingController::class, 'sendOtp'])->name('send-otp');
+    Route::post('/verify-otp', [BookingController::class, 'verifyOtp'])->name('verify-otp');
+});
 
 // Authentication routes
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -51,22 +66,39 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::patch('/admin/extras/{id}', [AdminController::class, 'updateExtra'])->name('admin.extras.patch');
     Route::post('/admin/extras/{id}/delete', [AdminController::class, 'deleteExtra'])->name('admin.extras.delete');
 
-// Forms routes
-Route::get('/admin/forms', [AdminController::class, 'forms'])->name('admin.forms');
-Route::post('/admin/forms', [AdminController::class, 'storeForm'])->name('admin.forms.store');
-Route::put('/admin/forms/{id}', [AdminController::class, 'updateForm'])->name('admin.forms.update');
-Route::patch('/admin/forms/{id}', [AdminController::class, 'updateForm'])->name('admin.forms.patch');
-Route::post('/admin/forms/{id}/delete', [AdminController::class, 'deleteForm'])->name('admin.forms.delete');
+    // Forms routes
+    Route::get('/admin/forms', [AdminController::class, 'forms'])->name('admin.forms');
+    Route::post('/admin/forms', [AdminController::class, 'storeForm'])->name('admin.forms.store');
+    Route::put('/admin/forms/{id}', [AdminController::class, 'updateForm'])->name('admin.forms.update');
+    Route::patch('/admin/forms/{id}', [AdminController::class, 'updateForm'])->name('admin.forms.patch');
+    Route::post('/admin/forms/{id}/delete', [AdminController::class, 'deleteForm'])->name('admin.forms.delete');
 
-// Form fields routes
-Route::post('/admin/form-fields', [AdminController::class, 'storeFormField'])->name('admin.form-fields.store');
-Route::put('/admin/form-fields/{id}', [AdminController::class, 'updateFormField'])->name('admin.form-fields.update');
-Route::patch('/admin/form-fields/{id}', [AdminController::class, 'updateFormField'])->name('admin.form-fields.patch');
-Route::post('/admin/form-fields/{id}/delete', [AdminController::class, 'deleteFormField'])->name('admin.form-fields.delete');
+    // Form fields routes
+    Route::post('/admin/form-fields', [AdminController::class, 'storeFormField'])->name('admin.form-fields.store');
+    Route::put('/admin/form-fields/{id}', [AdminController::class, 'updateFormField'])->name('admin.form-fields.update');
+    Route::patch('/admin/form-fields/{id}', [AdminController::class, 'updateFormField'])->name('admin.form-fields.patch');
+    Route::post('/admin/form-fields/{id}/delete', [AdminController::class, 'deleteFormField'])->name('admin.form-fields.delete');
+
+    // Schedule settings routes
+    Route::get('/admin/schedule', [AdminController::class, 'schedule'])->name('admin.schedule');
+    Route::post('/admin/schedule', [AdminController::class, 'storeSchedule'])->name('admin.schedule.store');
+    Route::put('/admin/schedule/{id}', [AdminController::class, 'updateSchedule'])->name('admin.schedule.update');
+    Route::patch('/admin/schedule/{id}', [AdminController::class, 'updateSchedule'])->name('admin.schedule.patch');
+    Route::post('/admin/schedule/{id}/delete', [AdminController::class, 'deleteSchedule'])->name('admin.schedule.delete');
+
+    // Consent settings routes
+    Route::get('/admin/consent', [AdminController::class, 'consent'])->name('admin.consent');
+    Route::post('/admin/consent', [AdminController::class, 'storeConsent'])->name('admin.consent.store');
+    Route::put('/admin/consent/{id}', [AdminController::class, 'updateConsent'])->name('admin.consent.update');
+    Route::patch('/admin/consent/{id}', [AdminController::class, 'updateConsent'])->name('admin.consent.patch');
+    Route::post('/admin/consent/{id}/delete', [AdminController::class, 'deleteConsent'])->name('admin.consent.delete');
+
     Route::get('/admin/custom-fields', [AdminController::class, 'customFields'])->name('admin.custom-fields');
     Route::get('/admin/times', [AdminController::class, 'times'])->name('admin.times');
     Route::get('/admin/calendar', [AdminController::class, 'calendar'])->name('admin.calendar');
     Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings');
     Route::get('/admin/integration', [AdminController::class, 'integration'])->name('admin.integration');
+    Route::post('/admin/integration/update', [AdminController::class, 'updateIntegration'])->name('admin.integration.update');
+    Route::post('/admin/integration/test', [AdminController::class, 'testIntegration'])->name('admin.integration.test');
     Route::get('/admin/notification', [AdminController::class, 'notification'])->name('admin.notification');
 });

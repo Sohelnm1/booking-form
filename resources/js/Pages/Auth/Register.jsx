@@ -8,6 +8,7 @@ import {
     MailOutlined,
 } from "@ant-design/icons";
 import AppLayout from "../../Layouts/AppLayout";
+import Logo from "../../Components/Logo";
 
 const { Title, Text } = Typography;
 
@@ -48,6 +49,14 @@ export default function Register() {
                     styles={{ body: { padding: "40px" } }}
                 >
                     <div style={{ textAlign: "center", marginBottom: 32 }}>
+                        <div style={{ marginBottom: 24 }}>
+                            <Logo
+                                variant="tertiary"
+                                color="gradient"
+                                background="white"
+                                size="medium"
+                            />
+                        </div>
                         <Title
                             level={2}
                             style={{ marginBottom: 8, color: "#1f1f1f" }}
@@ -55,7 +64,7 @@ export default function Register() {
                             Create Account
                         </Title>
                         <Text type="secondary">
-                            Join us to start booking your appointments
+                            Join HospiPal to start booking your appointments
                         </Text>
                     </div>
 

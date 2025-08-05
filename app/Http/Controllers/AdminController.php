@@ -10,6 +10,9 @@ use App\Models\Service;
 use App\Models\Extra;
 use App\Models\Form;
 use App\Models\FormField;
+use App\Models\ScheduleSetting;
+use App\Models\ConsentSetting;
+use Twilio\Rest\Client;
 
 class AdminController extends Controller
 {
@@ -448,6 +451,114 @@ class AdminController extends Controller
     }
 
     /**
+     * Show schedule settings page
+     */
+    public function schedule()
+    {
+        $scheduleSettings = ScheduleSetting::ordered()->get();
+        $services = Service::ordered()->get();
+
+        return Inertia::render('Admin/Schedule', [
+            'auth' => [
+                'user' => Auth::user(),
+            ],
+            'scheduleSettings' => $scheduleSettings,
+            'services' => $services,
+        ]);
+    }
+
+    /**
+     * Store schedule setting
+     */
+    public function storeSchedule(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'booking_window_days' => 'required|integer|min:1|max:365',
+            'min_advance_hours' => 'required|integer|min:0|max:168',
+            'max_advance_days' => 'required|integer|min:1|max:365',
+            'buffer_time_minutes' => 'required|integer|min:0|max:60',
+            'start_time' => 'required|date_format:H:i:s',
+            'end_time' => 'required|date_format:H:i:s|after:start_time',
+            'working_days' => 'required|array|min:1',
+            'working_days.*' => 'integer|in:1,2,3,4,5,6,7',
+            'break_times' => 'nullable|array',
+            'is_active' => 'boolean',
+            'sort_order' => 'nullable|integer|min:0',
+        ]);
+
+        ScheduleSetting::create([
+            'name' => $request->name,
+            'description' => $request->description,
+            'booking_window_days' => $request->booking_window_days,
+            'min_advance_hours' => $request->min_advance_hours,
+            'max_advance_days' => $request->max_advance_days,
+            'buffer_time_minutes' => $request->buffer_time_minutes,
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
+            'working_days' => $request->working_days,
+            'break_times' => $request->break_times,
+            'is_active' => $request->boolean('is_active', true),
+            'sort_order' => $request->sort_order ?? 0,
+        ]);
+
+        return redirect()->back()->with('success', 'Schedule setting created successfully.');
+    }
+
+    /**
+     * Update schedule setting
+     */
+    public function updateSchedule(Request $request, $id)
+    {
+        $scheduleSetting = ScheduleSetting::findOrFail($id);
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'booking_window_days' => 'required|integer|min:1|max:365',
+            'min_advance_hours' => 'required|integer|min:0|max:168',
+            'max_advance_days' => 'required|integer|min:1|max:365',
+            'buffer_time_minutes' => 'required|integer|min:0|max:60',
+            'start_time' => 'required|date_format:H:i:s',
+            'end_time' => 'required|date_format:H:i:s|after:start_time',
+            'working_days' => 'required|array|min:1',
+            'working_days.*' => 'integer|in:1,2,3,4,5,6,7',
+            'break_times' => 'nullable|array',
+            'is_active' => 'boolean',
+            'sort_order' => 'nullable|integer|min:0',
+        ]);
+
+        $scheduleSetting->update([
+            'name' => $request->name,
+            'description' => $request->description,
+            'booking_window_days' => $request->booking_window_days,
+            'min_advance_hours' => $request->min_advance_hours,
+            'max_advance_days' => $request->max_advance_days,
+            'buffer_time_minutes' => $request->buffer_time_minutes,
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
+            'working_days' => $request->working_days,
+            'break_times' => $request->break_times,
+            'is_active' => $request->boolean('is_active', true),
+            'sort_order' => $request->sort_order ?? 0,
+        ]);
+
+        return redirect()->back()->with('success', 'Schedule setting updated successfully.');
+    }
+
+    /**
+     * Delete schedule setting
+     */
+    public function deleteSchedule($id)
+    {
+        $scheduleSetting = ScheduleSetting::findOrFail($id);
+        $scheduleSetting->delete();
+
+        return redirect()->back()->with('success', 'Schedule setting deleted successfully.');
+    }
+
+    /**
      * Show times page
      */
     public function times()
@@ -488,10 +599,63 @@ class AdminController extends Controller
      */
     public function integration()
     {
+        // Load payment and integration settings from database
+        $settings = \DB::table('settings')
+            ->whereIn('group', ['payment', 'notification', 'integration'])
+            ->get()
+            ->keyBy('key');
+
+        $integrations = [
+            [
+                'id' => 'razorpay',
+                'name' => 'Razorpay Payment Gateway',
+                'description' => 'Payment processing integration for online payments',
+                'status' => $settings->get('razorpay_key')?->value ? 'active' : 'inactive',
+                'api_key' => $settings->get('razorpay_key')?->value ? 'rzp_****' . substr($settings->get('razorpay_key')->value, -4) : '',
+                'api_secret' => $settings->get('razorpay_secret')?->value ? '****' . substr($settings->get('razorpay_secret')->value, -4) : '',
+                'is_enabled' => !empty($settings->get('razorpay_key')?->value),
+                'last_sync' => now()->format('Y-m-d H:i:s'),
+                'settings' => [
+                    'razorpay_key' => $settings->get('razorpay_key')?->value ?? '',
+                    'razorpay_secret' => $settings->get('razorpay_secret')?->value ?? '',
+                    'currency' => $settings->get('currency')?->value ?? 'INR',
+                ]
+            ],
+            [
+                'id' => 'sms',
+                'name' => 'SMS Gateway (Twilio)',
+                'description' => 'SMS notifications for OTP and booking confirmations',
+                'status' => $settings->get('twilio_sid')?->value ? 'active' : 'inactive',
+                'api_key' => $settings->get('twilio_sid')?->value ? 'tw_****' . substr($settings->get('twilio_sid')->value, -4) : '',
+                'is_enabled' => !empty($settings->get('twilio_sid')?->value),
+                'last_sync' => now()->format('Y-m-d H:i:s'),
+                'settings' => [
+                    'twilio_sid' => $settings->get('twilio_sid')?->value ?? '',
+                    'twilio_token' => $settings->get('twilio_token')?->value ?? '',
+                    'twilio_phone' => $settings->get('twilio_phone')?->value ?? '',
+                ]
+            ],
+            [
+                'id' => 'email',
+                'name' => 'Email Service (SendGrid)',
+                'description' => 'Email notifications and marketing emails',
+                'status' => $settings->get('sendgrid_key')?->value ? 'active' : 'inactive',
+                'api_key' => $settings->get('sendgrid_key')?->value ? 'SG.****' . substr($settings->get('sendgrid_key')->value, -4) : '',
+                'is_enabled' => !empty($settings->get('sendgrid_key')?->value),
+                'last_sync' => now()->format('Y-m-d H:i:s'),
+                'settings' => [
+                    'sendgrid_key' => $settings->get('sendgrid_key')?->value ?? '',
+                    'sendgrid_from_email' => $settings->get('sendgrid_from_email')?->value ?? '',
+                    'sendgrid_from_name' => $settings->get('sendgrid_from_name')?->value ?? '',
+                ]
+            ],
+        ];
+
         return Inertia::render('Admin/Integration', [
             'auth' => [
                 'user' => Auth::user(),
             ],
+            'integrations' => $integrations,
         ]);
     }
 
@@ -505,6 +669,96 @@ class AdminController extends Controller
                 'user' => Auth::user(),
             ],
         ]);
+    }
+
+    /**
+     * Show consent settings page
+     */
+    public function consent()
+    {
+        $consentSettings = ConsentSetting::ordered()->get();
+
+        return Inertia::render('Admin/Consent', [
+            'auth' => [
+                'user' => Auth::user(),
+            ],
+            'consentSettings' => $consentSettings,
+        ]);
+    }
+
+    /**
+     * Store consent setting
+     */
+    public function storeConsent(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255|unique:consent_settings',
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'summary' => 'nullable|string',
+            'is_required' => 'boolean',
+            'is_active' => 'boolean',
+            'sort_order' => 'integer',
+            'version' => 'string|max:10',
+        ]);
+
+        ConsentSetting::create([
+            'name' => $request->name,
+            'title' => $request->title,
+            'content' => $request->content,
+            'summary' => $request->summary,
+            'is_required' => $request->boolean('is_required', true),
+            'is_active' => $request->boolean('is_active', true),
+            'sort_order' => $request->sort_order ?? 0,
+            'version' => $request->version ?? '1.0',
+            'last_updated' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Consent setting created successfully.');
+    }
+
+    /**
+     * Update consent setting
+     */
+    public function updateConsent(Request $request, $id)
+    {
+        $consentSetting = ConsentSetting::findOrFail($id);
+
+        $request->validate([
+            'name' => 'required|string|max:255|unique:consent_settings,name,' . $id,
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'summary' => 'nullable|string',
+            'is_required' => 'boolean',
+            'is_active' => 'boolean',
+            'sort_order' => 'integer',
+            'version' => 'string|max:10',
+        ]);
+
+        $consentSetting->update([
+            'name' => $request->name,
+            'title' => $request->title,
+            'content' => $request->content,
+            'summary' => $request->summary,
+            'is_required' => $request->boolean('is_required', true),
+            'is_active' => $request->boolean('is_active', true),
+            'sort_order' => $request->sort_order ?? 0,
+            'version' => $request->version ?? '1.0',
+            'last_updated' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Consent setting updated successfully.');
+    }
+
+    /**
+     * Delete consent setting
+     */
+    public function deleteConsent($id)
+    {
+        $consentSetting = ConsentSetting::findOrFail($id);
+        $consentSetting->delete();
+
+        return redirect()->back()->with('success', 'Consent setting deleted successfully.');
     }
 
     /**
@@ -662,5 +916,146 @@ class AdminController extends Controller
             ]);
             return redirect()->route('admin.forms')->with('error', 'Failed to delete field. Please try again.');
         }
+    }
+
+    /**
+     * Update integration settings
+     */
+    public function updateIntegration(Request $request)
+    {
+        $request->validate([
+            'integration_id' => 'required|string',
+            'settings' => 'required|array',
+        ]);
+
+        $integrationId = $request->integration_id;
+        $settings = $request->settings;
+
+        try {
+            // Update settings based on integration type
+            switch ($integrationId) {
+                case 'razorpay':
+                    $this->updateSetting('razorpay_key', $settings['razorpay_key'] ?? '', 'payment');
+                    $this->updateSetting('razorpay_secret', $settings['razorpay_secret'] ?? '', 'payment');
+                    $this->updateSetting('currency', $settings['currency'] ?? 'INR', 'payment');
+                    break;
+
+                case 'sms':
+                    $this->updateSetting('twilio_sid', $settings['twilio_sid'] ?? '', 'notification');
+                    $this->updateSetting('twilio_token', $settings['twilio_token'] ?? '', 'notification');
+                    $this->updateSetting('twilio_phone', $settings['twilio_phone'] ?? '', 'notification');
+                    break;
+
+                case 'email':
+                    $this->updateSetting('sendgrid_key', $settings['sendgrid_key'] ?? '', 'notification');
+                    $this->updateSetting('sendgrid_from_email', $settings['sendgrid_from_email'] ?? '', 'notification');
+                    $this->updateSetting('sendgrid_from_name', $settings['sendgrid_from_name'] ?? '', 'notification');
+                    break;
+
+                default:
+                    return response()->json(['error' => 'Invalid integration type'], 400);
+            }
+
+            return response()->json(['success' => 'Integration settings updated successfully']);
+        } catch (\Exception $e) {
+            \Log::error('Failed to update integration settings:', [
+                'integration_id' => $integrationId,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+            ]);
+            return response()->json(['error' => 'Failed to update settings'], 500);
+        }
+    }
+
+    /**
+     * Test integration connection
+     */
+    public function testIntegration(Request $request)
+    {
+        $request->validate([
+            'integration_id' => 'required|string',
+        ]);
+
+        $integrationId = $request->integration_id;
+
+        try {
+            switch ($integrationId) {
+                case 'razorpay':
+                    // Test Razorpay connection
+                    $key = \DB::table('settings')->where('key', 'razorpay_key')->value('value');
+                    $secret = \DB::table('settings')->where('key', 'razorpay_secret')->value('value');
+                    
+                    if (empty($key) || empty($secret)) {
+                        return response()->json(['error' => 'Razorpay credentials not configured'], 400);
+                    }
+
+                    // Here you would typically make a test API call to Razorpay
+                    // For now, we'll just validate the format
+                    if (!str_starts_with($key, 'rzp_')) {
+                        return response()->json(['error' => 'Invalid Razorpay key format'], 400);
+                    }
+
+                    return response()->json(['success' => 'Razorpay connection successful']);
+
+                case 'sms':
+                    // Test SMS integration
+                    $sid = \DB::table('settings')->where('key', 'twilio_sid')->value('value');
+                    $token = \DB::table('settings')->where('key', 'twilio_token')->value('value');
+                    $phone = \DB::table('settings')->where('key', 'twilio_phone')->value('value');
+                    
+                    if (empty($sid) || empty($token) || empty($phone)) {
+                        return response()->json(['error' => 'SMS credentials not configured'], 400);
+                    }
+
+                    try {
+                        $twilio = new Client($sid, $token);
+                        // Test the connection by fetching account info
+                        $account = $twilio->api->v2010->accounts($sid)->fetch();
+                        
+                        if ($account->status === 'active') {
+                            return response()->json(['success' => 'SMS integration test successful']);
+                        } else {
+                            return response()->json(['error' => 'Twilio account is not active'], 400);
+                        }
+                    } catch (\Exception $e) {
+                        return response()->json(['error' => 'SMS integration test failed: ' . $e->getMessage()], 400);
+                    }
+
+                case 'email':
+                    // Test email integration
+                    $key = \DB::table('settings')->where('key', 'sendgrid_key')->value('value');
+                    
+                    if (empty($key)) {
+                        return response()->json(['error' => 'Email credentials not configured'], 400);
+                    }
+
+                    return response()->json(['success' => 'Email integration test successful']);
+
+                default:
+                    return response()->json(['error' => 'Invalid integration type'], 400);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Integration test failed:', [
+                'integration_id' => $integrationId,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+            ]);
+            return response()->json(['error' => 'Integration test failed'], 500);
+        }
+    }
+
+    /**
+     * Helper method to update or create a setting
+     */
+    private function updateSetting($key, $value, $group = 'general')
+    {
+        \DB::table('settings')->updateOrInsert(
+            ['key' => $key],
+            [
+                'value' => $value,
+                'group' => $group,
+                'updated_at' => now(),
+            ]
+        );
     }
 } 

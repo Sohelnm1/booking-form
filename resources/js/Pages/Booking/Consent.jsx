@@ -1,0 +1,971 @@
+import React, { useState } from "react";
+import { Head, router } from "@inertiajs/react";
+import {
+    Card,
+    Button,
+    Row,
+    Col,
+    Typography,
+    Space,
+    Tag,
+    Divider,
+    Progress,
+    Checkbox,
+    Collapse,
+    Alert,
+    Modal,
+    Input,
+    Form,
+    message,
+    Spin,
+} from "antd";
+import {
+    FileTextOutlined,
+    CheckCircleOutlined,
+    ArrowLeftOutlined,
+    ArrowRightOutlined,
+    EyeOutlined,
+    PhoneOutlined,
+    SendOutlined,
+    CheckOutlined,
+} from "@ant-design/icons";
+import dayjs from "dayjs";
+import AppLayout from "../../Layouts/AppLayout";
+import Logo from "../../Components/Logo";
+
+const { Title, Text, Paragraph } = Typography;
+const { Panel } = Collapse;
+
+export default function Consent({
+    service,
+    selectedExtras,
+    date,
+    time,
+    consentSettings,
+}) {
+    const [acceptedConsents, setAcceptedConsents] = useState([]);
+    const [viewingConsent, setViewingConsent] = useState(null);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+
+    // Phone verification states
+    const [phoneNumber, setPhoneNumber] = useState("");
+    const [otp, setOtp] = useState("");
+    const [otpSent, setOtpSent] = useState(false);
+    const [otpVerified, setOtpVerified] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [phoneVerificationModal, setPhoneVerificationModal] = useState(false);
+
+    const handleBack = () => {
+        const extraIds = selectedExtras.map((extra) => extra.id);
+        router.visit(route("booking.select-datetime"), {
+            data: {
+                service_id: service.id,
+                extras: extraIds,
+            },
+        });
+    };
+
+    const handleContinue = () => {
+        const requiredConsents = consentSettings.filter(
+            (consent) => consent.is_required
+        );
+        const allRequiredAccepted = requiredConsents.every((consent) =>
+            acceptedConsents.includes(consent.id)
+        );
+
+        if (!allRequiredAccepted) {
+            return;
+        }
+
+        // If all required consents are accepted but phone not verified, show phone verification
+        if (requiredConsents.length > 0 && !otpVerified) {
+            setPhoneVerificationModal(true);
+            return;
+        }
+
+        const extraIds = selectedExtras.map((extra) => extra.id);
+        const consentIds = acceptedConsents;
+
+        const data = {
+            service_id: service.id,
+            extras: extraIds,
+            date: date,
+            time: time,
+            consents: consentIds,
+        };
+
+        // Include verified phone number if available
+        if (otpVerified && phoneNumber) {
+            data.verified_phone = phoneNumber;
+        }
+
+        router.visit(route("booking.confirm"), {
+            data: data,
+        });
+    };
+
+    const handleViewConsent = (consent) => {
+        setViewingConsent(consent);
+        setIsModalVisible(true);
+    };
+
+    // Phone verification functions
+    const handleConsentToggle = (consentId) => {
+        setAcceptedConsents((prev) => {
+            if (prev.includes(consentId)) {
+                return prev.filter((id) => id !== consentId);
+            } else {
+                return [...prev, consentId];
+            }
+        });
+    };
+
+    const handleSendOtp = async () => {
+        if (!phoneNumber || phoneNumber.length < 10) {
+            message.error("Please enter a valid phone number");
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            const response = await fetch(route("booking.send-otp"), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document
+                        .querySelector('meta[name="csrf-token"]')
+                        .getAttribute("content"),
+                },
+                body: JSON.stringify({
+                    phone_number: phoneNumber,
+                }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                message.success("OTP sent successfully to your phone number");
+                setOtpSent(true);
+            } else {
+                message.error(result.error || "Failed to send OTP");
+            }
+        } catch (error) {
+            console.error("Error sending OTP:", error);
+            message.error("Failed to send OTP");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (!otp || otp.length !== 6) {
+            message.error("Please enter a valid 6-digit OTP");
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            const response = await fetch(route("booking.verify-otp"), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document
+                        .querySelector('meta[name="csrf-token"]')
+                        .getAttribute("content"),
+                },
+                body: JSON.stringify({
+                    phone_number: phoneNumber,
+                    otp: otp,
+                }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                message.success("Phone number verified successfully!");
+                setOtpVerified(true);
+                setPhoneVerificationModal(false);
+
+                // Now add the consent to accepted list
+                const requiredConsents = consentSettings.filter(
+                    (c) => c.is_required
+                );
+                const pendingConsent = requiredConsents.find(
+                    (c) => !acceptedConsents.includes(c.id)
+                );
+                if (pendingConsent) {
+                    setAcceptedConsents((prev) => [...prev, pendingConsent.id]);
+                }
+            } else {
+                message.error(result.error || "Invalid OTP");
+            }
+        } catch (error) {
+            console.error("Error verifying OTP:", error);
+            message.error("Failed to verify OTP");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handlePhoneVerificationCancel = () => {
+        setPhoneVerificationModal(false);
+        setPhoneNumber("");
+        setOtp("");
+        setOtpSent(false);
+        setOtpVerified(false);
+    };
+
+    const formatPrice = (price) => {
+        return `₹${parseFloat(price).toFixed(2)}`;
+    };
+
+    const formatDuration = (minutes) => {
+        if (minutes < 60) {
+            return `${minutes} min`;
+        } else {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+        }
+    };
+
+    const formatTime = (time) => {
+        return dayjs(time, "HH:mm").format("h:mm A");
+    };
+
+    const formatDate = (date) => {
+        return dayjs(date).format("dddd, MMMM D, YYYY");
+    };
+
+    const requiredConsents = consentSettings.filter(
+        (consent) => consent.is_required
+    );
+    const optionalConsents = consentSettings.filter(
+        (consent) => !consent.is_required
+    );
+    const allRequiredAccepted = requiredConsents.every((consent) =>
+        acceptedConsents.includes(consent.id)
+    );
+
+    return (
+        <AppLayout>
+            <Head title="Consent & Terms - Book Appointment" />
+
+            <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px" }}>
+                {/* Header */}
+                <div style={{ textAlign: "center", marginBottom: 48 }}>
+                    <Logo
+                        variant="primary"
+                        color="color"
+                        background="white"
+                        size="large"
+                    />
+                    <Title level={2} style={{ marginTop: 24, marginBottom: 8 }}>
+                        Consent & Terms
+                    </Title>
+                    <Text type="secondary" style={{ fontSize: 16 }}>
+                        Please review and accept our terms and conditions
+                    </Text>
+                </div>
+
+                {/* Progress Bar */}
+                <div style={{ marginBottom: 32 }}>
+                    <Progress
+                        percent={80}
+                        showInfo={false}
+                        strokeColor="#1890ff"
+                        trailColor="#f0f0f0"
+                    />
+                    <div style={{ textAlign: "center", marginTop: 8 }}>
+                        <Text type="secondary">Step 4 of 5</Text>
+                    </div>
+                </div>
+
+                <Row gutter={[32, 32]}>
+                    {/* Main Content */}
+                    <Col xs={24} lg={16}>
+                        {/* Required Consents */}
+                        {requiredConsents.length > 0 && (
+                            <Card style={{ marginBottom: 24 }}>
+                                <Title level={4} style={{ marginBottom: 16 }}>
+                                    <FileTextOutlined
+                                        style={{
+                                            marginRight: 8,
+                                            color: "#ff4d4f",
+                                        }}
+                                    />
+                                    Required Agreements
+                                </Title>
+
+                                {requiredConsents.map((consent) => {
+                                    const isAccepted =
+                                        acceptedConsents.includes(consent.id);
+
+                                    return (
+                                        <div
+                                            key={consent.id}
+                                            style={{ marginBottom: 16 }}
+                                        >
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "flex-start",
+                                                    padding: 16,
+                                                    border: "1px solid #f0f0f0",
+                                                    borderRadius: 8,
+                                                    backgroundColor: isAccepted
+                                                        ? "#f6ffed"
+                                                        : "white",
+                                                }}
+                                            >
+                                                <Checkbox
+                                                    checked={isAccepted}
+                                                    onChange={() =>
+                                                        handleConsentToggle(
+                                                            consent.id
+                                                        )
+                                                    }
+                                                    style={{
+                                                        marginRight: 12,
+                                                        marginTop: 2,
+                                                    }}
+                                                />
+                                                <div style={{ flex: 1 }}>
+                                                    <div
+                                                        style={{
+                                                            display: "flex",
+                                                            justifyContent:
+                                                                "space-between",
+                                                            alignItems:
+                                                                "center",
+                                                            marginBottom: 8,
+                                                        }}
+                                                    >
+                                                        <Title
+                                                            level={5}
+                                                            style={{
+                                                                margin: 0,
+                                                            }}
+                                                        >
+                                                            {consent.title}
+                                                        </Title>
+                                                        <Space>
+                                                            <Tag color="red">
+                                                                Required
+                                                            </Tag>
+                                                            <Button
+                                                                type="text"
+                                                                size="small"
+                                                                icon={
+                                                                    <EyeOutlined />
+                                                                }
+                                                                onClick={() =>
+                                                                    handleViewConsent(
+                                                                        consent
+                                                                    )
+                                                                }
+                                                            >
+                                                                View
+                                                            </Button>
+                                                        </Space>
+                                                    </div>
+                                                    {consent.summary && (
+                                                        <Text
+                                                            type="secondary"
+                                                            style={{
+                                                                fontSize: 14,
+                                                            }}
+                                                        >
+                                                            {consent.summary}
+                                                        </Text>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </Card>
+                        )}
+
+                        {/* Optional Consents */}
+                        {optionalConsents.length > 0 && (
+                            <Card>
+                                <Title level={4} style={{ marginBottom: 16 }}>
+                                    <FileTextOutlined
+                                        style={{
+                                            marginRight: 8,
+                                            color: "#1890ff",
+                                        }}
+                                    />
+                                    Optional Agreements
+                                </Title>
+
+                                {optionalConsents.map((consent) => {
+                                    const isAccepted =
+                                        acceptedConsents.includes(consent.id);
+
+                                    return (
+                                        <div
+                                            key={consent.id}
+                                            style={{ marginBottom: 16 }}
+                                        >
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "flex-start",
+                                                    padding: 16,
+                                                    border: "1px solid #f0f0f0",
+                                                    borderRadius: 8,
+                                                    backgroundColor: isAccepted
+                                                        ? "#f6ffed"
+                                                        : "white",
+                                                }}
+                                            >
+                                                <Checkbox
+                                                    checked={isAccepted}
+                                                    onChange={() =>
+                                                        handleConsentToggle(
+                                                            consent.id
+                                                        )
+                                                    }
+                                                    style={{
+                                                        marginRight: 12,
+                                                        marginTop: 2,
+                                                    }}
+                                                />
+                                                <div style={{ flex: 1 }}>
+                                                    <div
+                                                        style={{
+                                                            display: "flex",
+                                                            justifyContent:
+                                                                "space-between",
+                                                            alignItems:
+                                                                "center",
+                                                            marginBottom: 8,
+                                                        }}
+                                                    >
+                                                        <Title
+                                                            level={5}
+                                                            style={{
+                                                                margin: 0,
+                                                            }}
+                                                        >
+                                                            {consent.title}
+                                                        </Title>
+                                                        <Space>
+                                                            <Tag color="blue">
+                                                                Optional
+                                                            </Tag>
+                                                            <Button
+                                                                type="text"
+                                                                size="small"
+                                                                icon={
+                                                                    <EyeOutlined />
+                                                                }
+                                                                onClick={() =>
+                                                                    handleViewConsent(
+                                                                        consent
+                                                                    )
+                                                                }
+                                                            >
+                                                                View
+                                                            </Button>
+                                                        </Space>
+                                                    </div>
+                                                    {consent.summary && (
+                                                        <Text
+                                                            type="secondary"
+                                                            style={{
+                                                                fontSize: 14,
+                                                            }}
+                                                        >
+                                                            {consent.summary}
+                                                        </Text>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </Card>
+                        )}
+
+                        {consentSettings.length === 0 && (
+                            <Card>
+                                <Alert
+                                    message="No consent documents available"
+                                    description="There are no terms and conditions to review at this time."
+                                    type="info"
+                                    showIcon
+                                />
+                            </Card>
+                        )}
+                    </Col>
+
+                    {/* Sidebar - Summary */}
+                    <Col xs={24} lg={8}>
+                        <Card style={{ position: "sticky", top: 24 }}>
+                            <Title level={4} style={{ marginBottom: 16 }}>
+                                Booking Summary
+                            </Title>
+
+                            {/* Service */}
+                            <div style={{ marginBottom: 16 }}>
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        marginBottom: 8,
+                                    }}
+                                >
+                                    <Text strong>{service.name}</Text>
+                                    <Text>{formatPrice(service.price)}</Text>
+                                </div>
+                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                    {formatDuration(service.duration)}
+                                </Text>
+                            </div>
+
+                            {/* Selected Extras */}
+                            {selectedExtras.length > 0 && (
+                                <>
+                                    <Divider style={{ margin: "12px 0" }} />
+                                    {selectedExtras.map((extra) => (
+                                        <div
+                                            key={extra.id}
+                                            style={{ marginBottom: 8 }}
+                                        >
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent:
+                                                        "space-between",
+                                                }}
+                                            >
+                                                <Text>+ {extra.name}</Text>
+                                                <Text>
+                                                    {formatPrice(extra.price)}
+                                                </Text>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </>
+                            )}
+
+                            {/* Total */}
+                            <Divider style={{ margin: "16px 0" }} />
+                            <div
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    marginBottom: 8,
+                                }}
+                            >
+                                <Text strong>Total Price</Text>
+                                <Text strong style={{ fontSize: 16 }}>
+                                    {formatPrice(
+                                        parseFloat(service.price) +
+                                            selectedExtras.reduce(
+                                                (sum, extra) =>
+                                                    sum +
+                                                    parseFloat(extra.price),
+                                                0
+                                            )
+                                    )}
+                                </Text>
+                            </div>
+
+                            {/* Appointment Details */}
+                            <Divider style={{ margin: "16px 0" }} />
+                            <div style={{ marginBottom: 8 }}>
+                                <Text type="secondary">Appointment Date</Text>
+                                <div>
+                                    <Text strong>{formatDate(date)}</Text>
+                                </div>
+                            </div>
+                            <div style={{ marginBottom: 8 }}>
+                                <Text type="secondary">Appointment Time</Text>
+                                <div>
+                                    <Text strong>{formatTime(time)}</Text>
+                                </div>
+                            </div>
+
+                            {/* Consent Status */}
+                            <Divider style={{ margin: "16px 0" }} />
+                            <div style={{ marginBottom: 8 }}>
+                                <Text type="secondary">
+                                    Required Agreements
+                                </Text>
+                                <div>
+                                    <Text
+                                        strong
+                                        style={{
+                                            color: allRequiredAccepted
+                                                ? "#52c41a"
+                                                : "#ff4d4f",
+                                        }}
+                                    >
+                                        {
+                                            acceptedConsents.filter((id) =>
+                                                requiredConsents.find(
+                                                    (c) => c.id === id
+                                                )
+                                            ).length
+                                        }{" "}
+                                        of {requiredConsents.length} accepted
+                                    </Text>
+                                </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div style={{ marginTop: 24 }}>
+                                <Button
+                                    block
+                                    style={{ marginBottom: 12 }}
+                                    icon={<ArrowLeftOutlined />}
+                                    onClick={handleBack}
+                                >
+                                    Back to Date & Time
+                                </Button>
+                                <Button
+                                    type="primary"
+                                    block
+                                    size="large"
+                                    icon={<ArrowRightOutlined />}
+                                    onClick={handleContinue}
+                                    disabled={!allRequiredAccepted}
+                                >
+                                    {requiredConsents.length > 0 && !otpVerified
+                                        ? "Verify Phone Number"
+                                        : "Continue to Confirmation"}
+                                </Button>
+                            </div>
+
+                            {!allRequiredAccepted && (
+                                <Alert
+                                    message="Required agreements not accepted"
+                                    description="Please accept all required terms and conditions to continue."
+                                    type="warning"
+                                    showIcon
+                                    style={{ marginTop: 16 }}
+                                />
+                            )}
+                        </Card>
+                    </Col>
+                </Row>
+
+                {/* Consent View Modal */}
+                <Modal
+                    title={viewingConsent?.title}
+                    open={isModalVisible}
+                    onCancel={() => setIsModalVisible(false)}
+                    footer={[
+                        <Button
+                            key="close"
+                            onClick={() => setIsModalVisible(false)}
+                        >
+                            Close
+                        </Button>,
+                    ]}
+                    width={800}
+                >
+                    {viewingConsent && (
+                        <div>
+                            <div style={{ marginBottom: 16 }}>
+                                <Tag
+                                    color={
+                                        viewingConsent.is_required
+                                            ? "red"
+                                            : "blue"
+                                    }
+                                >
+                                    {viewingConsent.is_required
+                                        ? "Required"
+                                        : "Optional"}
+                                </Tag>
+                                <Text
+                                    type="secondary"
+                                    style={{ marginLeft: 8 }}
+                                >
+                                    Version {viewingConsent.version}
+                                </Text>
+                            </div>
+                            <div
+                                style={{
+                                    maxHeight: 400,
+                                    overflowY: "auto",
+                                    padding: 16,
+                                    border: "1px solid #f0f0f0",
+                                    borderRadius: 8,
+                                    backgroundColor: "#fafafa",
+                                }}
+                            >
+                                <Paragraph
+                                    style={{
+                                        whiteSpace: "pre-line",
+                                        margin: 0,
+                                    }}
+                                >
+                                    {viewingConsent.content}
+                                </Paragraph>
+                            </div>
+                        </div>
+                    )}
+                </Modal>
+
+                {/* Phone Verification Modal */}
+                <Modal
+                    title={
+                        <div style={{ textAlign: "center", padding: "8px 0" }}>
+                            <div
+                                style={{
+                                    width: 60,
+                                    height: 60,
+                                    borderRadius: "50%",
+                                    backgroundColor: "#f0f8ff",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    margin: "0 auto 16px",
+                                    border: "2px solid #e6f7ff",
+                                }}
+                            >
+                                <PhoneOutlined
+                                    style={{ fontSize: 28, color: "#1890ff" }}
+                                />
+                            </div>
+                            <Title
+                                level={3}
+                                style={{ margin: 0, color: "#262626" }}
+                            >
+                                Phone Verification
+                            </Title>
+                        </div>
+                    }
+                    open={phoneVerificationModal}
+                    onCancel={handlePhoneVerificationCancel}
+                    footer={null}
+                    width={480}
+                    closable={!loading}
+                    centered
+                    style={{ top: 20 }}
+                    bodyStyle={{ padding: "32px 24px" }}
+                >
+                    <div style={{ textAlign: "center" }}>
+                        <div style={{ marginBottom: 32 }}>
+                            <Text
+                                type="secondary"
+                                style={{
+                                    fontSize: 16,
+                                    lineHeight: 1.6,
+                                    color: "#595959",
+                                }}
+                            >
+                                {!otpSent
+                                    ? "Enter your phone number to receive a verification code"
+                                    : `We've sent a 6-digit code to ${phoneNumber}`}
+                            </Text>
+                        </div>
+
+                        {!otpSent ? (
+                            <div>
+                                <div style={{ marginBottom: 24 }}>
+                                    <div
+                                        style={{
+                                            position: "relative",
+                                            marginBottom: 8,
+                                        }}
+                                    >
+                                        <Input
+                                            size="large"
+                                            placeholder="+91 98765 43210"
+                                            prefix={
+                                                <PhoneOutlined
+                                                    style={{ color: "#bfbfbf" }}
+                                                />
+                                            }
+                                            value={phoneNumber}
+                                            onChange={(e) =>
+                                                setPhoneNumber(e.target.value)
+                                            }
+                                            style={{
+                                                height: 48,
+                                                fontSize: 16,
+                                                borderRadius: 8,
+                                                border: "1px solid #d9d9d9",
+                                            }}
+                                        />
+                                    </div>
+                                    <Text
+                                        type="secondary"
+                                        style={{ fontSize: 12 }}
+                                    >
+                                        We'll send you a verification code via
+                                        SMS
+                                    </Text>
+                                </div>
+                                <Button
+                                    type="primary"
+                                    size="large"
+                                    icon={<SendOutlined />}
+                                    onClick={handleSendOtp}
+                                    loading={loading}
+                                    disabled={
+                                        !phoneNumber || phoneNumber.length < 10
+                                    }
+                                    style={{
+                                        height: 48,
+                                        fontSize: 16,
+                                        fontWeight: 500,
+                                        borderRadius: 8,
+                                        width: "100%",
+                                        background:
+                                            "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
+                                        border: "none",
+                                        boxShadow:
+                                            "0 4px 12px rgba(24, 144, 255, 0.3)",
+                                    }}
+                                >
+                                    {loading
+                                        ? "Sending..."
+                                        : "Send Verification Code"}
+                                </Button>
+                            </div>
+                        ) : (
+                            <div>
+                                <div style={{ marginBottom: 32 }}>
+                                    <div
+                                        style={{
+                                            position: "relative",
+                                            display: "flex",
+                                            justifyContent: "center",
+                                            gap: 8,
+                                            marginBottom: 16,
+                                        }}
+                                    >
+                                        <Input
+                                            size="large"
+                                            placeholder="Enter 6-digit code"
+                                            value={otp}
+                                            onChange={(e) =>
+                                                setOtp(e.target.value)
+                                            }
+                                            maxLength={6}
+                                            style={{
+                                                position: "absolute",
+                                                opacity: 0,
+                                                zIndex: 10,
+                                                width: "100%",
+                                                height: "100%",
+                                            }}
+                                            autoFocus
+                                        />
+                                        {[0, 1, 2, 3, 4, 5].map((index) => (
+                                            <div
+                                                key={index}
+                                                style={{
+                                                    width: 48,
+                                                    height: 56,
+                                                    border: "2px solid #d9d9d9",
+                                                    borderRadius: 8,
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    fontSize: 20,
+                                                    fontWeight: 600,
+                                                    backgroundColor: otp[index]
+                                                        ? "#f6ffed"
+                                                        : "#fafafa",
+                                                    borderColor: otp[index]
+                                                        ? "#52c41a"
+                                                        : "#d9d9d9",
+                                                    transition: "all 0.2s ease",
+                                                    cursor: "text",
+                                                }}
+                                            >
+                                                {otp[index] || ""}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <Text
+                                        type="secondary"
+                                        style={{ fontSize: 14 }}
+                                    >
+                                        Enter the 6-digit verification code
+                                    </Text>
+                                </div>
+
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        gap: 12,
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <Button
+                                        onClick={() => {
+                                            setOtpSent(false);
+                                            setOtp("");
+                                        }}
+                                        disabled={loading}
+                                        style={{
+                                            height: 44,
+                                            borderRadius: 8,
+                                            border: "1px solid #d9d9d9",
+                                            color: "#595959",
+                                        }}
+                                    >
+                                        Change Number
+                                    </Button>
+                                    <Button
+                                        type="primary"
+                                        icon={<CheckOutlined />}
+                                        onClick={handleVerifyOtp}
+                                        loading={loading}
+                                        disabled={!otp || otp.length !== 6}
+                                        style={{
+                                            height: 44,
+                                            borderRadius: 8,
+                                            background:
+                                                "linear-gradient(135deg, #52c41a 0%, #389e0d 100%)",
+                                            border: "none",
+                                            boxShadow:
+                                                "0 4px 12px rgba(82, 196, 26, 0.3)",
+                                        }}
+                                    >
+                                        {loading
+                                            ? "Verifying..."
+                                            : "Verify Code"}
+                                    </Button>
+                                </div>
+
+                                <div style={{ marginTop: 24 }}>
+                                    <Text
+                                        type="secondary"
+                                        style={{ fontSize: 12 }}
+                                    >
+                                        Didn't receive the code?{" "}
+                                        <Button
+                                            type="link"
+                                            size="small"
+                                            style={{
+                                                padding: 0,
+                                                height: "auto",
+                                            }}
+                                            onClick={handleSendOtp}
+                                            disabled={loading}
+                                        >
+                                            Resend
+                                        </Button>
+                                    </Text>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </Modal>
+            </div>
+        </AppLayout>
+    );
+}

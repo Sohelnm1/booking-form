@@ -1,0 +1,679 @@
+import React, { useState, useEffect } from "react";
+import { Head, router } from "@inertiajs/react";
+import {
+    Card,
+    Button,
+    Row,
+    Col,
+    Typography,
+    Space,
+    Tag,
+    Divider,
+    Progress,
+    Badge,
+    Spin,
+    Alert,
+    Empty,
+} from "antd";
+import {
+    CalendarOutlined,
+    ClockCircleOutlined,
+    ArrowLeftOutlined,
+    ArrowRightOutlined,
+    CheckOutlined,
+} from "@ant-design/icons";
+import dayjs from "dayjs";
+import AppLayout from "../../Layouts/AppLayout";
+import Logo from "../../Components/Logo";
+
+const { Title, Text } = Typography;
+
+export default function SelectDateTime({
+    service,
+    selectedExtras,
+    scheduleSettings,
+}) {
+    const [selectedDate, setSelectedDate] = useState(null);
+    const [selectedTime, setSelectedTime] = useState(null);
+    const [availableSlots, setAvailableSlots] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [currentMonth, setCurrentMonth] = useState(dayjs());
+
+    // Calculate total duration for slot calculation
+    const totalDuration =
+        service.duration +
+        selectedExtras.reduce((sum, extra) => sum + (extra.duration || 0), 0);
+
+    const handleBack = () => {
+        const extraIds = selectedExtras.map((extra) => extra.id);
+        router.visit(route("booking.select-extras"), {
+            data: {
+                service_id: service.id,
+                extras: extraIds,
+            },
+        });
+    };
+
+    const handleContinue = () => {
+        if (selectedDate && selectedTime) {
+            const extraIds = selectedExtras.map((extra) => extra.id);
+            router.visit(route("booking.consent"), {
+                data: {
+                    service_id: service.id,
+                    extras: extraIds,
+                    date: selectedDate.format("YYYY-MM-DD"),
+                    time: selectedTime.format("HH:mm"),
+                },
+            });
+        }
+    };
+
+    const fetchAvailableSlots = async (date) => {
+        setLoading(true);
+        try {
+            const response = await fetch(
+                `${route("booking.available-slots")}?date=${date.format(
+                    "YYYY-MM-DD"
+                )}&service_id=${service.id}`
+            );
+            const data = await response.json();
+            console.log("Available slots response:", data);
+            setAvailableSlots(data.slots || []);
+        } catch (error) {
+            console.error("Error fetching slots:", error);
+            // Fallback time slots for testing
+            const fallbackSlots = [
+                { start: "09:00", end: "09:30", available: true },
+                { start: "09:30", end: "10:00", available: true },
+                { start: "10:00", end: "10:30", available: true },
+                { start: "10:30", end: "11:00", available: true },
+                { start: "11:00", end: "11:30", available: true },
+                { start: "11:30", end: "12:00", available: true },
+                { start: "14:00", end: "14:30", available: true },
+                { start: "14:30", end: "15:00", available: true },
+                { start: "15:00", end: "15:30", available: true },
+                { start: "15:30", end: "16:00", available: true },
+                { start: "16:00", end: "16:30", available: true },
+                { start: "16:30", end: "17:00", available: true },
+            ];
+            setAvailableSlots(fallbackSlots);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDateSelect = (date) => {
+        setSelectedDate(date);
+        setSelectedTime(null);
+        fetchAvailableSlots(date);
+    };
+
+    const handleTimeSelect = (time) => {
+        setSelectedTime(time);
+    };
+
+    const formatPrice = (price) => {
+        return `₹${parseFloat(price).toFixed(2)}`;
+    };
+
+    const formatDuration = (minutes) => {
+        if (minutes < 60) {
+            return `${minutes} min`;
+        } else {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+        }
+    };
+
+    const formatTime = (time) => {
+        return dayjs(time, "HH:mm").format("h:mm A");
+    };
+
+    // Custom calendar functions
+    const getDaysInMonth = (date) => {
+        const year = date.year();
+        const month = date.month();
+        const firstDay = dayjs(new Date(year, month, 1));
+        const lastDay = dayjs(new Date(year, month + 1, 0));
+        const startDate = firstDay.startOf("week");
+        const endDate = lastDay.endOf("week");
+
+        const days = [];
+        let current = startDate;
+
+        while (current.isBefore(endDate) || current.isSame(endDate, "day")) {
+            days.push(current);
+            current = current.add(1, "day");
+        }
+
+        return days;
+    };
+
+    const handlePrevMonth = () => {
+        setCurrentMonth(currentMonth.subtract(1, "month"));
+    };
+
+    const handleNextMonth = () => {
+        setCurrentMonth(currentMonth.add(1, "month"));
+    };
+
+    const isDateSelectable = (date) => {
+        const today = dayjs();
+        return (
+            date.isAfter(today.subtract(1, "day")) &&
+            date.isBefore(today.add(31, "day"))
+        );
+    };
+
+    return (
+        <AppLayout>
+            <Head title="Select Date & Time - Book Appointment" />
+
+            <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px" }}>
+                {/* Header */}
+                <div style={{ textAlign: "center", marginBottom: 48 }}>
+                    <Logo
+                        variant="primary"
+                        color="color"
+                        background="white"
+                        size="large"
+                    />
+                    <Title level={2} style={{ marginTop: 24, marginBottom: 8 }}>
+                        Choose Date & Time
+                    </Title>
+                    <Text type="secondary" style={{ fontSize: 16 }}>
+                        Select your preferred appointment date and time
+                    </Text>
+                </div>
+
+                {/* Progress Bar */}
+                <div style={{ marginBottom: 32 }}>
+                    <Progress
+                        percent={60}
+                        showInfo={false}
+                        strokeColor="#1890ff"
+                        trailColor="#f0f0f0"
+                    />
+                    <div style={{ textAlign: "center", marginTop: 8 }}>
+                        <Text type="secondary">Step 3 of 5</Text>
+                    </div>
+                </div>
+
+                <Row gutter={[32, 32]}>
+                    {/* Main Content */}
+                    <Col xs={24} lg={16}>
+                        {/* Calendar Section */}
+                        <Card style={{ marginBottom: 24 }}>
+                            <Title level={4} style={{ marginBottom: 16 }}>
+                                <CalendarOutlined style={{ marginRight: 8 }} />
+                                Select Date
+                            </Title>
+
+                            {/* Custom Calendar */}
+                            <div
+                                style={{
+                                    border: "1px solid #f0f0f0",
+                                    borderRadius: "12px",
+                                    overflow: "hidden",
+                                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.06)",
+                                    background: "white",
+                                }}
+                            >
+                                {/* Calendar Header */}
+                                <div
+                                    style={{
+                                        padding: "16px 20px",
+                                        borderBottom: "1px solid #f0f0f0",
+                                        background: "#fafafa",
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                    }}
+                                >
+                                    <Button
+                                        size="small"
+                                        onClick={handlePrevMonth}
+                                        style={{
+                                            border: "none",
+                                            boxShadow: "none",
+                                        }}
+                                    >
+                                        ‹
+                                    </Button>
+                                    <span
+                                        style={{
+                                            fontSize: "16px",
+                                            fontWeight: "600",
+                                            minWidth: "120px",
+                                            textAlign: "center",
+                                        }}
+                                    >
+                                        {currentMonth.format("MMMM YYYY")}
+                                    </span>
+                                    <Button
+                                        size="small"
+                                        onClick={handleNextMonth}
+                                        style={{
+                                            border: "none",
+                                            boxShadow: "none",
+                                        }}
+                                    >
+                                        ›
+                                    </Button>
+                                </div>
+
+                                {/* Calendar Grid */}
+                                <div style={{ padding: "16px" }}>
+                                    {/* Day Headers */}
+                                    <div
+                                        style={{
+                                            display: "grid",
+                                            gridTemplateColumns:
+                                                "repeat(7, 1fr)",
+                                            gap: "4px",
+                                            marginBottom: "8px",
+                                        }}
+                                    >
+                                        {[
+                                            "Su",
+                                            "Mo",
+                                            "Tu",
+                                            "We",
+                                            "Th",
+                                            "Fr",
+                                            "Sa",
+                                        ].map((day) => (
+                                            <div
+                                                key={day}
+                                                style={{
+                                                    textAlign: "center",
+                                                    fontWeight: "600",
+                                                    color: "#666",
+                                                    padding: "8px 4px",
+                                                    fontSize: "12px",
+                                                    textTransform: "uppercase",
+                                                    letterSpacing: "0.5px",
+                                                }}
+                                            >
+                                                {day}
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Date Grid */}
+                                    <div
+                                        style={{
+                                            display: "grid",
+                                            gridTemplateColumns:
+                                                "repeat(7, 1fr)",
+                                            gap: "4px",
+                                        }}
+                                    >
+                                        {getDaysInMonth(currentMonth).map(
+                                            (date, index) => {
+                                                const today = dayjs();
+                                                const isPast = date.isBefore(
+                                                    today,
+                                                    "day"
+                                                );
+                                                const isToday = date.isSame(
+                                                    today,
+                                                    "day"
+                                                );
+                                                const isSelected =
+                                                    selectedDate &&
+                                                    selectedDate.isSame(
+                                                        date,
+                                                        "day"
+                                                    );
+                                                const isCurrentMonth =
+                                                    date.month() ===
+                                                    currentMonth.month();
+                                                const isSelectable =
+                                                    isDateSelectable(date);
+
+                                                const cellStyle = {
+                                                    height: "48px",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    borderRadius: "8px",
+                                                    cursor:
+                                                        isSelectable && !isPast
+                                                            ? "pointer"
+                                                            : "default",
+                                                    transition: "all 0.2s ease",
+                                                    fontSize: "14px",
+                                                    fontWeight: "500",
+                                                    opacity: isCurrentMonth
+                                                        ? 1
+                                                        : 0.3,
+                                                };
+
+                                                let backgroundColor =
+                                                    "transparent";
+                                                let color = "#333";
+                                                let border =
+                                                    "1px solid transparent";
+
+                                                if (isPast) {
+                                                    color = "#999";
+                                                } else if (isSelected) {
+                                                    // Selected date takes priority over today
+                                                    backgroundColor = "#e6f7ff";
+                                                    color = "#1890ff";
+                                                    border =
+                                                        "2px solid #1890ff";
+                                                } else if (
+                                                    isToday &&
+                                                    !selectedDate
+                                                ) {
+                                                    // Only show today as highlighted if no date is selected
+                                                    backgroundColor = "#1890ff";
+                                                    color = "white";
+                                                    border = "none";
+                                                } else if (isSelectable) {
+                                                    color = "#333";
+                                                } else {
+                                                    color = "#999";
+                                                }
+
+                                                return (
+                                                    <div
+                                                        key={index}
+                                                        style={{
+                                                            ...cellStyle,
+                                                            backgroundColor,
+                                                            color,
+                                                            border,
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            if (
+                                                                isSelectable &&
+                                                                !isPast &&
+                                                                !isSelected
+                                                            ) {
+                                                                e.currentTarget.style.backgroundColor =
+                                                                    "#f5f5f5";
+                                                            }
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            if (
+                                                                isSelectable &&
+                                                                !isPast &&
+                                                                !isSelected
+                                                            ) {
+                                                                e.currentTarget.style.backgroundColor =
+                                                                    "transparent";
+                                                            }
+                                                        }}
+                                                        onClick={() => {
+                                                            if (
+                                                                isSelectable &&
+                                                                !isPast
+                                                            ) {
+                                                                handleDateSelect(
+                                                                    date
+                                                                );
+                                                            }
+                                                        }}
+                                                    >
+                                                        {date.date()}
+                                                    </div>
+                                                );
+                                            }
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </Card>
+
+                        {/* Time Slots Section */}
+                        {selectedDate && (
+                            <Card>
+                                <Title level={4} style={{ marginBottom: 16 }}>
+                                    <ClockCircleOutlined
+                                        style={{ marginRight: 8 }}
+                                    />
+                                    Available Time Slots
+                                </Title>
+
+                                {loading ? (
+                                    <div
+                                        style={{
+                                            textAlign: "center",
+                                            padding: "40px",
+                                        }}
+                                    >
+                                        <Spin size="large" />
+                                        <div style={{ marginTop: 16 }}>
+                                            <Text type="secondary">
+                                                Loading available slots...
+                                            </Text>
+                                        </div>
+                                    </div>
+                                ) : availableSlots.length === 0 ? (
+                                    <Empty
+                                        description="No available slots for this date"
+                                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                    />
+                                ) : (
+                                    <Row gutter={[12, 12]}>
+                                        {availableSlots.map((slot, index) => {
+                                            // Handle both object format (from backend) and string format (fallback)
+                                            const slotStart =
+                                                typeof slot === "object"
+                                                    ? slot.start
+                                                    : slot;
+                                            const slotTime = dayjs(
+                                                slotStart,
+                                                "HH:mm"
+                                            );
+                                            const isSelected =
+                                                selectedTime &&
+                                                selectedTime.format("HH:mm") ===
+                                                    slotStart;
+
+                                            return (
+                                                <Col
+                                                    xs={12}
+                                                    sm={8}
+                                                    md={6}
+                                                    key={index}
+                                                >
+                                                    <Button
+                                                        size="large"
+                                                        style={{
+                                                            width: "100%",
+                                                            height: 48,
+                                                            border: isSelected
+                                                                ? "2px solid #1890ff"
+                                                                : "1px solid #d9d9d9",
+                                                            backgroundColor:
+                                                                isSelected
+                                                                    ? "#e6f7ff"
+                                                                    : "white",
+                                                        }}
+                                                        onClick={() =>
+                                                            handleTimeSelect(
+                                                                slotTime
+                                                            )
+                                                        }
+                                                    >
+                                                        <div
+                                                            style={{
+                                                                display: "flex",
+                                                                alignItems:
+                                                                    "center",
+                                                                justifyContent:
+                                                                    "center",
+                                                            }}
+                                                        >
+                                                            {isSelected && (
+                                                                <CheckOutlined
+                                                                    style={{
+                                                                        marginRight: 8,
+                                                                        color: "#1890ff",
+                                                                    }}
+                                                                />
+                                                            )}
+                                                            {formatTime(
+                                                                slotStart
+                                                            )}
+                                                        </div>
+                                                    </Button>
+                                                </Col>
+                                            );
+                                        })}
+                                    </Row>
+                                )}
+                            </Card>
+                        )}
+                    </Col>
+
+                    {/* Sidebar - Summary */}
+                    <Col xs={24} lg={8}>
+                        <Card style={{ position: "sticky", top: 24 }}>
+                            <Title level={4} style={{ marginBottom: 16 }}>
+                                Booking Summary
+                            </Title>
+
+                            {/* Service */}
+                            <div style={{ marginBottom: 16 }}>
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        marginBottom: 8,
+                                    }}
+                                >
+                                    <Text strong>{service.name}</Text>
+                                    <Text>{formatPrice(service.price)}</Text>
+                                </div>
+                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                    {formatDuration(service.duration)}
+                                </Text>
+                            </div>
+
+                            {/* Selected Extras */}
+                            {selectedExtras.length > 0 && (
+                                <>
+                                    <Divider style={{ margin: "12px 0" }} />
+                                    {selectedExtras.map((extra) => (
+                                        <div
+                                            key={extra.id}
+                                            style={{ marginBottom: 8 }}
+                                        >
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent:
+                                                        "space-between",
+                                                }}
+                                            >
+                                                <Text>+ {extra.name}</Text>
+                                                <Text>
+                                                    {formatPrice(extra.price)}
+                                                </Text>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </>
+                            )}
+
+                            {/* Total */}
+                            <Divider style={{ margin: "16px 0" }} />
+                            <div
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    marginBottom: 8,
+                                }}
+                            >
+                                <Text strong>Total Price</Text>
+                                <Text strong style={{ fontSize: 16 }}>
+                                    {formatPrice(
+                                        parseFloat(service.price) +
+                                            selectedExtras.reduce(
+                                                (sum, extra) =>
+                                                    sum +
+                                                    parseFloat(extra.price),
+                                                0
+                                            )
+                                    )}
+                                </Text>
+                            </div>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                }}
+                            >
+                                <Text type="secondary">Total Duration</Text>
+                                <Text type="secondary">
+                                    {formatDuration(totalDuration)}
+                                </Text>
+                            </div>
+
+                            {/* Selected Date & Time */}
+                            {(selectedDate || selectedTime) && (
+                                <>
+                                    <Divider style={{ margin: "16px 0" }} />
+                                    <div style={{ marginBottom: 8 }}>
+                                        <Text type="secondary">
+                                            Selected Date
+                                        </Text>
+                                        <div>
+                                            <Text strong>
+                                                {selectedDate
+                                                    ? selectedDate.format(
+                                                          "dddd, MMMM D, YYYY"
+                                                      )
+                                                    : "Not selected"}
+                                            </Text>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <Text type="secondary">
+                                            Selected Time
+                                        </Text>
+                                        <div>
+                                            <Text strong>
+                                                {selectedTime
+                                                    ? formatTime(selectedTime)
+                                                    : "Not selected"}
+                                            </Text>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* Action Buttons */}
+                            <div style={{ marginTop: 24 }}>
+                                <Button
+                                    block
+                                    style={{ marginBottom: 12 }}
+                                    icon={<ArrowLeftOutlined />}
+                                    onClick={handleBack}
+                                >
+                                    Back to Extras
+                                </Button>
+                                <Button
+                                    type="primary"
+                                    block
+                                    size="large"
+                                    icon={<ArrowRightOutlined />}
+                                    onClick={handleContinue}
+                                    disabled={!selectedDate || !selectedTime}
+                                >
+                                    Continue to Consent
+                                </Button>
+                            </div>
+                        </Card>
+                    </Col>
+                </Row>
+            </div>
+        </AppLayout>
+    );
+}

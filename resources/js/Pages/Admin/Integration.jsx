@@ -15,6 +15,7 @@ import {
     Form,
     Modal,
     message,
+    Select,
 } from "antd";
 import {
     ApiOutlined,
@@ -28,54 +29,11 @@ import AdminLayout from "../../Layouts/AdminLayout";
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
-export default function Integration({ auth }) {
+export default function Integration({ auth, integrations = [] }) {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingIntegration, setEditingIntegration] = useState(null);
+    const [loading, setLoading] = useState(false);
     const [form] = Form.useForm();
-
-    // Sample integration data
-    const integrations = [
-        {
-            id: 1,
-            name: "Razorpay Payment Gateway",
-            description: "Payment processing integration for online payments",
-            status: "active",
-            api_key: "rzp_test_****",
-            webhook_url: "https://your-domain.com/webhook/razorpay",
-            is_enabled: true,
-            last_sync: "2024-01-15 10:30:00",
-        },
-        {
-            id: 2,
-            name: "SMS Gateway (Twilio)",
-            description: "SMS notifications for OTP and booking confirmations",
-            status: "active",
-            api_key: "tw_****",
-            webhook_url: "https://your-domain.com/webhook/twilio",
-            is_enabled: true,
-            last_sync: "2024-01-15 09:15:00",
-        },
-        {
-            id: 3,
-            name: "Email Service (SendGrid)",
-            description: "Email notifications and marketing emails",
-            status: "inactive",
-            api_key: "SG.****",
-            webhook_url: "https://your-domain.com/webhook/sendgrid",
-            is_enabled: false,
-            last_sync: "2024-01-10 14:20:00",
-        },
-        {
-            id: 4,
-            name: "Google Calendar",
-            description: "Sync bookings with Google Calendar",
-            status: "pending",
-            api_key: "google_****",
-            webhook_url: "https://your-domain.com/webhook/google",
-            is_enabled: false,
-            last_sync: null,
-        },
-    ];
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -105,23 +63,89 @@ export default function Integration({ auth }) {
 
     const handleEdit = (integration) => {
         setEditingIntegration(integration);
-        form.setFieldsValue({
+
+        // Set form values based on integration type
+        const formValues = {
+            integration_id: integration.id,
             name: integration.name,
             description: integration.description,
-            api_key: integration.api_key,
-            webhook_url: integration.webhook_url,
             is_enabled: integration.is_enabled,
-        });
+        };
+
+        // Add integration-specific fields
+        if (integration.settings) {
+            Object.keys(integration.settings).forEach((key) => {
+                formValues[key] = integration.settings[key];
+            });
+        }
+
+        form.setFieldsValue(formValues);
         setIsModalVisible(true);
     };
 
-    const handleModalOk = () => {
-        form.validateFields().then((values) => {
-            // Implement save functionality
-            message.success("Integration updated successfully");
-            setIsModalVisible(false);
-            form.resetFields();
-        });
+    const handleModalOk = async () => {
+        try {
+            setLoading(true);
+            const values = await form.validateFields();
+
+            // Extract settings based on integration type
+            const settings = {};
+            const integrationId = values.integration_id;
+
+            switch (integrationId) {
+                case "razorpay":
+                    settings.razorpay_key = values.razorpay_key || "";
+                    settings.razorpay_secret = values.razorpay_secret || "";
+                    settings.currency = values.currency || "INR";
+                    break;
+                case "sms":
+                    settings.twilio_sid = values.twilio_sid || "";
+                    settings.twilio_token = values.twilio_token || "";
+                    settings.twilio_phone = values.twilio_phone || "";
+                    break;
+                case "email":
+                    settings.sendgrid_key = values.sendgrid_key || "";
+                    settings.sendgrid_from_email =
+                        values.sendgrid_from_email || "";
+                    settings.sendgrid_from_name =
+                        values.sendgrid_from_name || "";
+                    break;
+            }
+
+            // Send update request
+            const response = await fetch(route("admin.integration.update"), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document
+                        .querySelector('meta[name="csrf-token"]')
+                        .getAttribute("content"),
+                },
+                body: JSON.stringify({
+                    integration_id: integrationId,
+                    settings: settings,
+                }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                message.success("Integration settings updated successfully");
+                setIsModalVisible(false);
+                form.resetFields();
+                // Reload the page to get updated data
+                window.location.reload();
+            } else {
+                message.error(
+                    result.error || "Failed to update integration settings"
+                );
+            }
+        } catch (error) {
+            console.error("Error updating integration:", error);
+            message.error("Failed to update integration settings");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleModalCancel = () => {
@@ -136,6 +160,38 @@ export default function Integration({ auth }) {
                 integration.is_enabled ? "disabled" : "enabled"
             } successfully`
         );
+    };
+
+    const handleTestConnection = async (integration) => {
+        try {
+            setLoading(true);
+
+            const response = await fetch(route("admin.integration.test"), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document
+                        .querySelector('meta[name="csrf-token"]')
+                        .getAttribute("content"),
+                },
+                body: JSON.stringify({
+                    integration_id: integration.id,
+                }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                message.success(result.success || "Connection test successful");
+            } else {
+                message.error(result.error || "Connection test failed");
+            }
+        } catch (error) {
+            console.error("Error testing connection:", error);
+            message.error("Failed to test connection");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -186,6 +242,16 @@ export default function Integration({ auth }) {
                                     >
                                         Configure
                                     </Button>,
+                                    <Button
+                                        type="text"
+                                        icon={<ApiOutlined />}
+                                        onClick={() =>
+                                            handleTestConnection(integration)
+                                        }
+                                        loading={loading}
+                                    >
+                                        Test
+                                    </Button>,
                                 ]}
                             >
                                 <div style={{ marginBottom: 16 }}>
@@ -214,12 +280,48 @@ export default function Integration({ auth }) {
                                         <Text code>{integration.api_key}</Text>
                                     </div>
 
-                                    <div>
-                                        <Text strong>Webhook URL: </Text>
-                                        <Text code style={{ fontSize: "12px" }}>
-                                            {integration.webhook_url}
-                                        </Text>
-                                    </div>
+                                    {integration.id === "razorpay" &&
+                                        integration.settings?.currency && (
+                                            <div>
+                                                <Text strong>Currency: </Text>
+                                                <Text code>
+                                                    {
+                                                        integration.settings
+                                                            .currency
+                                                    }
+                                                </Text>
+                                            </div>
+                                        )}
+
+                                    {integration.id === "sms" &&
+                                        integration.settings?.twilio_phone && (
+                                            <div>
+                                                <Text strong>Phone: </Text>
+                                                <Text code>
+                                                    {
+                                                        integration.settings
+                                                            .twilio_phone
+                                                    }
+                                                </Text>
+                                            </div>
+                                        )}
+
+                                    {integration.id === "email" &&
+                                        integration.settings
+                                            ?.sendgrid_from_email && (
+                                            <div>
+                                                <Text strong>From Email: </Text>
+                                                <Text
+                                                    code
+                                                    style={{ fontSize: "12px" }}
+                                                >
+                                                    {
+                                                        integration.settings
+                                                            .sendgrid_from_email
+                                                    }
+                                                </Text>
+                                            </div>
+                                        )}
 
                                     {integration.last_sync && (
                                         <div>
@@ -236,69 +338,172 @@ export default function Integration({ auth }) {
                 </Row>
 
                 <Modal
-                    title="Configure Integration"
+                    title={`Configure ${editingIntegration?.name}`}
                     open={isModalVisible}
                     onOk={handleModalOk}
                     onCancel={handleModalCancel}
                     width={600}
                     okText="Save Changes"
                     okIcon={<SaveOutlined />}
+                    confirmLoading={loading}
                 >
                     <Form form={form} layout="vertical">
-                        <Form.Item
-                            name="name"
-                            label="Integration Name"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: "Please enter integration name",
-                                },
-                            ]}
-                        >
-                            <Input placeholder="Enter integration name" />
+                        <Form.Item name="integration_id" hidden>
+                            <Input />
                         </Form.Item>
 
-                        <Form.Item
-                            name="description"
-                            label="Description"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: "Please enter description",
-                                },
-                            ]}
-                        >
-                            <TextArea
-                                rows={3}
-                                placeholder="Enter integration description"
-                            />
-                        </Form.Item>
+                        {editingIntegration?.id === "razorpay" && (
+                            <>
+                                <Form.Item
+                                    name="razorpay_key"
+                                    label="Razorpay API Key"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message:
+                                                "Please enter Razorpay API key",
+                                        },
+                                    ]}
+                                >
+                                    <Input.Password placeholder="rzp_test_..." />
+                                </Form.Item>
 
-                        <Form.Item
-                            name="api_key"
-                            label="API Key"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: "Please enter API key",
-                                },
-                            ]}
-                        >
-                            <Input.Password placeholder="Enter API key" />
-                        </Form.Item>
+                                <Form.Item
+                                    name="razorpay_secret"
+                                    label="Razorpay API Secret"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message:
+                                                "Please enter Razorpay API secret",
+                                        },
+                                    ]}
+                                >
+                                    <Input.Password placeholder="Enter API secret" />
+                                </Form.Item>
 
-                        <Form.Item
-                            name="webhook_url"
-                            label="Webhook URL"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: "Please enter webhook URL",
-                                },
-                            ]}
-                        >
-                            <Input placeholder="https://your-domain.com/webhook/..." />
-                        </Form.Item>
+                                <Form.Item
+                                    name="currency"
+                                    label="Currency"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message: "Please select currency",
+                                        },
+                                    ]}
+                                >
+                                    <Select placeholder="Select currency">
+                                        <Select.Option value="INR">
+                                            Indian Rupee (₹)
+                                        </Select.Option>
+                                        <Select.Option value="USD">
+                                            US Dollar ($)
+                                        </Select.Option>
+                                        <Select.Option value="EUR">
+                                            Euro (€)
+                                        </Select.Option>
+                                        <Select.Option value="GBP">
+                                            British Pound (£)
+                                        </Select.Option>
+                                    </Select>
+                                </Form.Item>
+                            </>
+                        )}
+
+                        {editingIntegration?.id === "sms" && (
+                            <>
+                                <Form.Item
+                                    name="twilio_sid"
+                                    label="Twilio Account SID"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message:
+                                                "Please enter Twilio Account SID",
+                                        },
+                                    ]}
+                                >
+                                    <Input placeholder="AC..." />
+                                </Form.Item>
+
+                                <Form.Item
+                                    name="twilio_token"
+                                    label="Twilio Auth Token"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message:
+                                                "Please enter Twilio Auth Token",
+                                        },
+                                    ]}
+                                >
+                                    <Input.Password placeholder="Enter auth token" />
+                                </Form.Item>
+
+                                <Form.Item
+                                    name="twilio_phone"
+                                    label="Twilio Phone Number"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message:
+                                                "Please enter Twilio phone number",
+                                        },
+                                    ]}
+                                >
+                                    <Input placeholder="+1234567890" />
+                                </Form.Item>
+                            </>
+                        )}
+
+                        {editingIntegration?.id === "email" && (
+                            <>
+                                <Form.Item
+                                    name="sendgrid_key"
+                                    label="SendGrid API Key"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message:
+                                                "Please enter SendGrid API key",
+                                        },
+                                    ]}
+                                >
+                                    <Input.Password placeholder="SG..." />
+                                </Form.Item>
+
+                                <Form.Item
+                                    name="sendgrid_from_email"
+                                    label="From Email"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message: "Please enter from email",
+                                        },
+                                        {
+                                            type: "email",
+                                            message:
+                                                "Please enter a valid email",
+                                        },
+                                    ]}
+                                >
+                                    <Input placeholder="noreply@yourdomain.com" />
+                                </Form.Item>
+
+                                <Form.Item
+                                    name="sendgrid_from_name"
+                                    label="From Name"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message: "Please enter from name",
+                                        },
+                                    ]}
+                                >
+                                    <Input placeholder="Your Business Name" />
+                                </Form.Item>
+                            </>
+                        )}
 
                         <Form.Item
                             name="is_enabled"

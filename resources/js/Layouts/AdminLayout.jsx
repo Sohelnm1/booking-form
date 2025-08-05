@@ -25,8 +25,10 @@ import {
     BellOutlined,
     ApiOutlined,
     NotificationOutlined,
+    FileTextOutlined,
 } from "@ant-design/icons";
 import { router } from "@inertiajs/react";
+import Logo from "../Components/Logo";
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
@@ -82,6 +84,16 @@ export default function AdminLayout({ children, auth }) {
                 currentPath.startsWith("/admin/custom-fields/")
             ) {
                 newSelectedKey = "custom-fields";
+            } else if (
+                currentPath === "/admin/schedule" ||
+                currentPath.startsWith("/admin/schedule/")
+            ) {
+                newSelectedKey = "schedule";
+            } else if (
+                currentPath === "/admin/consent" ||
+                currentPath.startsWith("/admin/consent/")
+            ) {
+                newSelectedKey = "consent";
             } else if (
                 currentPath === "/admin/times" ||
                 currentPath.startsWith("/admin/times/")
@@ -216,6 +228,24 @@ export default function AdminLayout({ children, auth }) {
             },
         },
         {
+            key: "schedule",
+            icon: <ClockCircleOutlined />,
+            label: "Schedule",
+            onClick: () => {
+                setSelectedKey("schedule");
+                router.visit(route("admin.schedule"), { replace: true });
+            },
+        },
+        {
+            key: "consent",
+            icon: <FileTextOutlined />,
+            label: "Consent",
+            onClick: () => {
+                setSelectedKey("consent");
+                router.visit(route("admin.consent"), { replace: true });
+            },
+        },
+        {
             key: "times",
             icon: <ClockCircleOutlined />,
             label: "Times",
@@ -289,24 +319,30 @@ export default function AdminLayout({ children, auth }) {
             >
                 <div
                     style={{
-                        height: 64,
+                        height: 120,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         borderBottom: "1px solid #303030",
                         marginBottom: 16,
+                        padding: "0 16px",
                     }}
                 >
-                    <Title
-                        level={4}
-                        style={{
-                            color: "#fff",
-                            margin: 0,
-                            fontSize: collapsed ? "16px" : "18px",
-                        }}
-                    >
-                        {collapsed ? "BP" : "Booking Platform"}
-                    </Title>
+                    {collapsed ? (
+                        <Logo
+                            variant="tertiary"
+                            color="gradient"
+                            background="white"
+                            size="medium"
+                        />
+                    ) : (
+                        <Logo
+                            variant="secondary"
+                            color="color"
+                            background="dark"
+                            size="large"
+                        />
+                    )}
                 </div>
 
                 <Menu
