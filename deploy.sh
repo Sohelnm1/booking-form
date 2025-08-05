@@ -6,7 +6,7 @@
 echo "🚀 Starting deployment to Hostinger..."
 
 # Configuration
-REMOTE_HOST="your-hostinger-server.com"
+REMOTE_HOST="82.25.125.114"  # Replace with your actual server hostname from Hostinger
 REMOTE_USER="u777170885"
 REMOTE_PATH="/home/u777170885/domains/hospipalhealth.com/public_html/booking"
 LOCAL_PATH="."
