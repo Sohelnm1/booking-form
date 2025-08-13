@@ -12,7 +12,14 @@ use App\Models\Form;
 use App\Models\FormField;
 use App\Models\ScheduleSetting;
 use App\Models\ConsentSetting;
+use App\Models\User;
+use App\Models\Booking;
+use Illuminate\Support\Str;
 use Twilio\Rest\Client;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\AppointmentsExport;
+use App\Models\Coupon;
 
 class AdminController extends Controller
 {
@@ -50,10 +57,23 @@ class AdminController extends Controller
      */
     public function appointments()
     {
+        $bookings = Booking::with([
+            'customer',
+            'service',
+            'employee',
+            'extras',
+            'formResponses.formField'
+        ])
+        ->orderBy('appointment_time', 'desc')
+        ->get();
+
+
+
         return Inertia::render('Admin/Appointments', [
             'auth' => [
                 'user' => Auth::user(),
             ],
+            'bookings' => $bookings,
         ]);
     }
 
@@ -62,10 +82,21 @@ class AdminController extends Controller
      */
     public function employees()
     {
+        $employees = User::where('role', 'employee')
+            ->with(['services', 'scheduleSettings'])
+            ->orderBy('name')
+            ->get();
+        
+        $services = Service::active()->ordered()->get();
+        $scheduleSettings = ScheduleSetting::active()->ordered()->get();
+        
         return Inertia::render('Admin/Employees', [
             'auth' => [
                 'user' => Auth::user(),
             ],
+            'employees' => $employees,
+            'services' => $services,
+            'scheduleSettings' => $scheduleSettings,
         ]);
     }
 
@@ -424,7 +455,11 @@ class AdminController extends Controller
      */
     public function forms()
     {
-        $forms = Form::with(['fields', 'services'])->ordered()->get();
+        // Get the default booking form with all its fields and their service associations
+        $defaultForm = Form::where('name', 'Default Booking Form')
+            ->with(['fields.services'])
+            ->first();
+            
         $services = Service::active()->ordered()->get();
         $fieldTypes = FormField::getFieldTypes();
         
@@ -432,7 +467,7 @@ class AdminController extends Controller
             'auth' => [
                 'user' => Auth::user(),
             ],
-            'forms' => $forms,
+            'forms' => $defaultForm ? [$defaultForm] : [],
             'services' => $services,
             'fieldTypes' => $fieldTypes,
         ]);
@@ -761,80 +796,7 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'Consent setting deleted successfully.');
     }
 
-    /**
-     * Store a new form
-     */
-    public function storeForm(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-            'sort_order' => 'integer',
-            'services' => 'nullable|array',
-            'services.*' => 'exists:services,id',
-        ]);
 
-        $data = $request->only(['name', 'description', 'is_active', 'sort_order']);
-        $data['settings'] = $request->input('settings', []);
-
-        $form = Form::create($data);
-
-        // Attach services if provided
-        if ($request->has('services')) {
-            $form->services()->attach($request->services);
-        }
-
-        return redirect()->route('admin.forms')->with('success', 'Form created successfully');
-    }
-
-    /**
-     * Update an existing form
-     */
-    public function updateForm(Request $request, $id)
-    {
-        $form = Form::findOrFail($id);
-
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-            'sort_order' => 'integer',
-            'services' => 'nullable|array',
-            'services.*' => 'exists:services,id',
-        ]);
-
-        $data = $request->only(['name', 'description', 'is_active', 'sort_order']);
-        $data['settings'] = $request->input('settings', []);
-
-        $form->update($data);
-
-        // Sync services
-        $form->services()->sync($request->services ?? []);
-
-        return redirect()->route('admin.forms')->with('success', 'Form updated successfully');
-    }
-
-    /**
-     * Delete a form
-     */
-    public function deleteForm($id)
-    {
-        $form = Form::findOrFail($id);
-        $formName = $form->name;
-
-        try {
-            $form->delete();
-            return redirect()->route('admin.forms')->with('success', "Form '{$formName}' deleted successfully");
-        } catch (\Exception $e) {
-            \Log::error('Failed to delete form:', [
-                'id' => $id,
-                'error' => $e->getMessage(),
-                'user_id' => Auth::id(),
-            ]);
-            return redirect()->route('admin.forms')->with('error', 'Failed to delete form. Please try again.');
-        }
-    }
 
     /**
      * Store a form field
@@ -852,8 +814,12 @@ class AdminController extends Controller
             'is_primary' => 'boolean',
             'sort_order' => 'integer',
             'options' => 'nullable|array',
+            'options.*.label' => 'required_with:options|string|max:255',
+            'options.*.value' => 'required_with:options|string|max:255',
             'validation_rules' => 'nullable|array',
             'settings' => 'nullable|array',
+            'services' => 'nullable|array',
+            'services.*' => 'exists:services,id',
         ]);
 
         $data = $request->all();
@@ -861,7 +827,12 @@ class AdminController extends Controller
         $data['validation_rules'] = $request->input('validation_rules', []);
         $data['settings'] = $request->input('settings', []);
 
-        FormField::create($data);
+        $field = FormField::create($data);
+
+        // Attach services for custom fields (non-primary)
+        if (!$field->is_primary && $request->has('services')) {
+            $field->services()->attach($request->services);
+        }
 
         return redirect()->route('admin.forms')->with('success', 'Form field added successfully');
     }
@@ -873,6 +844,11 @@ class AdminController extends Controller
     {
         $field = FormField::findOrFail($id);
 
+        // Don't allow editing of primary fields
+        if ($field->is_primary) {
+            return redirect()->route('admin.forms')->with('error', 'Primary fields (Name, Phone, Email) cannot be edited as they are required for all bookings.');
+        }
+
         $request->validate([
             'label' => 'required|string|max:255',
             'name' => 'required|string|max:255',
@@ -883,8 +859,12 @@ class AdminController extends Controller
             'is_primary' => 'boolean',
             'sort_order' => 'integer',
             'options' => 'nullable|array',
+            'options.*.label' => 'required_with:options|string|max:255',
+            'options.*.value' => 'required_with:options|string|max:255',
             'validation_rules' => 'nullable|array',
             'settings' => 'nullable|array',
+            'services' => 'nullable|array',
+            'services.*' => 'exists:services,id',
         ]);
 
         $data = $request->all();
@@ -893,6 +873,11 @@ class AdminController extends Controller
         $data['settings'] = $request->input('settings', []);
 
         $field->update($data);
+
+        // Update service associations for custom fields (non-primary)
+        if (!$field->is_primary) {
+            $field->services()->sync($request->services ?? []);
+        }
 
         return redirect()->route('admin.forms')->with('success', 'Form field updated successfully');
     }
@@ -904,6 +889,11 @@ class AdminController extends Controller
     {
         $field = FormField::findOrFail($id);
         $fieldName = $field->label;
+
+        // Don't allow deletion of primary fields
+        if ($field->is_primary) {
+            return redirect()->route('admin.forms')->with('error', 'Primary fields (Name, Phone, Email) cannot be deleted as they are required for all bookings.');
+        }
 
         try {
             $field->delete();
@@ -1057,5 +1047,251 @@ class AdminController extends Controller
                 'updated_at' => now(),
             ]
         );
+    }
+
+    /**
+     * Store a new employee
+     */
+    public function storeEmployee(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'phone_number' => 'required|string|max:20',
+            'services' => 'array',
+            'services.*' => 'exists:services,id',
+            'schedule_settings' => 'array',
+            'schedule_settings.*' => 'exists:schedule_settings,id',
+            'is_active' => 'boolean',
+        ]);
+
+        $employee = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone_number' => $request->phone_number,
+            'role' => 'employee',
+            'password' => bcrypt(Str::random(12)), // Temporary password
+            'is_active' => $request->is_active ?? true,
+        ]);
+
+        // Attach services to employee
+        if ($request->services) {
+            $employee->services()->attach($request->services);
+        }
+
+        // Attach schedule settings to employee
+        if ($request->schedule_settings) {
+            $employee->scheduleSettings()->attach($request->schedule_settings);
+        }
+
+        return redirect()->route('admin.employees')->with('success', 'Employee created successfully!');
+    }
+
+    /**
+     * Update an employee
+     */
+    public function updateEmployee(Request $request, $id)
+    {
+        $employee = User::findOrFail($id);
+        
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $id,
+            'phone_number' => 'required|string|max:20',
+            'services' => 'array',
+            'services.*' => 'exists:services,id',
+            'schedule_settings' => 'array',
+            'schedule_settings.*' => 'exists:schedule_settings,id',
+            'is_active' => 'boolean',
+        ]);
+
+        $employee->update([
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone_number' => $request->phone_number,
+            'is_active' => $request->is_active ?? true,
+        ]);
+
+        // Sync services
+        $employee->services()->sync($request->services ?? []);
+
+        // Sync schedule settings
+        $employee->scheduleSettings()->sync($request->schedule_settings ?? []);
+
+        return redirect()->route('admin.employees')->with('success', 'Employee updated successfully!');
+    }
+
+    /**
+     * Delete an employee
+     */
+    public function deleteEmployee($id)
+    {
+        $employee = User::findOrFail($id);
+        
+        // Check if employee has any bookings
+        $bookingCount = Booking::where('employee_id', $id)->count();
+        if ($bookingCount > 0) {
+            return redirect()->route('admin.employees')->with('error', 'Cannot delete employee with existing bookings.');
+        }
+
+        $employee->delete();
+        return redirect()->route('admin.employees')->with('success', 'Employee deleted successfully!');
+    }
+
+    /**
+     * Download appointment PDF
+     */
+    public function downloadAppointmentPdf($id)
+    {
+        $booking = Booking::with([
+            'customer',
+            'service',
+            'employee',
+            'extras',
+            'formResponses.formField'
+        ])->findOrFail($id);
+
+        $data = [
+            'booking' => $booking,
+            'company' => 'HospiPal Health'
+        ];
+
+        $pdf = Pdf::loadView('pdfs.appointment', $data);
+        
+        return $pdf->download('appointment-' . $booking->id . '.pdf');
+    }
+
+    /**
+     * Export appointments to Excel
+     */
+    public function exportAppointmentsExcel()
+    {
+        $filename = 'appointments-' . now()->format('Y-m-d-H-i-s') . '.xlsx';
+        
+        return Excel::download(new AppointmentsExport, $filename);
+    }
+
+    /**
+     * Show coupons page
+     */
+    public function coupons()
+    {
+        $coupons = Coupon::orderBy('created_at', 'desc')->get();
+        $services = Service::active()->ordered()->get();
+        
+        return Inertia::render('Admin/Coupons', [
+            'auth' => [
+                'user' => Auth::user(),
+            ],
+            'coupons' => $coupons,
+            'services' => $services,
+        ]);
+    }
+
+    /**
+     * Store a new coupon
+     */
+    public function storeCoupon(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string|max:50|unique:coupons,code',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'discount_type' => 'required|in:percentage,fixed',
+            'discount_value' => 'required|numeric|min:0',
+            'minimum_amount' => 'required|numeric|min:0',
+            'maximum_discount' => 'nullable|numeric|min:0',
+            'max_uses' => 'nullable|integer|min:1',
+            'max_uses_per_user' => 'required|integer|min:1',
+            'valid_from' => 'nullable|date',
+            'valid_until' => 'nullable|date|after:valid_from',
+            'is_active' => 'nullable|boolean',
+            'is_first_time_only' => 'nullable|boolean',
+            'applicable_services' => 'nullable|array',
+            'excluded_services' => 'nullable|array',
+        ]);
+
+        $coupon = Coupon::create([
+            'code' => strtoupper($request->code),
+            'name' => $request->name,
+            'description' => $request->description,
+            'discount_type' => $request->discount_type,
+            'discount_value' => $request->discount_value,
+            'minimum_amount' => $request->minimum_amount,
+            'maximum_discount' => $request->maximum_discount,
+            'max_uses' => $request->max_uses,
+            'max_uses_per_user' => $request->max_uses_per_user,
+            'valid_from' => $request->valid_from,
+            'valid_until' => $request->valid_until,
+            'is_active' => $request->boolean('is_active', true),
+            'is_first_time_only' => $request->boolean('is_first_time_only', false),
+            'applicable_services' => $request->applicable_services ?: null,
+            'excluded_services' => $request->excluded_services ?: null,
+            'created_by' => Auth::user()->name,
+        ]);
+
+        return redirect()->route('admin.coupons')->with('success', 'Coupon created successfully!');
+    }
+
+    /**
+     * Update a coupon
+     */
+    public function updateCoupon(Request $request, $id)
+    {
+        $coupon = Coupon::findOrFail($id);
+        
+        $request->validate([
+            'code' => 'required|string|max:50|unique:coupons,code,' . $id,
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'discount_type' => 'required|in:percentage,fixed',
+            'discount_value' => 'required|numeric|min:0',
+            'minimum_amount' => 'required|numeric|min:0',
+            'maximum_discount' => 'nullable|numeric|min:0',
+            'max_uses' => 'nullable|integer|min:1',
+            'max_uses_per_user' => 'required|integer|min:1',
+            'valid_from' => 'nullable|date',
+            'valid_until' => 'nullable|date|after:valid_from',
+            'is_active' => 'nullable|boolean',
+            'is_first_time_only' => 'nullable|boolean',
+            'applicable_services' => 'nullable|array',
+            'excluded_services' => 'nullable|array',
+        ]);
+
+        $coupon->update([
+            'code' => strtoupper($request->code),
+            'name' => $request->name,
+            'description' => $request->description,
+            'discount_type' => $request->discount_type,
+            'discount_value' => $request->discount_value,
+            'minimum_amount' => $request->minimum_amount,
+            'maximum_discount' => $request->maximum_discount,
+            'max_uses' => $request->max_uses,
+            'max_uses_per_user' => $request->max_uses_per_user,
+            'valid_from' => $request->valid_from,
+            'valid_until' => $request->valid_until,
+            'is_active' => $request->boolean('is_active', true),
+            'is_first_time_only' => $request->boolean('is_first_time_only', false),
+            'applicable_services' => $request->applicable_services ?: null,
+            'excluded_services' => $request->excluded_services ?: null,
+        ]);
+
+        return redirect()->route('admin.coupons')->with('success', 'Coupon updated successfully!');
+    }
+
+    /**
+     * Delete a coupon
+     */
+    public function deleteCoupon($id)
+    {
+        $coupon = Coupon::findOrFail($id);
+        
+        // Check if coupon has been used
+        if ($coupon->used_count > 0) {
+            return redirect()->route('admin.coupons')->with('error', 'Cannot delete coupon that has been used.');
+        }
+
+        $coupon->delete();
+        return redirect()->route('admin.coupons')->with('success', 'Coupon deleted successfully!');
     }
 } 

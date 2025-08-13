@@ -26,6 +26,7 @@ import {
     ApiOutlined,
     NotificationOutlined,
     FileTextOutlined,
+    GiftOutlined,
 } from "@ant-design/icons";
 import { router } from "@inertiajs/react";
 import Logo from "../Components/Logo";
@@ -94,6 +95,11 @@ export default function AdminLayout({ children, auth }) {
                 currentPath.startsWith("/admin/consent/")
             ) {
                 newSelectedKey = "consent";
+            } else if (
+                currentPath === "/admin/coupons" ||
+                currentPath.startsWith("/admin/coupons/")
+            ) {
+                newSelectedKey = "coupons";
             } else if (
                 currentPath === "/admin/times" ||
                 currentPath.startsWith("/admin/times/")
@@ -243,6 +249,15 @@ export default function AdminLayout({ children, auth }) {
             onClick: () => {
                 setSelectedKey("consent");
                 router.visit(route("admin.consent"), { replace: true });
+            },
+        },
+        {
+            key: "coupons",
+            icon: <GiftOutlined />,
+            label: "Coupons",
+            onClick: () => {
+                setSelectedKey("coupons");
+                router.visit(route("admin.coupons"), { replace: true });
             },
         },
         {

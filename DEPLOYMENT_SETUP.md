@@ -11,18 +11,28 @@
 1. Log into your Hostinger control panel
 2. Go to **Hosting** → **Manage** → **Advanced** → **SSH Access**
 3. Note down your:
-    - **Server hostname** (e.g., `srv123.hostinger.com`)
+    - **Server hostname** (e.g., `srv123.hostinger.com` or IP address like `82.25.125.114`)
     - **SSH username** (usually your hosting username)
-    - **SSH port** (usually 22)
+    - **SSH port** (usually 22, but may be custom like 65002)
 
 ## Step 2: Update Deployment Script
 
-Edit `deploy.sh` and replace the placeholder values:
+Edit `deploy.ps1` (for Windows) and replace the placeholder values:
 
-```bash
-REMOTE_HOST="your-actual-server-hostname.hostinger.com"
-REMOTE_USER="your-hosting-username"
-REMOTE_PATH="/home/your-username/domains/yourdomain.com/public_html/booking"
+```powershell
+$REMOTE_HOST = "your-actual-server-hostname.hostinger.com"
+$REMOTE_USER = "your-hosting-username"
+$REMOTE_PORT = "your-ssh-port"
+$REMOTE_PATH = "/home/your-username/domains/yourdomain.com/public_html/booking"
+```
+
+**For your specific configuration:**
+
+```powershell
+$REMOTE_HOST = "82.25.125.114"
+$REMOTE_USER = "u777170885"
+$REMOTE_PORT = "65002"
+$REMOTE_PATH = "/home/u777170885/domains/hospipalhealth.com/public_html/booking"
 ```
 
 ## Step 3: Set Up SSH Key Authentication
@@ -56,10 +66,19 @@ If you prefer password authentication, you'll be prompted for your hosting passw
 Test your SSH connection:
 
 ```bash
-ssh your-username@your-server-hostname
+ssh -p 65002 u777170885@82.25.125.114
 ```
 
 ## Step 6: Run Deployment
+
+**For Windows PowerShell:**
+
+```powershell
+# Run deployment
+.\deploy.ps1
+```
+
+**For Linux/Mac (if using deploy.sh):**
 
 ```bash
 # Make script executable

@@ -22,9 +22,13 @@ Route::prefix('booking')->name('booking.')->group(function () {
     Route::get('/confirm', [BookingController::class, 'confirm'])->name('confirm');
     Route::post('/process', [BookingController::class, 'processBooking'])->name('process');
     Route::get('/success', [BookingController::class, 'success'])->name('success');
+    Route::get('/payment-success', [BookingController::class, 'paymentSuccess'])->name('payment-success');
+    Route::get('/payment-failed', [BookingController::class, 'paymentFailed'])->name('payment-failed');
+    Route::get('/payment-cancelled', [BookingController::class, 'paymentCancelled'])->name('payment-cancelled');
     Route::get('/available-slots', [BookingController::class, 'getAvailableSlots'])->name('available-slots');
     Route::post('/send-otp', [BookingController::class, 'sendOtp'])->name('send-otp');
     Route::post('/verify-otp', [BookingController::class, 'verifyOtp'])->name('verify-otp');
+    Route::post('/validate-coupon', [BookingController::class, 'validateCoupon'])->name('validate-coupon');
 });
 
 // Authentication routes
@@ -48,7 +52,13 @@ Route::middleware(['auth', 'role:employee'])->group(function () {
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/admin/appointments', [AdminController::class, 'appointments'])->name('admin.appointments');
+    Route::get('/admin/appointments/{id}/pdf', [AdminController::class, 'downloadAppointmentPdf'])->name('admin.appointments.pdf');
+    Route::get('/admin/appointments/export-excel', [AdminController::class, 'exportAppointmentsExcel'])->name('admin.appointments.excel');
     Route::get('/admin/employees', [AdminController::class, 'employees'])->name('admin.employees');
+    Route::post('/admin/employees', [AdminController::class, 'storeEmployee'])->name('admin.employees.store');
+    Route::put('/admin/employees/{id}', [AdminController::class, 'updateEmployee'])->name('admin.employees.update');
+    Route::patch('/admin/employees/{id}', [AdminController::class, 'updateEmployee'])->name('admin.employees.patch');
+    Route::post('/admin/employees/{id}/delete', [AdminController::class, 'deleteEmployee'])->name('admin.employees.delete');
     Route::get('/admin/customers', [AdminController::class, 'customers'])->name('admin.customers');
     
     // Services routes
@@ -68,10 +78,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     // Forms routes
     Route::get('/admin/forms', [AdminController::class, 'forms'])->name('admin.forms');
-    Route::post('/admin/forms', [AdminController::class, 'storeForm'])->name('admin.forms.store');
-    Route::put('/admin/forms/{id}', [AdminController::class, 'updateForm'])->name('admin.forms.update');
-    Route::patch('/admin/forms/{id}', [AdminController::class, 'updateForm'])->name('admin.forms.patch');
-    Route::post('/admin/forms/{id}/delete', [AdminController::class, 'deleteForm'])->name('admin.forms.delete');
 
     // Form fields routes
     Route::post('/admin/form-fields', [AdminController::class, 'storeFormField'])->name('admin.form-fields.store');
@@ -92,6 +98,13 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::put('/admin/consent/{id}', [AdminController::class, 'updateConsent'])->name('admin.consent.update');
     Route::patch('/admin/consent/{id}', [AdminController::class, 'updateConsent'])->name('admin.consent.patch');
     Route::post('/admin/consent/{id}/delete', [AdminController::class, 'deleteConsent'])->name('admin.consent.delete');
+
+    // Coupons routes
+    Route::get('/admin/coupons', [AdminController::class, 'coupons'])->name('admin.coupons');
+    Route::post('/admin/coupons', [AdminController::class, 'storeCoupon'])->name('admin.coupons.store');
+    Route::put('/admin/coupons/{id}', [AdminController::class, 'updateCoupon'])->name('admin.coupons.update');
+    Route::patch('/admin/coupons/{id}', [AdminController::class, 'updateCoupon'])->name('admin.coupons.patch');
+    Route::post('/admin/coupons/{id}/delete', [AdminController::class, 'deleteCoupon'])->name('admin.coupons.delete');
 
     Route::get('/admin/custom-fields', [AdminController::class, 'customFields'])->name('admin.custom-fields');
     Route::get('/admin/times', [AdminController::class, 'times'])->name('admin.times');

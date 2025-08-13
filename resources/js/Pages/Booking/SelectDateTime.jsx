@@ -71,6 +71,10 @@ export default function SelectDateTime({
     const fetchAvailableSlots = async (date) => {
         setLoading(true);
         try {
+            console.log("Fetching slots for date:", date.format("YYYY-MM-DD"));
+            console.log("Service ID:", service.id);
+            console.log("Service duration:", service.duration);
+
             const response = await fetch(
                 `${route("booking.available-slots")}?date=${date.format(
                     "YYYY-MM-DD"
@@ -78,7 +82,28 @@ export default function SelectDateTime({
             );
             const data = await response.json();
             console.log("Available slots response:", data);
-            setAvailableSlots(data.slots || []);
+
+            if (data.slots && data.slots.length > 0) {
+                setAvailableSlots(data.slots);
+            } else {
+                console.log("No slots returned from backend, using fallback");
+                // Fallback time slots for testing
+                const fallbackSlots = [
+                    { start: "09:00", end: "09:30", available: true },
+                    { start: "09:30", end: "10:00", available: true },
+                    { start: "10:00", end: "10:30", available: true },
+                    { start: "10:30", end: "11:00", available: true },
+                    { start: "11:00", end: "11:30", available: true },
+                    { start: "11:30", end: "12:00", available: true },
+                    { start: "14:00", end: "14:30", available: true },
+                    { start: "14:30", end: "15:00", available: true },
+                    { start: "15:00", end: "15:30", available: true },
+                    { start: "15:30", end: "16:00", available: true },
+                    { start: "16:00", end: "16:30", available: true },
+                    { start: "16:30", end: "17:00", available: true },
+                ];
+                setAvailableSlots(fallbackSlots);
+            }
         } catch (error) {
             console.error("Error fetching slots:", error);
             // Fallback time slots for testing
@@ -160,10 +185,34 @@ export default function SelectDateTime({
 
     const isDateSelectable = (date) => {
         const today = dayjs();
-        return (
-            date.isAfter(today.subtract(1, "day")) &&
-            date.isBefore(today.add(31, "day"))
-        );
+
+        // Get schedule settings for date range calculation
+        const defaultSchedule = scheduleSettings?.[0];
+        if (!defaultSchedule) {
+            // Fallback to basic logic if no schedule settings
+            return (
+                date.isAfter(today.subtract(1, "day")) &&
+                date.isBefore(today.add(31, "day"))
+            );
+        }
+
+        // Use schedule settings for date range
+        const minAdvanceHours = defaultSchedule.min_advance_hours || 2;
+        const maxAdvanceDays = defaultSchedule.max_advance_days || 30;
+        const workingDays = defaultSchedule.working_days || [1, 2, 3, 4, 5];
+
+        // Check if date is within booking window
+        const minDate = today.add(minAdvanceHours, "hour");
+        const maxDate = today.add(maxAdvanceDays, "day");
+
+        const isWithinRange = date.isAfter(minDate) && date.isBefore(maxDate);
+
+        // Check if date is a working day
+        const dayOfWeek = date.day(); // 0=Sunday, 1=Monday, etc.
+        const adjustedDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek; // Convert to 1-7 format
+        const isWorkingDay = workingDays.includes(adjustedDayOfWeek);
+
+        return isWithinRange && isWorkingDay;
     };
 
     return (
@@ -185,6 +234,20 @@ export default function SelectDateTime({
                     <Text type="secondary" style={{ fontSize: 16 }}>
                         Select your preferred appointment date and time
                     </Text>
+                    {scheduleSettings && scheduleSettings.length > 0 && (
+                        <div style={{ marginTop: 8 }}>
+                            <Text type="secondary" style={{ fontSize: "12px" }}>
+                                📅 Booking window:{" "}
+                                {scheduleSettings[0].booking_window_days} days
+                                ahead • ⏰ Min advance:{" "}
+                                {scheduleSettings[0].min_advance_hours} hours •
+                                🕐 Working hours:{" "}
+                                {scheduleSettings[0].start_time} -{" "}
+                                {scheduleSettings[0].end_time} • 📆 Working
+                                days: {scheduleSettings[0].working_days_text}
+                            </Text>
+                        </div>
+                    )}
                 </div>
 
                 {/* Progress Bar */}
@@ -379,6 +442,43 @@ export default function SelectDateTime({
                                                     color = "#999";
                                                 }
 
+                                                // Generate tooltip text
+                                                let tooltipText = "";
+                                                if (isPast) {
+                                                    tooltipText =
+                                                        "Past date - cannot be selected";
+                                                } else if (!isSelectable) {
+                                                    const dayOfWeek =
+                                                        date.day();
+                                                    const adjustedDayOfWeek =
+                                                        dayOfWeek === 0
+                                                            ? 7
+                                                            : dayOfWeek;
+                                                    const defaultSchedule =
+                                                        scheduleSettings?.[0];
+                                                    const workingDays =
+                                                        defaultSchedule?.working_days || [
+                                                            1, 2, 3, 4, 5,
+                                                        ];
+
+                                                    if (
+                                                        !workingDays.includes(
+                                                            adjustedDayOfWeek
+                                                        )
+                                                    ) {
+                                                        tooltipText = `${date.format(
+                                                            "dddd"
+                                                        )} - Not a working day`;
+                                                    } else {
+                                                        tooltipText =
+                                                            "Date not available for booking";
+                                                    }
+                                                } else {
+                                                    tooltipText = `Available for booking on ${date.format(
+                                                        "dddd, MMMM D"
+                                                    )}`;
+                                                }
+
                                                 return (
                                                     <div
                                                         key={index}
@@ -388,6 +488,7 @@ export default function SelectDateTime({
                                                             color,
                                                             border,
                                                         }}
+                                                        title={tooltipText}
                                                         onMouseEnter={(e) => {
                                                             if (
                                                                 isSelectable &&
@@ -420,6 +521,22 @@ export default function SelectDateTime({
                                                         }}
                                                     >
                                                         {date.date()}
+                                                        {isToday && (
+                                                            <div
+                                                                style={{
+                                                                    fontSize:
+                                                                        "8px",
+                                                                    lineHeight:
+                                                                        "1",
+                                                                    marginTop:
+                                                                        "2px",
+                                                                    fontWeight:
+                                                                        "normal",
+                                                                }}
+                                                            >
+                                                                Today
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 );
                                             }
@@ -475,6 +592,12 @@ export default function SelectDateTime({
                                                 selectedTime.format("HH:mm") ===
                                                     slotStart;
 
+                                            // Check if slot is available (from backend or fallback)
+                                            const isAvailable =
+                                                typeof slot === "object"
+                                                    ? slot.available !== false
+                                                    : true;
+
                                             return (
                                                 <Col
                                                     xs={12}
@@ -484,18 +607,27 @@ export default function SelectDateTime({
                                                 >
                                                     <Button
                                                         size="large"
+                                                        disabled={!isAvailable}
                                                         style={{
                                                             width: "100%",
                                                             height: 48,
                                                             border: isSelected
                                                                 ? "2px solid #1890ff"
-                                                                : "1px solid #d9d9d9",
+                                                                : isAvailable
+                                                                ? "1px solid #d9d9d9"
+                                                                : "1px solid #ffccc7",
                                                             backgroundColor:
                                                                 isSelected
                                                                     ? "#e6f7ff"
-                                                                    : "white",
+                                                                    : isAvailable
+                                                                    ? "white"
+                                                                    : "#fff2f0",
+                                                            opacity: isAvailable
+                                                                ? 1
+                                                                : 0.6,
                                                         }}
                                                         onClick={() =>
+                                                            isAvailable &&
                                                             handleTimeSelect(
                                                                 slotTime
                                                             )
@@ -504,22 +636,50 @@ export default function SelectDateTime({
                                                         <div
                                                             style={{
                                                                 display: "flex",
+                                                                flexDirection:
+                                                                    "column",
                                                                 alignItems:
                                                                     "center",
                                                                 justifyContent:
                                                                     "center",
                                                             }}
                                                         >
-                                                            {isSelected && (
-                                                                <CheckOutlined
+                                                            <div
+                                                                style={{
+                                                                    display:
+                                                                        "flex",
+                                                                    alignItems:
+                                                                        "center",
+                                                                    justifyContent:
+                                                                        "center",
+                                                                }}
+                                                            >
+                                                                {isSelected && (
+                                                                    <CheckOutlined
+                                                                        style={{
+                                                                            marginRight: 8,
+                                                                            color: "#1890ff",
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                                {formatTime(
+                                                                    slotStart
+                                                                )}
+                                                            </div>
+                                                            {!isAvailable && (
+                                                                <div
                                                                     style={{
-                                                                        marginRight: 8,
-                                                                        color: "#1890ff",
+                                                                        fontSize:
+                                                                            "10px",
+                                                                        marginTop:
+                                                                            "2px",
+                                                                        color: "#ff4d4f",
+                                                                        fontWeight:
+                                                                            "normal",
                                                                     }}
-                                                                />
-                                                            )}
-                                                            {formatTime(
-                                                                slotStart
+                                                                >
+                                                                    Booked
+                                                                </div>
                                                             )}
                                                         </div>
                                                     </Button>

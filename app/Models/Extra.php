@@ -33,6 +33,7 @@ class Extra extends Model
     public function services(): BelongsToMany
     {
         return $this->belongsToMany(Service::class, 'service_extras')
+                    ->withPivot('is_active', 'sort_order')
                     ->withTimestamps();
     }
 

@@ -20,6 +20,9 @@
     @vite(['resources/css/app.css', 'resources/js/app.jsx'])
     @inertiaHead
     @routes
+    
+    <!-- Razorpay Script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body class="font-sans antialiased">
     @inertia

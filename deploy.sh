@@ -6,8 +6,9 @@
 echo "🚀 Starting deployment to Hostinger..."
 
 # Configuration
-REMOTE_HOST="82.25.125.114"  # Replace with your actual server hostname from Hostinger
+REMOTE_HOST="82.25.125.114"
 REMOTE_USER="u777170885"
+REMOTE_PORT="65002"
 REMOTE_PATH="/home/u777170885/domains/hospipalhealth.com/public_html/booking"
 LOCAL_PATH="."
 
@@ -71,25 +72,15 @@ rm -f .gitattributes
 rm -f phpunit.xml
 rm -f deploy.sh
 
-# Sync to Hostinger using rsync
-rsync -avz --delete \
-    --exclude='.git' \
-    --exclude='node_modules' \
-    --exclude='tests' \
-    --exclude='.env' \
-    --exclude='.env.example' \
-    --exclude='.gitignore' \
-    --exclude='.editorconfig' \
-    --exclude='.gitattributes' \
-    --exclude='phpunit.xml' \
-    --exclude='deploy.sh' \
-    "$TEMP_DIR/" "$REMOTE_USER@$REMOTE_HOST:$REMOTE_PATH/"
+# Sync to Hostinger using scp (Windows compatible)
+# Copy files directly to the booking directory, not into a subfolder
+scp -P "$REMOTE_PORT" -r "$TEMP_DIR"/* "$REMOTE_USER@$REMOTE_HOST:$REMOTE_PATH/"
 
 if [ $? -eq 0 ]; then
     print_status "Files synced successfully!"
     
     # Run post-deployment commands on the server
-    ssh "$REMOTE_USER@$REMOTE_HOST" << 'EOF'
+    ssh -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" << 'EOF'
         cd /home/u777170885/domains/hospipalhealth.com/public_html/booking
         
         echo "🔄 Running Laravel maintenance tasks..."

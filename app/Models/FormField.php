@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class FormField extends Model
 {
@@ -39,6 +40,15 @@ class FormField extends Model
     public function form(): BelongsTo
     {
         return $this->belongsTo(Form::class);
+    }
+
+    /**
+     * Get the services that use this field (for custom fields)
+     */
+    public function services(): BelongsToMany
+    {
+        return $this->belongsToMany(Service::class, 'form_field_services')
+                    ->withTimestamps();
     }
 
     /**

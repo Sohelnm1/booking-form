@@ -54,6 +54,7 @@ export default function Consent({
     const [otpVerified, setOtpVerified] = useState(false);
     const [loading, setLoading] = useState(false);
     const [phoneVerificationModal, setPhoneVerificationModal] = useState(false);
+    const [receivedOtp, setReceivedOtp] = useState(""); // For testing - store the OTP received from server
 
     const handleBack = () => {
         const extraIds = selectedExtras.map((extra) => extra.id);
@@ -147,6 +148,11 @@ export default function Consent({
             if (response.ok) {
                 message.success("OTP sent successfully to your phone number");
                 setOtpSent(true);
+
+                // For testing - store the OTP if it's returned by the server
+                if (result.otp) {
+                    setReceivedOtp(result.otp);
+                }
             } else {
                 message.error(result.error || "Failed to send OTP");
             }
@@ -767,6 +773,17 @@ export default function Consent({
                                     ? "Enter your phone number to receive a verification code"
                                     : `We've sent a 6-digit code to ${phoneNumber}`}
                             </Text>
+
+                            {/* For testing - show the OTP if available */}
+                            {otpSent && receivedOtp && (
+                                <Alert
+                                    message="Testing Mode - OTP Code"
+                                    description={`Your verification code is: ${receivedOtp}`}
+                                    type="info"
+                                    showIcon
+                                    style={{ marginTop: 16 }}
+                                />
+                            )}
                         </div>
 
                         {!otpSent ? (

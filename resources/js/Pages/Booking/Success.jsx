@@ -1,27 +1,23 @@
 import React from "react";
-import { Head, router } from "@inertiajs/react";
+import { Head } from "@inertiajs/react";
 import {
     Card,
     Button,
-    Row,
-    Col,
     Typography,
     Space,
-    Tag,
+    Descriptions,
     Divider,
     Result,
-    Descriptions,
-    Alert,
+    Tag,
 } from "antd";
 import {
     CheckCircleOutlined,
     CalendarOutlined,
     ClockCircleOutlined,
-    MailOutlined,
+    UserOutlined,
     PhoneOutlined,
-    HomeOutlined,
-    DownloadOutlined,
-    ShareAltOutlined,
+    MailOutlined,
+    CreditCardOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import AppLayout from "../../Layouts/AppLayout";
@@ -29,328 +25,215 @@ import Logo from "../../Components/Logo";
 
 const { Title, Text, Paragraph } = Typography;
 
-export default function Success() {
-    const handleGoHome = () => {
-        router.visit(route("welcome"));
-    };
-
-    const handleNewBooking = () => {
-        router.visit(route("booking.select-service"));
-    };
-
-    const handleDownloadReceipt = () => {
-        // TODO: Implement receipt download
-        console.log("Downloading receipt...");
-    };
-
-    const handleShareBooking = () => {
-        // TODO: Implement sharing functionality
-        if (navigator.share) {
-            navigator.share({
-                title: "My Appointment Booking",
-                text: "I've successfully booked an appointment with HospiPal!",
-                url: window.location.href,
-            });
-        } else {
-            // Fallback: copy to clipboard
-            navigator.clipboard.writeText(window.location.href);
-        }
-    };
-
-    // Mock booking data (in real app, this would come from the session or props)
-    const bookingData = {
-        booking_id:
-            "BK" + Math.random().toString(36).substr(2, 9).toUpperCase(),
-        service_name: "Consultation",
-        appointment_date: dayjs().add(2, "day").format("YYYY-MM-DD"),
-        appointment_time: "10:00",
-        customer_name: "John Doe",
-        customer_email: "john@example.com",
-        customer_phone: "+91 98765 43210",
-        total_price: 1500.0,
-        payment_status: "Paid",
-    };
-
-    const formatPrice = (price) => {
-        return `₹${parseFloat(price).toFixed(2)}`;
-    };
-
+export default function Success({ booking, payment_id }) {
     const formatTime = (time) => {
-        return dayjs(time, "HH:mm").format("h:mm A");
+        return dayjs(time).format("h:mm A");
     };
 
     const formatDate = (date) => {
-        return dayjs(date).format("dddd, MMMM D, YYYY");
+        return dayjs(date).format("MMM DD, YYYY");
+    };
+
+    const formatDateTime = (datetime) => {
+        return dayjs(datetime).format("MMM DD, YYYY h:mm A");
+    };
+
+    const getStatusColor = (status) => {
+        switch (status) {
+            case "confirmed":
+                return "success";
+            case "pending":
+                return "warning";
+            case "completed":
+                return "processing";
+            case "cancelled":
+                return "error";
+            default:
+                return "default";
+        }
     };
 
     return (
         <AppLayout>
-            <Head title="Booking Confirmed - HospiPal" />
+            <Head title="Booking Confirmed" />
 
-            <div style={{ maxWidth: 800, margin: "0 auto", padding: "24px" }}>
-                {/* Success Result */}
-                <Result
-                    status="success"
-                    icon={
-                        <CheckCircleOutlined
-                            style={{ fontSize: 72, color: "#52c41a" }}
-                        />
-                    }
-                    title="Booking Confirmed!"
-                    subTitle={`Your appointment has been successfully booked. Booking ID: ${bookingData.booking_id}`}
-                    extra={[
-                        <Button
-                            type="primary"
-                            size="large"
-                            icon={<HomeOutlined />}
-                            onClick={handleGoHome}
-                            key="home"
-                        >
-                            Go to Home
-                        </Button>,
-                        <Button
-                            size="large"
-                            icon={<CalendarOutlined />}
-                            onClick={handleNewBooking}
-                            key="new"
-                        >
-                            Book Another
-                        </Button>,
-                    ]}
-                />
-
-                {/* Booking Details */}
-                <Card style={{ marginTop: 32 }}>
-                    <Title level={4} style={{ marginBottom: 16 }}>
-                        <CalendarOutlined style={{ marginRight: 8 }} />
-                        Appointment Details
-                    </Title>
-
-                    <Descriptions bordered column={1} size="small">
-                        <Descriptions.Item label="Booking ID">
-                            <Tag color="blue" style={{ fontSize: 14 }}>
-                                {bookingData.booking_id}
-                            </Tag>
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="Service">
-                            <Text strong>{bookingData.service_name}</Text>
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="Appointment Date">
-                            <CalendarOutlined style={{ marginRight: 8 }} />
-                            {formatDate(bookingData.appointment_date)}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="Appointment Time">
-                            <ClockCircleOutlined style={{ marginRight: 8 }} />
-                            {formatTime(bookingData.appointment_time)}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="Customer Name">
-                            <Text>{bookingData.customer_name}</Text>
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="Email">
-                            <MailOutlined style={{ marginRight: 8 }} />
-                            {bookingData.customer_email}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="Phone">
-                            <PhoneOutlined style={{ marginRight: 8 }} />
-                            {bookingData.customer_phone}
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="Total Amount">
-                            <Text
-                                strong
-                                style={{ fontSize: 16, color: "#52c41a" }}
+            <div
+                style={{ padding: "24px", maxWidth: "800px", margin: "0 auto" }}
+            >
+                <Card>
+                    <Result
+                        status="success"
+                        icon={<CheckCircleOutlined />}
+                        title="Booking Confirmed!"
+                        subTitle="Your appointment has been successfully booked and payment completed."
+                        extra={[
+                            <Button
+                                type="primary"
+                                key="home"
+                                onClick={() => (window.location.href = "/")}
                             >
-                                {formatPrice(bookingData.total_price)}
-                            </Text>
-                        </Descriptions.Item>
-
-                        <Descriptions.Item label="Payment Status">
-                            <Tag color="green">
-                                {bookingData.payment_status}
-                            </Tag>
-                        </Descriptions.Item>
-                    </Descriptions>
-                </Card>
-
-                {/* Next Steps */}
-                <Card style={{ marginTop: 24 }}>
-                    <Title level={4} style={{ marginBottom: 16 }}>
-                        What's Next?
-                    </Title>
-
-                    <Row gutter={[16, 16]}>
-                        <Col xs={24} sm={12}>
-                            <Alert
-                                message="Confirmation Email"
-                                description="You'll receive a confirmation email with all the details shortly."
-                                type="info"
-                                showIcon
-                                icon={<MailOutlined />}
-                            />
-                        </Col>
-                        <Col xs={24} sm={12}>
-                            <Alert
-                                message="Reminder SMS"
-                                description="We'll send you a reminder SMS 24 hours before your appointment."
-                                type="info"
-                                showIcon
-                                icon={<PhoneOutlined />}
-                            />
-                        </Col>
-                    </Row>
+                                Back to Home
+                            </Button>,
+                        ]}
+                    />
 
                     <Divider />
 
-                    <Title level={5}>Important Information:</Title>
-                    <ul style={{ paddingLeft: 20 }}>
-                        <li>
-                            <Text>
-                                Please arrive 10 minutes before your scheduled
-                                appointment time.
+                    {/* Payment Information */}
+                    <Descriptions
+                        title="Payment Information"
+                        bordered
+                        size="small"
+                        style={{ marginBottom: 24 }}
+                    >
+                        <Descriptions.Item label="Payment Status">
+                            <Tag color="success">Paid</Tag>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Payment Method">
+                            {booking?.payment_method || "Razorpay"}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Transaction ID">
+                            {payment_id || booking?.transaction_id}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Amount Paid">
+                            <Text strong style={{ fontSize: "16px" }}>
+                                ₹{booking?.total_amount}
                             </Text>
-                        </li>
-                        <li>
+                        </Descriptions.Item>
+                    </Descriptions>
+
+                    {/* Customer Information */}
+                    <Descriptions
+                        title="Customer Information"
+                        bordered
+                        size="small"
+                        style={{ marginBottom: 24 }}
+                    >
+                        <Descriptions.Item label="Name" span={2}>
+                            <Space>
+                                <UserOutlined />
+                                {booking?.customer?.name}
+                            </Space>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Email" span={2}>
+                            <Space>
+                                <MailOutlined />
+                                {booking?.customer?.email}
+                            </Space>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Phone" span={2}>
+                            <Space>
+                                <PhoneOutlined />
+                                {booking?.customer?.phone_number}
+                            </Space>
+                        </Descriptions.Item>
+                    </Descriptions>
+
+                    {/* Booking Information */}
+                    <Descriptions
+                        title="Booking Information"
+                        bordered
+                        size="small"
+                        style={{ marginBottom: 24 }}
+                    >
+                        <Descriptions.Item label="Service">
+                            {booking?.service?.name}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Employee">
+                            {booking?.employee?.name}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Date & Time">
+                            <Space>
+                                <CalendarOutlined />
+                                {formatDateTime(booking?.appointment_time)}
+                            </Space>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Duration">
+                            <Space>
+                                <ClockCircleOutlined />
+                                {booking?.duration} minutes
+                            </Space>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Status">
+                            <Tag color={getStatusColor(booking?.status)}>
+                                {booking?.status_text || booking?.status}
+                            </Tag>
+                        </Descriptions.Item>
+                    </Descriptions>
+
+                    {/* Extras */}
+                    {booking?.extras && booking.extras.length > 0 && (
+                        <Descriptions
+                            title="Selected Extras"
+                            bordered
+                            size="small"
+                            style={{ marginBottom: 24 }}
+                        >
+                            {booking.extras.map((extra) => (
+                                <Descriptions.Item
+                                    key={extra.id}
+                                    label={extra.name}
+                                >
+                                    ₹{extra.pivot.price}
+                                </Descriptions.Item>
+                            ))}
+                        </Descriptions>
+                    )}
+
+                    {/* Important Notes */}
+                    <Card
+                        title="Important Information"
+                        style={{ marginTop: 24 }}
+                        type="inner"
+                    >
+                        <ul>
+                            <li>
+                                <Text>
+                                    Please arrive 10 minutes before your
+                                    scheduled appointment time.
+                                </Text>
+                            </li>
+                            <li>
+                                <Text>
+                                    A confirmation SMS and email will be sent to
+                                    your registered contact details.
+                                </Text>
+                            </li>
+                            <li>
+                                <Text>
+                                    If you need to reschedule or cancel, please
+                                    contact us at least 24 hours in advance.
+                                </Text>
+                            </li>
+                            <li>
+                                <Text>
+                                    Please bring a valid ID proof for
+                                    verification.
+                                </Text>
+                            </li>
+                        </ul>
+                    </Card>
+
+                    {/* Contact Information */}
+                    <Card
+                        title="Contact Information"
+                        style={{ marginTop: 24 }}
+                        type="inner"
+                    >
+                        <Space direction="vertical" size="small">
                             <Text>
-                                Bring a valid ID and any relevant medical
-                                documents.
+                                <strong>Phone:</strong> +91 1234567890
                             </Text>
-                        </li>
-                        <li>
                             <Text>
-                                If you need to reschedule, please contact us at
-                                least 24 hours in advance.
+                                <strong>Email:</strong> support@hospipal.com
                             </Text>
-                        </li>
-                        <li>
                             <Text>
-                                Face masks are recommended for in-person
-                                appointments.
+                                <strong>Address:</strong> 123 Healthcare Street,
+                                Medical District, City - 123456
                             </Text>
-                        </li>
-                    </ul>
+                        </Space>
+                    </Card>
                 </Card>
-
-                {/* Action Buttons */}
-                <Card style={{ marginTop: 24 }}>
-                    <Row gutter={[16, 16]} justify="center">
-                        <Col>
-                            <Button
-                                type="primary"
-                                icon={<DownloadOutlined />}
-                                onClick={handleDownloadReceipt}
-                                size="large"
-                            >
-                                Download Receipt
-                            </Button>
-                        </Col>
-                        <Col>
-                            <Button
-                                icon={<ShareAltOutlined />}
-                                onClick={handleShareBooking}
-                                size="large"
-                            >
-                                Share Booking
-                            </Button>
-                        </Col>
-                        <Col>
-                            <Button onClick={handleNewBooking} size="large">
-                                Book Another Appointment
-                            </Button>
-                        </Col>
-                    </Row>
-                </Card>
-
-                {/* Contact Information */}
-                <Card style={{ marginTop: 24 }}>
-                    <Title level={4} style={{ marginBottom: 16 }}>
-                        Need Help?
-                    </Title>
-
-                    <Row gutter={[24, 16]}>
-                        <Col xs={24} sm={8}>
-                            <div style={{ textAlign: "center" }}>
-                                <PhoneOutlined
-                                    style={{
-                                        fontSize: 24,
-                                        color: "#1890ff",
-                                        marginBottom: 8,
-                                    }}
-                                />
-                                <div>
-                                    <Text strong>Call Us</Text>
-                                    <br />
-                                    <Text type="secondary">
-                                        +91 98765 43210
-                                    </Text>
-                                </div>
-                            </div>
-                        </Col>
-                        <Col xs={24} sm={8}>
-                            <div style={{ textAlign: "center" }}>
-                                <MailOutlined
-                                    style={{
-                                        fontSize: 24,
-                                        color: "#1890ff",
-                                        marginBottom: 8,
-                                    }}
-                                />
-                                <div>
-                                    <Text strong>Email Us</Text>
-                                    <br />
-                                    <Text type="secondary">
-                                        support@hospipal.com
-                                    </Text>
-                                </div>
-                            </div>
-                        </Col>
-                        <Col xs={24} sm={8}>
-                            <div style={{ textAlign: "center" }}>
-                                <ClockCircleOutlined
-                                    style={{
-                                        fontSize: 24,
-                                        color: "#1890ff",
-                                        marginBottom: 8,
-                                    }}
-                                />
-                                <div>
-                                    <Text strong>Business Hours</Text>
-                                    <br />
-                                    <Text type="secondary">
-                                        Mon-Sat: 9 AM - 6 PM
-                                    </Text>
-                                </div>
-                            </div>
-                        </Col>
-                    </Row>
-                </Card>
-
-                {/* Footer */}
-                <div
-                    style={{
-                        textAlign: "center",
-                        marginTop: 48,
-                        padding: "24px 0",
-                    }}
-                >
-                    <Logo
-                        variant="primary"
-                        color="color"
-                        background="white"
-                        size="medium"
-                    />
-                    <div style={{ marginTop: 16 }}>
-                        <Text type="secondary">
-                            Thank you for choosing HospiPal for your healthcare
-                            needs.
-                        </Text>
-                    </div>
-                </div>
             </div>
         </AppLayout>
     );

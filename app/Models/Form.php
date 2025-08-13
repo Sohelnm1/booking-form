@@ -39,7 +39,8 @@ class Form extends Model
     {
         return $this->belongsToMany(Service::class, 'service_forms')
                     ->withPivot('is_active', 'sort_order')
-                    ->withTimestamps();
+                    ->withTimestamps()
+                    ->wherePivot('is_active', true);
     }
 
     /**

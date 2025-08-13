@@ -29,7 +29,7 @@ return new class extends Migration
             $table->time('end_time')->default('18:00:00');
             
             // Working days (JSON array: [1,2,3,4,5] for Mon-Fri)
-            $table->json('working_days')->default('[1,2,3,4,5]');
+            $table->json('working_days'); // Removed default value - MySQL doesn't allow JSON defaults
             
             // Break times (JSON array of time ranges)
             $table->json('break_times')->nullable(); // [{"start": "12:00", "end": "13:00"}]

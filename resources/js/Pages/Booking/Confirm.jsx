@@ -22,6 +22,7 @@ import {
     Checkbox,
     DatePicker,
     TimePicker,
+    message,
 } from "antd";
 import {
     UserOutlined,
@@ -33,6 +34,7 @@ import {
     CalendarOutlined,
     ClockCircleOutlined,
     DollarOutlined,
+    GiftOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import AppLayout from "../../Layouts/AppLayout";
@@ -51,10 +53,30 @@ export default function Confirm({
     formFields,
     paymentSettings,
     totalPrice,
+    verifiedPhone,
 }) {
     const [formInstance] = Form.useForm();
     const [loading, setLoading] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
+    const [couponCode, setCouponCode] = useState("");
+    const [couponLoading, setCouponLoading] = useState(false);
+    const [appliedCoupon, setAppliedCoupon] = useState(null);
+    const [couponError, setCouponError] = useState("");
+    const [finalPrice, setFinalPrice] = useState(totalPrice);
+
+    // Calculate total duration
+    const totalDuration =
+        service.duration +
+        selectedExtras.reduce((sum, extra) => sum + (extra.duration || 0), 0);
+
+    // Set initial form values when component mounts
+    React.useEffect(() => {
+        if (verifiedPhone) {
+            formInstance.setFieldsValue({
+                customer_phone: verifiedPhone,
+            });
+        }
+    }, [verifiedPhone, formInstance]);
 
     const handleBack = () => {
         const extraIds = selectedExtras.map((extra) => extra.id);
@@ -68,6 +90,67 @@ export default function Confirm({
                 consents: consentIds,
             },
         });
+    };
+
+    const validateCoupon = async () => {
+        if (!couponCode.trim()) {
+            setCouponError("Please enter a coupon code");
+            return;
+        }
+
+        setCouponLoading(true);
+        setCouponError("");
+
+        try {
+            const extraIds = selectedExtras.map((extra) => extra.id);
+
+            // Get the current phone number from the form
+            const currentPhoneNumber =
+                formInstance.getFieldValue("customer_phone") || verifiedPhone;
+
+            const response = await fetch(route("booking.validate-coupon"), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document
+                        .querySelector('meta[name="csrf-token"]')
+                        .getAttribute("content"),
+                },
+                body: JSON.stringify({
+                    code: couponCode,
+                    service_id: service.id,
+                    extras: extraIds,
+                    phone_number: currentPhoneNumber,
+                }),
+            });
+
+            const result = await response.json();
+
+            if (result.valid) {
+                setAppliedCoupon(result.coupon);
+                setFinalPrice(result.coupon.final_amount);
+                setCouponError("");
+                message.success(result.message);
+            } else {
+                setCouponError(result.message);
+                setAppliedCoupon(null);
+                setFinalPrice(totalPrice);
+            }
+        } catch (error) {
+            console.error("Coupon validation error:", error);
+            setCouponError("Failed to validate coupon. Please try again.");
+            setAppliedCoupon(null);
+            setFinalPrice(totalPrice);
+        } finally {
+            setCouponLoading(false);
+        }
+    };
+
+    const removeCoupon = () => {
+        setAppliedCoupon(null);
+        setCouponCode("");
+        setFinalPrice(totalPrice);
+        setCouponError("");
     };
 
     const handleSubmit = async (values) => {
@@ -87,11 +170,117 @@ export default function Confirm({
                 customer_phone: values.customer_phone,
                 payment_method: values.payment_method,
                 special_requests: values.special_requests || "",
+                coupon_code: appliedCoupon ? appliedCoupon.code : null,
             };
 
-            await router.post(route("booking.process"), formData);
+            // Debug: Log what's being sent to backend
+            console.log("Form data being sent to backend:", formData);
+            console.log("Applied coupon:", appliedCoupon);
+            console.log("Coupon code being sent:", formData.coupon_code);
+
+            // Create booking and get Razorpay order
+            const response = await fetch(route("booking.process"), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document
+                        .querySelector('meta[name="csrf-token"]')
+                        .getAttribute("content"),
+                },
+                body: JSON.stringify(formData),
+            });
+
+            let result;
+            try {
+                result = await response.json();
+            } catch (parseError) {
+                console.error("Failed to parse response:", parseError);
+                message.error(
+                    "Server returned an invalid response. Please try again."
+                );
+                return;
+            }
+
+            if (result.success) {
+                // Debug: Log the order data
+                console.log("Razorpay order data:", result.order_data);
+                console.log("Frontend final price:", finalPrice);
+                console.log("Frontend total price:", totalPrice);
+                console.log(
+                    "Amount being sent to Razorpay:",
+                    result.order_data.amount
+                );
+                console.log(
+                    "Amount in rupees:",
+                    result.order_data.amount / 100
+                );
+                console.log(
+                    "Expected discounted amount in paise:",
+                    finalPrice * 100
+                );
+                console.log(
+                    "Expected discounted amount in rupees:",
+                    finalPrice
+                );
+
+                // Initialize Razorpay
+                const options = {
+                    key: result.order_data.key_id,
+                    amount: result.order_data.amount,
+                    currency: result.order_data.currency,
+                    name: "HospiPal",
+                    description: `${service.name} - Booking`,
+                    order_id: result.order_data.order_id,
+                    handler: function (response) {
+                        // Handle successful payment
+                        window.location.href =
+                            route("booking.payment-success") +
+                            `?razorpay_payment_id=${response.razorpay_payment_id}` +
+                            `&razorpay_order_id=${response.razorpay_order_id}` +
+                            `&razorpay_signature=${response.razorpay_signature}`;
+                    },
+                    prefill: {
+                        name: values.customer_name,
+                        email: values.customer_email,
+                        contact: values.customer_phone,
+                    },
+                    theme: {
+                        color: "#1890ff",
+                    },
+                    modal: {
+                        ondismiss: function () {
+                            // Handle modal dismissal (user closed the payment modal)
+                            window.location.href = route(
+                                "booking.payment-cancelled"
+                            );
+                        },
+                    },
+                    notes: {
+                        "Booking Details": `${service.name} - ${formatDate(
+                            date
+                        )} at ${formatTime(time)}`,
+                    },
+                };
+
+                const rzp = new window.Razorpay(options);
+                rzp.open();
+            } else {
+                // Handle different types of errors
+                if (result.errors) {
+                    // Validation errors
+                    Object.keys(result.errors).forEach((field) => {
+                        result.errors[field].forEach((error) => {
+                            message.error(error);
+                        });
+                    });
+                } else {
+                    // General error
+                    message.error(result.error || "Failed to create booking");
+                }
+            }
         } catch (error) {
             console.error("Booking error:", error);
+            message.error("An error occurred. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -118,10 +307,6 @@ export default function Confirm({
     const formatDate = (date) => {
         return dayjs(date).format("dddd, MMMM D, YYYY");
     };
-
-    const totalDuration =
-        service.duration +
-        selectedExtras.reduce((sum, extra) => sum + (extra.duration || 0), 0);
 
     // Helper function to get validation rules for form fields
     const getFieldValidationRules = (field) => {
@@ -190,31 +375,61 @@ export default function Confirm({
             case "select":
                 return (
                     <Select {...commonProps}>
-                        {field.options?.map((option, index) => (
-                            <Option key={index} value={option}>
-                                {option}
-                            </Option>
-                        ))}
+                        {field.options?.map((option, index) => {
+                            const value =
+                                typeof option === "object"
+                                    ? option.value
+                                    : option;
+                            const label =
+                                typeof option === "object"
+                                    ? option.label
+                                    : option;
+                            return (
+                                <Option key={index} value={value}>
+                                    {label}
+                                </Option>
+                            );
+                        })}
                     </Select>
                 );
             case "radio":
                 return (
                     <Radio.Group>
-                        {field.options?.map((option, index) => (
-                            <Radio key={index} value={option}>
-                                {option}
-                            </Radio>
-                        ))}
+                        {field.options?.map((option, index) => {
+                            const value =
+                                typeof option === "object"
+                                    ? option.value
+                                    : option;
+                            const label =
+                                typeof option === "object"
+                                    ? option.label
+                                    : option;
+                            return (
+                                <Radio key={index} value={value}>
+                                    {label}
+                                </Radio>
+                            );
+                        })}
                     </Radio.Group>
                 );
             case "checkbox":
                 return (
                     <Checkbox.Group>
-                        {field.options?.map((option, index) => (
-                            <Checkbox key={index} value={option}>
-                                {option}
-                            </Checkbox>
-                        ))}
+                        {field.options?.map((option, index) => {
+                            const value =
+                                typeof option === "object"
+                                    ? option.value
+                                    : option;
+                            const label =
+                                typeof option === "object"
+                                    ? option.label
+                                    : option;
+                            return (
+                                <Checkbox key={index} value={value}>
+                                    {label}
+                                </Checkbox>
+                            );
+                        })}
                     </Checkbox.Group>
                 );
             case "date":
@@ -334,6 +549,33 @@ export default function Confirm({
                                     {formatDuration(totalDuration)}
                                 </Descriptions.Item>
 
+                                {appliedCoupon && (
+                                    <Descriptions.Item label="Original Price">
+                                        <Text delete style={{ fontSize: 16 }}>
+                                            <DollarOutlined
+                                                style={{ marginRight: 8 }}
+                                            />
+                                            {formatPrice(totalPrice)}
+                                        </Text>
+                                    </Descriptions.Item>
+                                )}
+
+                                {appliedCoupon && (
+                                    <Descriptions.Item label="Discount">
+                                        <Text
+                                            style={{
+                                                fontSize: 16,
+                                                color: "#52c41a",
+                                            }}
+                                        >
+                                            -{" "}
+                                            {formatPrice(
+                                                appliedCoupon.discount_amount
+                                            )}
+                                        </Text>
+                                    </Descriptions.Item>
+                                )}
+
                                 <Descriptions.Item label="Total Price">
                                     <Text
                                         strong
@@ -345,10 +587,81 @@ export default function Confirm({
                                         <DollarOutlined
                                             style={{ marginRight: 8 }}
                                         />
-                                        {formatPrice(totalPrice)}
+                                        {formatPrice(finalPrice)}
                                     </Text>
                                 </Descriptions.Item>
                             </Descriptions>
+                        </Card>
+
+                        {/* Coupon Section */}
+                        <Card style={{ marginBottom: 24 }}>
+                            <Title level={4} style={{ marginBottom: 16 }}>
+                                <GiftOutlined style={{ marginRight: 8 }} />
+                                Apply Coupon
+                            </Title>
+
+                            {!appliedCoupon ? (
+                                <Row gutter={16}>
+                                    <Col flex="auto">
+                                        <Input
+                                            placeholder="Enter coupon code"
+                                            value={couponCode}
+                                            onChange={(e) =>
+                                                setCouponCode(e.target.value)
+                                            }
+                                            onPressEnter={validateCoupon}
+                                            status={couponError ? "error" : ""}
+                                        />
+                                        {couponError && (
+                                            <Text
+                                                type="danger"
+                                                style={{ fontSize: 12 }}
+                                            >
+                                                {couponError}
+                                            </Text>
+                                        )}
+                                    </Col>
+                                    <Col>
+                                        <Button
+                                            type="primary"
+                                            onClick={validateCoupon}
+                                            loading={couponLoading}
+                                        >
+                                            Apply
+                                        </Button>
+                                    </Col>
+                                </Row>
+                            ) : (
+                                <div>
+                                    <Alert
+                                        message="Coupon Applied Successfully!"
+                                        description={
+                                            <div>
+                                                <Text strong>
+                                                    {appliedCoupon.name}
+                                                </Text>
+                                                <br />
+                                                <Text type="secondary">
+                                                    You saved Rs.{" "}
+                                                    {
+                                                        appliedCoupon.discount_amount
+                                                    }
+                                                </Text>
+                                            </div>
+                                        }
+                                        type="success"
+                                        showIcon
+                                        action={
+                                            <Button
+                                                size="small"
+                                                onClick={removeCoupon}
+                                            >
+                                                Remove
+                                            </Button>
+                                        }
+                                    />
+                                </div>
+                            )}
                         </Card>
 
                         {/* Customer Information Form */}
@@ -502,8 +815,24 @@ export default function Confirm({
                                                         prefix={
                                                             <PhoneOutlined />
                                                         }
-                                                        placeholder="Enter your phone number"
+                                                        placeholder={
+                                                            verifiedPhone
+                                                                ? "Phone number verified"
+                                                                : "Enter your phone number"
+                                                        }
                                                         size="large"
+                                                        disabled={
+                                                            !!verifiedPhone
+                                                        }
+                                                        addonAfter={
+                                                            verifiedPhone ? (
+                                                                <CheckCircleOutlined
+                                                                    style={{
+                                                                        color: "green",
+                                                                    }}
+                                                                />
+                                                            ) : null
+                                                        }
                                                     />
                                                 </Form.Item>
                                             </Col>
@@ -621,7 +950,7 @@ export default function Confirm({
                                         icon={<CheckCircleOutlined />}
                                         style={{ flex: 2 }}
                                     >
-                                        Confirm & Pay {formatPrice(totalPrice)}
+                                        Confirm & Pay {formatPrice(finalPrice)}
                                     </Button>
                                 </div>
                             </Form>
@@ -649,6 +978,14 @@ export default function Confirm({
                                 </div>
                                 <Text type="secondary" style={{ fontSize: 12 }}>
                                     {formatDuration(service.duration)}
+                                </Text>
+                            </div>
+
+                            {/* Employee Assignment */}
+                            <div style={{ marginBottom: 16 }}>
+                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                    Employee will be automatically assigned
+                                    based on availability
                                 </Text>
                             </div>
 
@@ -695,6 +1032,44 @@ export default function Confirm({
 
                             {/* Total */}
                             <Divider style={{ margin: "16px 0" }} />
+
+                            {appliedCoupon && (
+                                <>
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            marginBottom: 8,
+                                        }}
+                                    >
+                                        <Text>Original Price</Text>
+                                        <Text delete style={{ fontSize: 14 }}>
+                                            {formatPrice(totalPrice)}
+                                        </Text>
+                                    </div>
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            marginBottom: 8,
+                                        }}
+                                    >
+                                        <Text>Discount</Text>
+                                        <Text
+                                            style={{
+                                                fontSize: 14,
+                                                color: "#52c41a",
+                                            }}
+                                        >
+                                            -{" "}
+                                            {formatPrice(
+                                                appliedCoupon.discount_amount
+                                            )}
+                                        </Text>
+                                    </div>
+                                </>
+                            )}
+
                             <div
                                 style={{
                                     display: "flex",
@@ -707,7 +1082,7 @@ export default function Confirm({
                                     strong
                                     style={{ fontSize: 18, color: "#52c41a" }}
                                 >
-                                    {formatPrice(totalPrice)}
+                                    {formatPrice(finalPrice)}
                                 </Text>
                             </div>
                             <div

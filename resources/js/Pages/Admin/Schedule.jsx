@@ -87,60 +87,33 @@ export default function Schedule({ auth, scheduleSettings, services }) {
 
     const handleModalOk = () => {
         form.validateFields().then((values) => {
-            const formData = new FormData();
-
-            // Handle time values
-            if (values.start_time) {
-                formData.append(
-                    "start_time",
-                    values.start_time.format("HH:mm:ss")
-                );
-            }
-            if (values.end_time) {
-                formData.append("end_time", values.end_time.format("HH:mm:ss"));
-            }
-
-            // Handle arrays
-            if (values.working_days) {
-                values.working_days.forEach((day) => {
-                    formData.append("working_days[]", day);
-                });
-            }
-
-            if (values.break_times) {
-                values.break_times.forEach((breakTime, index) => {
-                    formData.append(
-                        `break_times[${index}][start]`,
-                        breakTime.start
-                    );
-                    formData.append(
-                        `break_times[${index}][end]`,
-                        breakTime.end
-                    );
-                });
-            }
-
-            // Handle other fields
-            Object.keys(values).forEach((key) => {
-                if (
-                    ![
-                        "start_time",
-                        "end_time",
-                        "working_days",
-                        "break_times",
-                    ].includes(key)
-                ) {
-                    formData.append(key, values[key] || "");
-                }
-            });
+            // Prepare data object instead of FormData for better handling
+            const data = {
+                name: values.name,
+                description: values.description || "",
+                booking_window_days: values.booking_window_days,
+                min_advance_hours: values.min_advance_hours,
+                max_advance_days: values.max_advance_days,
+                buffer_time_minutes: values.buffer_time_minutes,
+                start_time: values.start_time
+                    ? values.start_time.format("HH:mm:ss")
+                    : null,
+                end_time: values.end_time
+                    ? values.end_time.format("HH:mm:ss")
+                    : null,
+                working_days: values.working_days || [],
+                break_times: values.break_times || [],
+                is_active: values.is_active || false,
+                sort_order: values.sort_order || 0,
+            };
 
             if (editingSetting) {
                 router.put(
                     route("admin.schedule.update", editingSetting.id),
-                    formData
+                    data
                 );
             } else {
-                router.post(route("admin.schedule.store"), formData);
+                router.post(route("admin.schedule.store"), data);
             }
 
             setIsModalVisible(false);
