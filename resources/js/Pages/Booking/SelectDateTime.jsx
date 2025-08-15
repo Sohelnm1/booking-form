@@ -23,6 +23,7 @@ import {
     CheckOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
+
 import BookingHeader from "../../Components/BookingHeader";
 import Logo from "../../Components/Logo";
 
@@ -304,15 +305,29 @@ export default function SelectDateTime({
                 return "Invalid Time";
             }
 
-            // Parse the time string
-            const parsedTime = dayjs(timeString, "HH:mm");
-
-            if (!parsedTime.isValid()) {
-                console.error("Invalid time string:", timeString);
+            // Parse time string manually to avoid timezone issues
+            const timeMatch = timeString.match(/^(\d{1,2}):(\d{2})$/);
+            if (!timeMatch) {
+                console.error("Invalid time string format:", timeString);
                 return "Invalid Time";
             }
 
-            return parsedTime.format("h:mm A");
+            const hours = parseInt(timeMatch[1], 10);
+            const minutes = parseInt(timeMatch[2], 10);
+
+            // Validate hours and minutes
+            if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+                console.error("Invalid time values:", hours, minutes);
+                return "Invalid Time";
+            }
+
+            // Format as 12-hour time with AM/PM
+            const period = hours >= 12 ? "PM" : "AM";
+            const displayHours =
+                hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+            const displayMinutes = minutes.toString().padStart(2, "0");
+
+            return `${displayHours}:${displayMinutes} ${period}`;
         } catch (error) {
             console.error("Error formatting time:", error, time);
             return "Invalid Time";
