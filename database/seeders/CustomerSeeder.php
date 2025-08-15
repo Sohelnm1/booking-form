@@ -100,6 +100,7 @@ class CustomerSeeder extends Seeder
                         'service_id' => $service->id,
                         'employee_id' => User::where('role', 'employee')->first()?->id,
                         'appointment_time' => $appointmentTime,
+                        'appointment_date_time' => $appointmentTime->setTimezone('Asia/Kolkata'),
                         'duration' => $service->duration,
                         'total_amount' => $service->price + rand(0, 50), // Add some random extras
                         'status' => ['pending', 'confirmed', 'completed', 'cancelled'][rand(0, 3)],

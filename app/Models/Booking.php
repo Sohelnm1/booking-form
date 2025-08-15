@@ -18,6 +18,7 @@ class Booking extends Model
         'service_id',
         'employee_id',
         'appointment_time',
+        'appointment_date_time',
         'duration',
         'total_amount',
         'status',
@@ -36,6 +37,7 @@ class Booking extends Model
 
     protected $casts = [
         'appointment_time' => 'datetime',
+        'appointment_date_time' => 'datetime',
         'total_amount' => 'decimal:2',
         'duration' => 'integer',
         'consent_given' => 'boolean',

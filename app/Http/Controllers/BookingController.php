@@ -778,6 +778,7 @@ class BookingController extends Controller
             'service_id' => $bookingData['service_id'],
             'employee_id' => $bookingData['employee_id'],
             'appointment_time' => $bookingData['appointment_time'],
+            'appointment_date_time' => $bookingData['appointment_time']->setTimezone('Asia/Kolkata'),
             'duration' => $bookingData['duration'],
             'total_amount' => $bookingData['total_amount'],
             'status' => 'confirmed',
@@ -937,7 +938,7 @@ class BookingController extends Controller
 
             // Use flexible slot generation instead of sequential slots
             // You can toggle this based on your preference
-            $useFlexibleSlots = true; // Set to false to use sequential slots
+            $useFlexibleSlots = false; // Set to false to use sequential slots
             
             if ($useFlexibleSlots) {
                 $slots = $this->generateFlexibleSlots($date, $service, $scheduleSetting, $totalDuration);
