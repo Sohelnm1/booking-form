@@ -25,7 +25,6 @@ class Coupon extends Model
         'valid_from',
         'valid_until',
         'is_active',
-        'is_first_time_only',
         'applicable_services',
         'excluded_services',
         'created_by',
@@ -38,7 +37,6 @@ class Coupon extends Model
         'valid_from' => 'datetime',
         'valid_until' => 'datetime',
         'is_active' => 'boolean',
-        'is_first_time_only' => 'boolean',
         'applicable_services' => 'array',
         'excluded_services' => 'array',
     ];
@@ -113,18 +111,6 @@ class Coupon extends Model
         if ($userUsageCount >= $this->max_uses_per_user) {
             $result['message'] = 'You have already used this coupon maximum times.';
             return $result;
-        }
-
-        // Check if it's first-time only coupon
-        if ($this->is_first_time_only) {
-            $hasPreviousBookings = Booking::where('user_id', $user->id)
-                ->where('id', '!=', request()->input('booking_id', 0))
-                ->exists();
-            
-            if ($hasPreviousBookings) {
-                $result['message'] = 'This coupon is only for first-time users.';
-                return $result;
-            }
         }
 
         // Calculate discount amount

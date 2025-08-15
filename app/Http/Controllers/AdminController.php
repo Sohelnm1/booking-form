@@ -105,10 +105,21 @@ class AdminController extends Controller
      */
     public function customers()
     {
+        $customers = User::where('role', 'customer')
+            ->withCount(['customerBookings' => function($query) {
+                $query->where('status', '!=', 'cancelled');
+            }])
+            ->withSum(['customerBookings' => function($query) {
+                $query->where('status', '!=', 'cancelled');
+            }], 'total_amount')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return Inertia::render('Admin/Customers', [
             'auth' => [
                 'user' => Auth::user(),
             ],
+            'customers' => $customers,
         ]);
     }
 
@@ -455,12 +466,13 @@ class AdminController extends Controller
      */
     public function forms()
     {
-        // Get the default booking form with all its fields and their service associations
-        $defaultForm = Form::where('name', 'Default Booking Form')
-            ->with(['fields.services'])
+        // Get any active booking form with all its fields and their service associations
+        $defaultForm = Form::where('is_active', true)
+            ->with(['fields.services', 'fields.extras'])
             ->first();
             
         $services = Service::active()->ordered()->get();
+        $extras = Extra::active()->ordered()->get();
         $fieldTypes = FormField::getFieldTypes();
         
         return Inertia::render('Admin/Forms', [
@@ -469,6 +481,7 @@ class AdminController extends Controller
             ],
             'forms' => $defaultForm ? [$defaultForm] : [],
             'services' => $services,
+            'extras' => $extras,
             'fieldTypes' => $fieldTypes,
         ]);
     }
@@ -820,6 +833,9 @@ class AdminController extends Controller
             'settings' => 'nullable|array',
             'services' => 'nullable|array',
             'services.*' => 'exists:services,id',
+            'extras' => 'nullable|array',
+            'extras.*' => 'exists:extras,id',
+            'rendering_control' => 'required|in:services,extras,both',
         ]);
 
         $data = $request->all();
@@ -829,9 +845,14 @@ class AdminController extends Controller
 
         $field = FormField::create($data);
 
-        // Attach services for custom fields (non-primary)
-        if (!$field->is_primary && $request->has('services')) {
-            $field->services()->attach($request->services);
+        // Attach services and extras for custom fields (non-primary)
+        if (!$field->is_primary) {
+            if ($request->has('services')) {
+                $field->services()->attach($request->services);
+            }
+            if ($request->has('extras')) {
+                $field->extras()->attach($request->extras);
+            }
         }
 
         return redirect()->route('admin.forms')->with('success', 'Form field added successfully');
@@ -865,6 +886,9 @@ class AdminController extends Controller
             'settings' => 'nullable|array',
             'services' => 'nullable|array',
             'services.*' => 'exists:services,id',
+            'extras' => 'nullable|array',
+            'extras.*' => 'exists:extras,id',
+            'rendering_control' => 'required|in:services,extras,both',
         ]);
 
         $data = $request->all();
@@ -874,9 +898,10 @@ class AdminController extends Controller
 
         $field->update($data);
 
-        // Update service associations for custom fields (non-primary)
+        // Update service and extra associations for custom fields (non-primary)
         if (!$field->is_primary) {
             $field->services()->sync($request->services ?? []);
+            $field->extras()->sync($request->extras ?? []);
         }
 
         return redirect()->route('admin.forms')->with('success', 'Form field updated successfully');
@@ -1206,7 +1231,6 @@ class AdminController extends Controller
             'valid_from' => 'nullable|date',
             'valid_until' => 'nullable|date|after:valid_from',
             'is_active' => 'nullable|boolean',
-            'is_first_time_only' => 'nullable|boolean',
             'applicable_services' => 'nullable|array',
             'excluded_services' => 'nullable|array',
         ]);
@@ -1224,7 +1248,6 @@ class AdminController extends Controller
             'valid_from' => $request->valid_from,
             'valid_until' => $request->valid_until,
             'is_active' => $request->boolean('is_active', true),
-            'is_first_time_only' => $request->boolean('is_first_time_only', false),
             'applicable_services' => $request->applicable_services ?: null,
             'excluded_services' => $request->excluded_services ?: null,
             'created_by' => Auth::user()->name,
@@ -1253,7 +1276,6 @@ class AdminController extends Controller
             'valid_from' => 'nullable|date',
             'valid_until' => 'nullable|date|after:valid_from',
             'is_active' => 'nullable|boolean',
-            'is_first_time_only' => 'nullable|boolean',
             'applicable_services' => 'nullable|array',
             'excluded_services' => 'nullable|array',
         ]);
@@ -1271,7 +1293,6 @@ class AdminController extends Controller
             'valid_from' => $request->valid_from,
             'valid_until' => $request->valid_until,
             'is_active' => $request->boolean('is_active', true),
-            'is_first_time_only' => $request->boolean('is_first_time_only', false),
             'applicable_services' => $request->applicable_services ?: null,
             'excluded_services' => $request->excluded_services ?: null,
         ]);

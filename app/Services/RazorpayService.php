@@ -32,10 +32,22 @@ class RazorpayService
             Log::info('Creating Razorpay order', [
                 'booking_id' => $booking->id,
                 'booking_total_amount' => $booking->total_amount,
-                'booking_discount_amount' => $booking->discount_amount,
+                'booking_discount_amount' => $booking->discount_amount ?? 0,
                 'razorpay_amount_paise' => $booking->total_amount * 100,
                 'razorpay_amount_rupees' => $booking->total_amount
             ]);
+
+            // Handle temporary bookings that don't have relationships loaded
+            $customerName = 'Customer';
+            $serviceName = 'Service';
+            
+            if ($booking->exists && $booking->relationLoaded('customer')) {
+                $customerName = $booking->customer->name;
+            }
+            
+            if ($booking->exists && $booking->relationLoaded('service')) {
+                $serviceName = $booking->service->name;
+            }
 
             $orderData = [
                 'receipt' => 'booking_' . $booking->id,
@@ -43,18 +55,20 @@ class RazorpayService
                 'currency' => 'INR',
                 'notes' => [
                     'booking_id' => $booking->id,
-                    'customer_name' => $booking->customer->name,
-                    'service_name' => $booking->service->name,
+                    'customer_name' => $customerName,
+                    'service_name' => $serviceName,
                 ]
             ];
 
             $order = $api->order->create($orderData);
 
-            // Update booking with order ID
-            $booking->update([
-                'transaction_id' => $order->id,
-                'payment_status' => 'pending'
-            ]);
+            // Only update if it's a real booking (not temporary)
+            if ($booking->exists && !str_starts_with($booking->id, 'temp_')) {
+                $booking->update([
+                    'transaction_id' => $order->id,
+                    'payment_status' => 'pending'
+                ]);
+            }
 
             // Debug: Log the final response
             Log::info('Razorpay order response', [

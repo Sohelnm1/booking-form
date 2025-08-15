@@ -100,7 +100,6 @@ export default function Coupons({ auth, coupons, services }) {
                     ? values.valid_until.format("YYYY-MM-DD HH:mm:ss")
                     : null,
                 is_active: values.is_active ?? true,
-                is_first_time_only: values.is_first_time_only ?? false,
                 applicable_services: values.applicable_services || [],
                 excluded_services: values.excluded_services || [],
             };
@@ -267,9 +266,6 @@ export default function Coupons({ auth, coupons, services }) {
             key: "restrictions",
             render: (_, record) => (
                 <Space direction="vertical" size="small">
-                    {record.is_first_time_only && (
-                        <Tag color="orange">First-time only</Tag>
-                    )}
                     {record.applicable_services &&
                         record.applicable_services.length > 0 && (
                             <Tag color="blue">Service specific</Tag>
@@ -409,7 +405,6 @@ export default function Coupons({ auth, coupons, services }) {
                             discount_type: "percentage",
                             max_uses_per_user: 1,
                             is_active: true,
-                            is_first_time_only: false,
                         }}
                     >
                         <Row gutter={16}>
@@ -592,6 +587,12 @@ export default function Coupons({ auth, coupons, services }) {
                                         min={1}
                                     />
                                 </Form.Item>
+                                <Text
+                                    type="secondary"
+                                    style={{ fontSize: "12px" }}
+                                >
+                                    Set to 1 for first-time user only coupons
+                                </Text>
                             </Col>
                         </Row>
 
@@ -669,15 +670,6 @@ export default function Coupons({ auth, coupons, services }) {
                                 <Form.Item
                                     name="is_active"
                                     label="Active"
-                                    valuePropName="checked"
-                                >
-                                    <Switch />
-                                </Form.Item>
-                            </Col>
-                            <Col span={8}>
-                                <Form.Item
-                                    name="is_first_time_only"
-                                    label="First-time Users Only"
                                     valuePropName="checked"
                                 >
                                     <Switch />

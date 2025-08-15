@@ -17,6 +17,7 @@ use App\Models\CouponUsage;
 use App\Services\RazorpayService;
 use Illuminate\Support\Str;
 use Twilio\Rest\Client;
+use Illuminate\Support\Facades\Auth;
 
 class BookingController extends Controller
 {
@@ -29,6 +30,9 @@ class BookingController extends Controller
         
         return Inertia::render('Booking/SelectService', [
             'services' => $services,
+            'auth' => [
+                'user' => Auth::user(),
+            ],
         ]);
     }
 
@@ -48,6 +52,9 @@ class BookingController extends Controller
         return Inertia::render('Booking/SelectExtras', [
             'service' => $service,
             'extras' => $extras,
+            'auth' => [
+                'user' => Auth::user(),
+            ],
         ]);
     }
 
@@ -67,6 +74,9 @@ class BookingController extends Controller
             'service' => $service,
             'selectedExtras' => $selectedExtras,
             'scheduleSettings' => $scheduleSettings,
+            'auth' => [
+                'user' => Auth::user(),
+            ],
         ]);
     }
 
@@ -90,6 +100,9 @@ class BookingController extends Controller
             'date' => $date,
             'time' => $time,
             'consentSettings' => $consentSettings,
+            'auth' => [
+                'user' => Auth::user(),
+            ],
         ]);
     }
 
@@ -103,15 +116,27 @@ class BookingController extends Controller
         $date = $request->query('date');
         $time = $request->query('time');
         $consents = $request->query('consents', []);
+        $verifiedPhone = $request->get('verified_phone');
+        
+        // Debug logging
+        \Log::info('Confirm page request data', [
+            'service_id' => $serviceId,
+            'extras' => $extras,
+            'date' => $date,
+            'time' => $time,
+            'consents' => $consents,
+            'verified_phone' => $verifiedPhone,
+            'all_query_params' => $request->query()
+        ]);
         
         $service = Service::findOrFail($serviceId);
         $selectedExtras = Extra::whereIn('id', $extras)->get();
         $consentSettings = ConsentSetting::whereIn('id', $consents)->get();
         
-        // Get the default booking form (single form for all services)
-        $form = Form::where('name', 'Default Booking Form')->first();
+        // Get any active booking form (prefer the first one)
+        $form = Form::where('is_active', true)->first();
         if (!$form) {
-            // Create default form if it doesn't exist
+            // Create default form if no active forms exist
             $form = Form::create([
                 'name' => 'Default Booking Form',
                 'description' => 'Standard booking form with primary fields and service-specific custom fields',
@@ -134,16 +159,59 @@ class BookingController extends Controller
         // Get all primary fields (always shown)
         $primaryFields = $form->fields()->where('is_primary', true)->orderBy('sort_order')->get();
         
-        // Get custom fields that are either:
-        // 1. Associated with this specific service, OR
-        // 2. Not associated with any services (show for all services)
+        // Get custom fields based on rendering control and selected services/extras
         $customFields = $form->fields()
             ->where('is_primary', false)
-            ->where(function($query) use ($service) {
-                $query->whereHas('services', function($subQuery) use ($service) {
-                    $subQuery->where('services.id', $service->id);
+            ->where(function($query) use ($service, $selectedExtras) {
+                $query->where(function($subQuery) use ($service, $selectedExtras) {
+                    // Services-based rendering
+                    $subQuery->where('rendering_control', 'services')
+                        ->where(function($serviceQuery) use ($service) {
+                            $serviceQuery->whereHas('services', function($sQuery) use ($service) {
+                                $sQuery->where('services.id', $service->id);
+                            })
+                            ->orWhereDoesntHave('services'); // Fields with no service associations show for all
+                        });
                 })
-                ->orWhereDoesntHave('services'); // Fields with no service associations show for all
+                ->orWhere(function($subQuery) use ($selectedExtras) {
+                    // Extras-based rendering
+                    $subQuery->where('rendering_control', 'extras')
+                        ->where(function($extraQuery) use ($selectedExtras) {
+                            if ($selectedExtras->count() > 0) {
+                                $extraQuery->whereHas('extras', function($eQuery) use ($selectedExtras) {
+                                    $eQuery->whereIn('extras.id', $selectedExtras->pluck('id'));
+                                })
+                                ->orWhereDoesntHave('extras'); // Fields with no extra associations show for all
+                            } else {
+                                // If no extras selected, show fields that don't have any extra associations
+                                $extraQuery->whereDoesntHave('extras');
+                            }
+                        });
+                })
+                ->orWhere(function($subQuery) use ($service, $selectedExtras) {
+                    // Both services and extras rendering
+                    $subQuery->where('rendering_control', 'both')
+                        ->where(function($bothQuery) use ($service, $selectedExtras) {
+                            // Must match service condition
+                            $bothQuery->where(function($serviceQuery) use ($service) {
+                                $serviceQuery->whereHas('services', function($sQuery) use ($service) {
+                                    $sQuery->where('services.id', $service->id);
+                                })
+                                ->orWhereDoesntHave('services');
+                            })
+                            // AND must match extras condition
+                            ->where(function($extraQuery) use ($selectedExtras) {
+                                if ($selectedExtras->count() > 0) {
+                                    $extraQuery->whereHas('extras', function($eQuery) use ($selectedExtras) {
+                                        $eQuery->whereIn('extras.id', $selectedExtras->pluck('id'));
+                                    })
+                                    ->orWhereDoesntHave('extras');
+                                } else {
+                                    $extraQuery->whereDoesntHave('extras');
+                                }
+                            });
+                        });
+                });
             })
             ->orderBy('sort_order')
             ->get();
@@ -175,6 +243,9 @@ class BookingController extends Controller
             'paymentSettings' => $paymentSettings,
             'totalPrice' => $totalPrice,
             'verifiedPhone' => $request->get('verified_phone'),
+            'auth' => [
+                'user' => Auth::user(),
+            ],
         ]);
     }
 
@@ -191,12 +262,23 @@ class BookingController extends Controller
             'coupon_code' => $request->coupon_code,
             'service_id' => $request->service_id,
             'customer_phone' => $request->customer_phone,
+            'verified_phone' => $request->verified_phone,
             'date' => $request->date,
             'time' => $request->time
         ]);
 
         try {
-            $request->validate([
+            // Get the form to understand field names
+            $form = Form::where('is_active', true)->first();
+            $primaryFields = $form ? $form->fields()->where('is_primary', true)->get() : collect();
+            
+            // Map field names dynamically
+            $nameField = $primaryFields->where('name', 'customer_name')->first() ?: $primaryFields->where('name', 'full_name')->first();
+            $phoneField = $primaryFields->where('name', 'customer_phone')->first() ?: $primaryFields->where('name', 'phone_number')->first();
+            $emailField = $primaryFields->where('name', 'customer_email')->first() ?: $primaryFields->where('name', 'email')->first();
+            
+            // Build validation rules dynamically
+            $validationRules = [
                 'service_id' => 'required|exists:services,id',
                 'extras' => 'array',
                 'extras.*' => 'exists:extras,id',
@@ -204,11 +286,53 @@ class BookingController extends Controller
                 'time' => 'required|date_format:H:i',
                 'consents' => 'array',
                 'consents.*' => 'exists:consent_settings,id',
-                'customer_name' => 'required|string|max:255',
-                'customer_email' => 'required|email',
-                'customer_phone' => 'required|string|max:20',
+                'verified_phone' => 'nullable|string|max:20',
                 'coupon_code' => 'nullable|string',
-                // Custom fields validation will be dynamic based on form fields
+            ];
+            
+            // Add validation for primary fields
+            if ($nameField) {
+                $validationRules[$nameField->name] = 'required|string|max:255';
+            }
+            if ($phoneField) {
+                $validationRules[$phoneField->name] = 'required|string|max:20';
+            }
+            if ($emailField) {
+                $validationRules[$emailField->name] = 'nullable|email';
+            }
+            
+            // Also accept the old hardcoded names for backward compatibility
+            $validationRules['customer_name'] = 'nullable|string|max:255';
+            $validationRules['customer_phone'] = 'nullable|string|max:20';
+            $validationRules['customer_email'] = 'nullable|email';
+            
+            $request->validate($validationRules);
+            
+            // Extract customer information using dynamic field names or fallback to hardcoded names
+            $customerName = $request->get($nameField->name ?? 'customer_name');
+            $customerPhone = $request->get($phoneField->name ?? 'customer_phone');
+            $customerEmail = $request->get($emailField->name ?? 'customer_email');
+            
+            \Log::info('Field mapping and extraction', [
+                'name_field_name' => $nameField ? $nameField->name : 'customer_name',
+                'phone_field_name' => $phoneField ? $phoneField->name : 'customer_phone',
+                'email_field_name' => $emailField ? $emailField->name : 'customer_email',
+                'extracted_name' => $customerName,
+                'extracted_phone' => $customerPhone,
+                'extracted_email' => $customerEmail,
+                'all_request_data' => $request->all()
+            ]);
+            
+            // Use verified phone number if available, otherwise use the form phone number
+            $phoneNumberToUse = $request->verified_phone ?: $customerPhone;
+            
+            // Format the phone number consistently
+            $phoneNumberToUse = $this->formatPhoneNumber($phoneNumberToUse);
+            
+            \Log::info('Phone number resolution', [
+                'form_phone' => $customerPhone,
+                'verified_phone' => $request->verified_phone,
+                'phone_to_use' => $phoneNumberToUse
             ]);
 
             $service = Service::findOrFail($request->service_id);
@@ -224,27 +348,103 @@ class BookingController extends Controller
             }
             
             // Create or find customer user first (needed for coupon validation)
-            // Check by phone number first (primary identifier), then by email
-            $customer = User::where('phone_number', $request->customer_phone)->first();
-            if (!$customer) {
-                $customer = User::where('email', $request->customer_email)->first();
+            // Check by phone number first (primary identifier) - this is the primary way to identify users
+            $customer = User::where('phone_number', $phoneNumberToUse)->first();
+            
+            // Only check by email if we want to update an existing user's phone number
+            // But for new bookings, we should create a new user if phone number doesn't exist
+            if (!$customer && $customerEmail) {
+                // Check if there's a user with this email but different phone
+                $existingUserWithEmail = User::where('email', $customerEmail)->first();
+                if ($existingUserWithEmail && $existingUserWithEmail->phone_number !== $phoneNumberToUse) {
+                    \Log::warning('Email already exists with different phone number', [
+                        'email' => $customerEmail,
+                        'existing_phone' => $existingUserWithEmail->phone_number,
+                        'new_phone' => $phoneNumberToUse,
+                        'existing_user_id' => $existingUserWithEmail->id
+                    ]);
+                    // Don't use the existing user - we'll create a new one
+                    $customer = null;
+                }
             }
+            
+            \Log::info('User lookup result', [
+                'phone_number_to_use' => $phoneNumberToUse,
+                'customer_email' => $customerEmail,
+                'customer_found' => $customer ? true : false,
+                'customer_id' => $customer ? $customer->id : null,
+                'customer_phone' => $customer ? $customer->phone_number : null,
+                'customer_name' => $customer ? $customer->name : null
+            ]);
             
             if (!$customer) {
                 $customer = User::create([
-                    'name' => $request->customer_name,
-                    'email' => $request->customer_email,
-                    'phone_number' => $request->customer_phone,
+                    'name' => $customerName,
+                    'email' => $customerEmail, // Can be null
+                    'phone_number' => $phoneNumberToUse,
                     'role' => 'customer',
                     'password' => bcrypt(Str::random(12)), // Temporary password
                 ]);
+                
+                \Log::info('New customer created', [
+                    'customer_id' => $customer->id,
+                    'customer_name' => $customer->name,
+                    'customer_phone' => $customer->phone_number,
+                    'customer_email' => $customer->email
+                ]);
             } else {
+                \Log::info('Existing customer found', [
+                    'customer_id' => $customer->id,
+                    'customer_name' => $customer->name,
+                    'customer_phone' => $customer->phone_number,
+                    'customer_email' => $customer->email
+                ]);
+                
                 // Update customer info if found by phone number but email is different
-                if ($customer->email !== $request->customer_email) {
-                    $customer->update([
-                        'name' => $request->customer_name,
-                        'email' => $request->customer_email,
-                    ]);
+                // Only update if the new email is not already used by another user
+                if ($customerEmail && $customer->email !== $customerEmail) {
+                    // Check if the new email is already used by another user
+                    $existingUserWithEmail = User::where('email', $customerEmail)
+                        ->where('id', '!=', $customer->id)
+                        ->first();
+                    
+                    if (!$existingUserWithEmail) {
+                        // Safe to update email
+                        $customer->update([
+                            'name' => $customerName,
+                            'email' => $customerEmail,
+                        ]);
+                        
+                        \Log::info('Customer email updated', [
+                            'customer_id' => $customer->id,
+                            'old_email' => $customer->email,
+                            'new_email' => $customerEmail
+                        ]);
+                    } else {
+                        // Email is already used by another user, only update name
+                        $customer->update([
+                            'name' => $customerName,
+                        ]);
+                        
+                        \Log::info('Email update skipped - email already in use by another user', [
+                            'customer_id' => $customer->id,
+                            'requested_email' => $customerEmail,
+                            'existing_user_id' => $existingUserWithEmail->id
+                        ]);
+                    }
+                } else {
+                    // Email is the same or not provided, just update name if needed
+                    if ($customer->name !== $customerName) {
+                        $customer->update([
+                            'name' => $customerName,
+                        ]);
+                        
+                        \Log::info('Customer name updated', [
+                            'customer_id' => $customer->id,
+                            'old_name' => $customer->name,
+                            'new_name' => $customerName
+                        ]);
+                    }
                 }
             }
             
@@ -417,11 +617,26 @@ class BookingController extends Controller
                 'custom_fields' => $request->except([
                     'service_id', 'extras', 'date', 'time', 'consents', 
                     'customer_name', 'customer_email', 'customer_phone', 
-                    'payment_method', 'special_requests', 'coupon_code'
+                    'payment_method', 'special_requests', 'coupon_code',
+                    'verified_phone',
+                    // Also exclude dynamic field names
+                    $nameField ? $nameField->name : null,
+                    $phoneField ? $phoneField->name : null,
+                    $emailField ? $emailField->name : null,
                 ]),
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
+            
+            \Log::info('Booking data stored in session', [
+                'user_id' => $bookingData['user_id'],
+                'customer_phone' => $customer->phone_number,
+                'customer_name' => $customer->name,
+                'service_id' => $bookingData['service_id'],
+                'total_amount' => $bookingData['total_amount'],
+                'coupon_code' => $bookingData['coupon_code'],
+                'custom_fields_keys' => array_keys($bookingData['custom_fields'])
+            ]);
             
             // Store in session for later use
             session(['pending_booking' => $bookingData]);
@@ -438,8 +653,16 @@ class BookingController extends Controller
             }
             
             // Create a temporary booking object for Razorpay order creation
-            $tempBooking = (object) $bookingData;
+            $tempBooking = new Booking($bookingData);
             $tempBooking->id = 'temp_' . time(); // Temporary ID for receipt
+            $tempBooking->exists = true; // Make it behave like an existing model
+            
+            \Log::info('Created temporary booking for Razorpay', [
+                'temp_booking_id' => $tempBooking->id,
+                'total_amount' => $tempBooking->total_amount,
+                'service_id' => $tempBooking->service_id,
+                'user_id' => $tempBooking->user_id
+            ]);
             
             $orderData = $razorpayService->createOrder($tempBooking);
             
@@ -472,7 +695,11 @@ class BookingController extends Controller
      */
     public function success()
     {
-        return Inertia::render('Booking/Success');
+        return Inertia::render('Booking/Success', [
+            'auth' => [
+                'user' => Auth::user(),
+            ],
+        ]);
     }
 
     /**
@@ -514,6 +741,30 @@ class BookingController extends Controller
             return redirect()->route('booking.failed')->with('error', 'Booking session expired or invalid. Please try again.');
         }
 
+        // Debug: Log the booking data to track phone number and user
+        \Log::info('Payment success - booking data from session', [
+            'user_id' => $bookingData['user_id'] ?? 'not_set',
+            'service_id' => $bookingData['service_id'] ?? 'not_set',
+            'total_amount' => $bookingData['total_amount'] ?? 'not_set',
+            'custom_fields' => $bookingData['custom_fields'] ?? [],
+            'session_data' => session()->all()
+        ]);
+
+        // Get the user to verify phone number
+        $user = User::find($bookingData['user_id']);
+        if ($user) {
+            \Log::info('Payment success - user details', [
+                'user_id' => $user->id,
+                'user_name' => $user->name,
+                'user_phone' => $user->phone_number,
+                'user_email' => $user->email
+            ]);
+        } else {
+            \Log::error('Payment success - user not found', [
+                'user_id' => $bookingData['user_id']
+            ]);
+        }
+
         // Get payment details from Razorpay
         $paymentDetails = $razorpayService->getPaymentDetails($request->razorpay_payment_id);
         
@@ -540,6 +791,13 @@ class BookingController extends Controller
             'coupon_code' => $bookingData['coupon_code'],
         ]);
 
+        \Log::info('Payment success - booking created', [
+            'booking_id' => $booking->id,
+            'user_id' => $booking->user_id,
+            'service_id' => $booking->service_id,
+            'total_amount' => $booking->total_amount
+        ]);
+
         // Attach extras to booking
         foreach ($bookingData['extras'] as $extra) {
             $booking->extras()->attach($extra['id'], [
@@ -549,7 +807,7 @@ class BookingController extends Controller
 
         // Store custom field responses
         if (!empty($bookingData['custom_fields'])) {
-            $this->storeCustomFieldResponses($booking, (object) $bookingData['custom_fields']);
+            $this->storeCustomFieldResponses($booking, $bookingData['custom_fields']);
         }
 
         // Handle coupon usage if coupon was applied
@@ -579,8 +837,11 @@ class BookingController extends Controller
         // TODO: Send SMS notification
 
         return Inertia::render('Booking/Success', [
-            'booking' => $booking->load(['customer', 'service', 'employee', 'extras']),
-            'payment_id' => $request->razorpay_payment_id
+            'booking' => $booking->load(['customer', 'service', 'employee', 'extras', 'formResponses.formField']),
+            'payment_id' => $request->razorpay_payment_id,
+            'auth' => [
+                'user' => Auth::user(),
+            ],
         ]);
     }
 
@@ -594,7 +855,10 @@ class BookingController extends Controller
         
         return Inertia::render('Booking/Failed', [
             'error' => $request->get('error', 'Payment failed. Please try again.'),
-            'booking_id' => null // No booking ID since booking wasn't created
+            'booking_id' => null, // No booking ID since booking wasn't created
+            'auth' => [
+                'user' => Auth::user(),
+            ],
         ]);
     }
 
@@ -608,7 +872,10 @@ class BookingController extends Controller
         
         return Inertia::render('Booking/Failed', [
             'error' => 'Payment was cancelled. No booking was created.',
-            'booking_id' => null
+            'booking_id' => null,
+            'auth' => [
+                'user' => Auth::user(),
+            ],
         ]);
     }
 
@@ -621,16 +888,31 @@ class BookingController extends Controller
             $request->validate([
                 'date' => 'required|date',
                 'service_id' => 'required|exists:services,id',
+                'extras' => 'nullable|array',
+                'extras.*' => 'exists:extras,id',
             ]);
 
             $service = Service::findOrFail($request->service_id);
             $date = \Carbon\Carbon::parse($request->date);
             
+            // Calculate total duration including extras
+            $totalDuration = $service->duration;
+            $selectedExtras = [];
+            
+            if ($request->extras && is_array($request->extras)) {
+                $selectedExtras = Extra::whereIn('id', $request->extras)->get();
+                foreach ($selectedExtras as $extra) {
+                    $totalDuration += $extra->duration ?? 0;
+                }
+            }
+            
             \Log::info('Available slots request', [
                 'date' => $date->format('Y-m-d'),
                 'service_id' => $service->id,
                 'service_name' => $service->name,
-                'service_duration' => $service->duration
+                'service_duration' => $service->duration,
+                'extras' => $request->extras,
+                'total_duration' => $totalDuration
             ]);
             
             // Get the most appropriate schedule setting
@@ -653,12 +935,39 @@ class BookingController extends Controller
                 return response()->json(['slots' => []]);
             }
 
-            // Get basic slots from schedule
-            $slots = $scheduleSetting->getAvailableSlots($date, $service->duration);
+            // Use flexible slot generation instead of sequential slots
+            // You can toggle this based on your preference
+            $useFlexibleSlots = true; // Set to false to use sequential slots
             
-            \Log::info('Generated slots from schedule', ['count' => count($slots)]);
+            if ($useFlexibleSlots) {
+                $slots = $this->generateFlexibleSlots($date, $service, $scheduleSetting, $totalDuration);
+            } else {
+                // Fallback to sequential slot generation
+                $slots = $scheduleSetting->getAvailableSlots($date, $totalDuration);
+                
+                // Process sequential slots for employee availability
+                $processedSlots = [];
+                foreach ($slots as $slot) {
+                    $availableEmployees = User::getAvailableEmployeesForSlot(
+                        $service->id,
+                        $date->format('Y-m-d'),
+                        $slot['start'],
+                        $totalDuration
+                    );
+                    
+                    $slot['available'] = $availableEmployees->count() > 0;
+                    $slot['available_employees'] = $availableEmployees->count();
+                    $processedSlots[] = $slot;
+                }
+                $slots = $processedSlots;
+            }
             
-            // Filter out slots that don't meet minimum advance time
+            \Log::info('Generated flexible slots', [
+                'count' => count($slots),
+                'slots' => $slots
+            ]);
+            
+            // Filter out slots that don't meet minimum advance time (if any)
             $now = now();
             $minAdvanceTime = $now->copy()->addHours($scheduleSetting->min_advance_hours);
             
@@ -668,35 +977,13 @@ class BookingController extends Controller
                 
                 // Only include slots that meet minimum advance time
                 if ($slotDateTime->gte($minAdvanceTime)) {
-                    try {
-                        // Check if any employees are available for this slot
-                        $availableEmployees = User::getAvailableEmployeesForSlot(
-                            $service->id,
-                            $date->format('Y-m-d'),
-                            $slot['start'],
-                            $service->duration
-                        );
-                        
-                        $isAvailable = $availableEmployees->count() > 0;
-                        $slot['available'] = $isAvailable;
-                        $slot['available_employees'] = $availableEmployees->count();
-                        $filteredSlots[] = $slot;
-                        
-                        \Log::info('Slot processed', [
-                            'slot' => $slot['start'],
-                            'available' => $isAvailable,
-                            'available_employees' => $availableEmployees->count()
-                        ]);
-                    } catch (Exception $e) {
-                        \Log::error('Error checking slot availability', [
-                            'slot' => $slot['start'],
-                            'error' => $e->getMessage()
-                        ]);
-                        // Default to available if there's an error
-                        $slot['available'] = true;
-                        $slot['available_employees'] = 0;
-                        $filteredSlots[] = $slot;
-                    }
+                    $filteredSlots[] = $slot;
+                } else {
+                    \Log::info('Slot filtered out - does not meet minimum advance time', [
+                        'slot' => $slot['start'],
+                        'slot_datetime' => $slotDateTime->format('Y-m-d H:i:s'),
+                        'min_advance_time' => $minAdvanceTime->format('Y-m-d H:i:s')
+                    ]);
                 }
             }
             
@@ -865,36 +1152,106 @@ class BookingController extends Controller
     /**
      * Store custom field responses for a booking
      */
-    private function storeCustomFieldResponses($booking, $request)
+    private function storeCustomFieldResponses($booking, $customFieldsData)
     {
-        // Get the default booking form
-        $form = Form::where('name', 'Default Booking Form')->first();
+        // Get any active booking form (prefer the first one)
+        $form = Form::where('is_active', true)->first();
         if (!$form) {
+            \Log::warning('No active form found for storing custom field responses', [
+                'booking_id' => $booking->id,
+                'custom_fields_data' => $customFieldsData
+            ]);
             return;
         }
 
-        // Get all form fields (primary and custom)
-        $formFields = $form->fields()->with('services')->get();
+        \Log::info('Storing custom field responses', [
+            'booking_id' => $booking->id,
+            'form_id' => $form->id,
+            'form_name' => $form->name,
+            'custom_fields_data' => $customFieldsData
+        ]);
+
+        // Get all form fields (primary and custom) with relationships
+        $formFields = $form->fields()->with(['services', 'extras'])->get();
 
         foreach ($formFields as $field) {
             $fieldName = $field->name;
-            $fieldValue = $request->input($fieldName);
+            $fieldValue = $customFieldsData[$fieldName] ?? null;
 
             // Skip if no value provided
             if ($fieldValue === null || $fieldValue === '') {
                 continue;
             }
 
-            // For custom fields, check if they apply to this service
+            // For custom fields, check if they apply based on rendering control
             if (!$field->is_primary) {
-                $fieldServices = $field->services;
-                if ($fieldServices->count() > 0) {
-                    // Field is service-specific, check if it applies to current service
-                    if (!$fieldServices->contains('id', $booking->service_id)) {
-                        continue; // Skip this field as it doesn't apply to this service
-                    }
+                $shouldStore = false;
+                
+                switch ($field->rendering_control) {
+                    case 'services':
+                        // Check service-based rendering
+                        $fieldServices = $field->services;
+                        if ($fieldServices->count() > 0) {
+                            $shouldStore = $fieldServices->contains('id', $booking->service_id);
+                        } else {
+                            $shouldStore = true; // No services assigned = show for all
+                        }
+                        break;
+                        
+                    case 'extras':
+                        // Check extras-based rendering
+                        $fieldExtras = $field->extras;
+                        $bookingExtras = $booking->extras;
+                        
+                        if ($fieldExtras->count() > 0) {
+                            if ($bookingExtras->count() > 0) {
+                                $shouldStore = $fieldExtras->intersect($bookingExtras)->count() > 0;
+                            } else {
+                                $shouldStore = false; // No extras selected
+                            }
+                        } else {
+                            $shouldStore = true; // No extras assigned = show for all
+                        }
+                        break;
+                        
+                    case 'both':
+                        // Check both services and extras
+                        $serviceMatch = false;
+                        $extrasMatch = false;
+                        
+                        // Service check
+                        $fieldServices = $field->services;
+                        if ($fieldServices->count() > 0) {
+                            $serviceMatch = $fieldServices->contains('id', $booking->service_id);
+                        } else {
+                            $serviceMatch = true;
+                        }
+                        
+                        // Extras check
+                        $fieldExtras = $field->extras;
+                        $bookingExtras = $booking->extras;
+                        
+                        if ($fieldExtras->count() > 0) {
+                            if ($bookingExtras->count() > 0) {
+                                $extrasMatch = $fieldExtras->intersect($bookingExtras)->count() > 0;
+                            } else {
+                                $extrasMatch = false;
+                            }
+                        } else {
+                            $extrasMatch = true;
+                        }
+                        
+                        $shouldStore = $serviceMatch && $extrasMatch;
+                        break;
+                        
+                    default:
+                        $shouldStore = true; // Fallback
+                        break;
                 }
-                // If field has no services assigned, it applies to all services
+                
+                if (!$shouldStore) {
+                    continue; // Skip this field as it doesn't apply
+                }
             }
 
             // Store the response
@@ -902,6 +1259,14 @@ class BookingController extends Controller
                 'form_field_id' => $field->id,
                 'response_value' => $fieldValue,
                 'response_data' => $this->formatFieldResponse($field, $fieldValue),
+            ]);
+
+            \Log::info('Stored form response', [
+                'booking_id' => $booking->id,
+                'field_id' => $field->id,
+                'field_name' => $field->name,
+                'field_label' => $field->label,
+                'response_value' => $fieldValue
             ]);
         }
     }
@@ -956,6 +1321,28 @@ class BookingController extends Controller
     }
 
     /**
+     * Format phone number consistently
+     */
+    private function formatPhoneNumber($phoneNumber)
+    {
+        // Remove any non-digit characters except +
+        $phoneNumber = preg_replace('/[^0-9+]/', '', $phoneNumber);
+        
+        // If it starts with +, keep as is
+        if (str_starts_with($phoneNumber, '+')) {
+            return $phoneNumber;
+        }
+        
+        // If it starts with 91, add +
+        if (str_starts_with($phoneNumber, '91')) {
+            return '+' . $phoneNumber;
+        }
+        
+        // For Indian numbers, add +91 and remove leading 0
+        return '+91' . ltrim($phoneNumber, '0');
+    }
+
+    /**
      * Get setting value from database
      */
     private function getSetting($key, $default = null)
@@ -974,18 +1361,7 @@ class BookingController extends Controller
         ]);
 
         try {
-            $phoneNumber = $request->phone_number;
-            
-            // Format phone number for Twilio (ensure it starts with +)
-            if (!str_starts_with($phoneNumber, '+')) {
-                // If it starts with 91, add +, otherwise assume it's a local number
-                if (str_starts_with($phoneNumber, '91')) {
-                    $phoneNumber = '+' . $phoneNumber;
-                } else {
-                    // For Indian numbers, add +91
-                    $phoneNumber = '+91' . ltrim($phoneNumber, '0');
-                }
-            }
+            $phoneNumber = $this->formatPhoneNumber($request->phone_number);
             
             // For testing - skip Twilio configuration check
             // Uncomment the below code when you want to enable real SMS sending
@@ -1073,16 +1449,7 @@ class BookingController extends Controller
         ]);
 
         try {
-            $phoneNumber = $request->phone_number;
-            
-            // Format phone number for consistency
-            if (!str_starts_with($phoneNumber, '+')) {
-                if (str_starts_with($phoneNumber, '91')) {
-                    $phoneNumber = '+' . $phoneNumber;
-                } else {
-                    $phoneNumber = '+91' . ltrim($phoneNumber, '0');
-                }
-            }
+            $phoneNumber = $this->formatPhoneNumber($request->phone_number);
             
             $otp = $request->otp;
             
@@ -1110,7 +1477,10 @@ class BookingController extends Controller
             // Mark phone as verified in session
             session(['phone_verified_' . $phoneNumber => true]);
 
-            return response()->json(['success' => 'Phone number verified successfully']);
+            return response()->json([
+                'success' => 'Phone number verified successfully',
+                'formatted_phone' => $phoneNumber // Return the formatted phone number
+            ]);
         } catch (\Exception $e) {
             \Log::error('Failed to verify OTP:', [
                 'phone' => $request->phone_number,
@@ -1176,5 +1546,84 @@ class BookingController extends Controller
         foreach ($expiredKeys as $key) {
             session()->forget($key);
         }
+    }
+
+    /**
+     * Generate flexible time slots starting from current time
+     */
+    private function generateFlexibleSlots($date, $service, $scheduleSetting, $totalDuration = null)
+    {
+        $now = now();
+        $currentTime = $now->format('H:i');
+        $startTime = $scheduleSetting->start_time;
+        $endTime = $scheduleSetting->end_time;
+        $serviceDuration = $totalDuration ?? $service->duration;
+        $bufferTime = $scheduleSetting->buffer_time_minutes;
+        
+        \Log::info('Generating flexible slots', [
+            'current_time' => $currentTime,
+            'start_time' => $startTime,
+            'end_time' => $endTime,
+            'service_duration' => $serviceDuration,
+            'buffer_time' => $bufferTime,
+            'total_duration' => $totalDuration
+        ]);
+        
+        $slots = [];
+        
+        // Start from current time if it's within business hours, otherwise from start time
+        $slotStartTime = $now->copy();
+        if ($slotStartTime->format('H:i') < $startTime) {
+            $slotStartTime = $date->copy()->setTimeFromTimeString($startTime);
+        }
+        
+        $businessEndTime = $date->copy()->setTimeFromTimeString($endTime);
+        
+        // Generate slots until we can't fit a complete service
+        while ($slotStartTime->copy()->addMinutes($serviceDuration) <= $businessEndTime) {
+            $slotEndTime = $slotStartTime->copy()->addMinutes($serviceDuration);
+            
+            // Check if any employees are available for this slot
+            $availableEmployees = User::getAvailableEmployeesForSlot(
+                $service->id,
+                $date->format('Y-m-d'),
+                $slotStartTime->format('H:i'),
+                $serviceDuration
+            );
+            
+            if ($availableEmployees->count() > 0) {
+                $slots[] = [
+                    'start' => $slotStartTime->format('H:i'),
+                    'end' => $slotEndTime->format('H:i'),
+                    'available' => true,
+                    'available_employees' => $availableEmployees->count()
+                ];
+                
+                \Log::info('Flexible slot created', [
+                    'start' => $slotStartTime->format('H:i'),
+                    'end' => $slotEndTime->format('H:i'),
+                    'available_employees' => $availableEmployees->count()
+                ]);
+            } else {
+                \Log::info('Slot skipped - no available employees', [
+                    'start' => $slotStartTime->format('H:i'),
+                    'end' => $slotEndTime->format('H:i')
+                ]);
+            }
+            
+            // Move to next slot (service duration + buffer time)
+            $nextSlotTime = $slotStartTime->copy()->addMinutes($serviceDuration + $bufferTime);
+            \Log::info('Moving to next slot', [
+                'current_slot_start' => $slotStartTime->format('H:i'),
+                'current_slot_end' => $slotEndTime->format('H:i'),
+                'service_duration' => $serviceDuration,
+                'buffer_time' => $bufferTime,
+                'next_slot_start' => $nextSlotTime->format('H:i'),
+                'total_increment' => $serviceDuration + $bufferTime
+            ]);
+            $slotStartTime = $nextSlotTime;
+        }
+        
+        return $slots;
     }
 } 

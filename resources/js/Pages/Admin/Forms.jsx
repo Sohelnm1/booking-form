@@ -31,7 +31,7 @@ import AdminLayout from "../../Layouts/AdminLayout";
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-export default function Forms({ auth, forms, services, fieldTypes }) {
+export default function Forms({ auth, forms, services, extras, fieldTypes }) {
     const [isFieldModalVisible, setIsFieldModalVisible] = useState(false);
     const [editingField, setEditingField] = useState(null);
     const [fieldForm] = Form.useForm();
@@ -51,6 +51,7 @@ export default function Forms({ auth, forms, services, fieldTypes }) {
             is_required: false,
             is_primary: false,
             sort_order: 0,
+            rendering_control: "services",
         });
         setIsFieldModalVisible(true);
     };
@@ -102,6 +103,8 @@ export default function Forms({ auth, forms, services, fieldTypes }) {
             options: formattedOptions,
             validation_rules: field.validation_rules || [],
             services: field.services?.map((s) => s.id) || [],
+            extras: field.extras?.map((e) => e.id) || [],
+            rendering_control: field.rendering_control || "services",
         });
         setIsFieldModalVisible(true);
     };
@@ -137,6 +140,8 @@ export default function Forms({ auth, forms, services, fieldTypes }) {
                 options: formattedOptions,
                 validation_rules: values.validation_rules || [],
                 services: values.services || [],
+                extras: values.extras || [],
+                rendering_control: values.rendering_control || "services",
             };
 
             if (editingField) {
@@ -208,29 +213,189 @@ export default function Forms({ auth, forms, services, fieldTypes }) {
             ),
         },
         {
-            title: "Services",
-            dataIndex: "services",
-            key: "services",
-            render: (services) => {
-                if (!services || services.length === 0) {
+            title: "Rendering Control",
+            key: "rendering_control",
+            render: (_, record) => {
+                const { rendering_control, services, extras, is_primary } =
+                    record;
+
+                if (is_primary) {
                     return (
                         <Tag color="green" size="small">
                             All services
                         </Tag>
                     );
                 }
-                return (
-                    <div>
-                        {services.slice(0, 2).map((service, index) => (
-                            <Tag key={index} color="purple" size="small">
-                                {service.name}
+
+                switch (rendering_control) {
+                    case "services":
+                        if (!services || services.length === 0) {
+                            return (
+                                <Tag color="green" size="small">
+                                    All services
+                                </Tag>
+                            );
+                        }
+                        return (
+                            <div>
+                                <Tag
+                                    color="blue"
+                                    size="small"
+                                    style={{ marginBottom: 4 }}
+                                >
+                                    Services
+                                </Tag>
+                                {services.slice(0, 2).map((service, index) => (
+                                    <Tag
+                                        key={index}
+                                        color="purple"
+                                        size="small"
+                                    >
+                                        {service.name}
+                                    </Tag>
+                                ))}
+                                {services.length > 2 && (
+                                    <Tag size="small">
+                                        +{services.length - 2} more
+                                    </Tag>
+                                )}
+                            </div>
+                        );
+
+                    case "extras":
+                        if (!extras || extras.length === 0) {
+                            return (
+                                <Tag color="orange" size="small">
+                                    All extras
+                                </Tag>
+                            );
+                        }
+                        return (
+                            <div>
+                                <Tag
+                                    color="orange"
+                                    size="small"
+                                    style={{ marginBottom: 4 }}
+                                >
+                                    Extras
+                                </Tag>
+                                {extras.slice(0, 2).map((extra, index) => (
+                                    <Tag
+                                        key={index}
+                                        color="orange"
+                                        size="small"
+                                    >
+                                        {extra.name}
+                                    </Tag>
+                                ))}
+                                {extras.length > 2 && (
+                                    <Tag size="small">
+                                        +{extras.length - 2} more
+                                    </Tag>
+                                )}
+                            </div>
+                        );
+
+                    case "both":
+                        const serviceTags = [];
+                        const extraTags = [];
+
+                        if (!services || services.length === 0) {
+                            serviceTags.push(
+                                <Tag
+                                    key="all-services"
+                                    color="green"
+                                    size="small"
+                                >
+                                    All services
+                                </Tag>
+                            );
+                        } else {
+                            serviceTags.push(
+                                <Tag
+                                    key="services-label"
+                                    color="blue"
+                                    size="small"
+                                >
+                                    Services
+                                </Tag>
+                            );
+                            services.slice(0, 1).forEach((service, index) => {
+                                serviceTags.push(
+                                    <Tag
+                                        key={`service-${index}`}
+                                        color="purple"
+                                        size="small"
+                                    >
+                                        {service.name}
+                                    </Tag>
+                                );
+                            });
+                            if (services.length > 1) {
+                                serviceTags.push(
+                                    <Tag key="services-more" size="small">
+                                        +{services.length - 1} more
+                                    </Tag>
+                                );
+                            }
+                        }
+
+                        if (!extras || extras.length === 0) {
+                            extraTags.push(
+                                <Tag
+                                    key="all-extras"
+                                    color="orange"
+                                    size="small"
+                                >
+                                    All extras
+                                </Tag>
+                            );
+                        } else {
+                            extraTags.push(
+                                <Tag
+                                    key="extras-label"
+                                    color="orange"
+                                    size="small"
+                                >
+                                    Extras
+                                </Tag>
+                            );
+                            extras.slice(0, 1).forEach((extra, index) => {
+                                extraTags.push(
+                                    <Tag
+                                        key={`extra-${index}`}
+                                        color="orange"
+                                        size="small"
+                                    >
+                                        {extra.name}
+                                    </Tag>
+                                );
+                            });
+                            if (extras.length > 1) {
+                                extraTags.push(
+                                    <Tag key="extras-more" size="small">
+                                        +{extras.length - 1} more
+                                    </Tag>
+                                );
+                            }
+                        }
+
+                        return (
+                            <div>
+                                <div style={{ marginBottom: 4 }}>
+                                    {serviceTags}
+                                </div>
+                                <div>{extraTags}</div>
+                            </div>
+                        );
+
+                    default:
+                        return (
+                            <Tag color="default" size="small">
+                                All services
                             </Tag>
-                        ))}
-                        {services.length > 2 && (
-                            <Tag size="small">+{services.length - 2} more</Tag>
-                        )}
-                    </div>
-                );
+                        );
+                }
             },
         },
         {
@@ -564,7 +729,7 @@ export default function Forms({ auth, forms, services, fieldTypes }) {
                             />
                         </Form.Item>
 
-                        {/* Services field - only show for custom fields */}
+                        {/* Rendering Control - only show for custom fields */}
                         <Form.Item
                             noStyle
                             shouldUpdate={(prevValues, currentValues) =>
@@ -575,6 +740,47 @@ export default function Forms({ auth, forms, services, fieldTypes }) {
                             {({ getFieldValue }) => {
                                 const isPrimary = getFieldValue("is_primary");
                                 return !isPrimary ? (
+                                    <Form.Item
+                                        name="rendering_control"
+                                        label="Field Rendering Control"
+                                    >
+                                        <Select
+                                            placeholder="Select rendering control"
+                                            style={{ width: "100%" }}
+                                        >
+                                            <Option value="services">
+                                                Show based on Services
+                                            </Option>
+                                            <Option value="extras">
+                                                Show based on Extras
+                                            </Option>
+                                            <Option value="both">
+                                                Show based on Services AND
+                                                Extras
+                                            </Option>
+                                        </Select>
+                                    </Form.Item>
+                                ) : null;
+                            }}
+                        </Form.Item>
+
+                        {/* Services field - only show for custom fields */}
+                        <Form.Item
+                            noStyle
+                            shouldUpdate={(prevValues, currentValues) =>
+                                prevValues.is_primary !==
+                                    currentValues.is_primary ||
+                                prevValues.rendering_control !==
+                                    currentValues.rendering_control
+                            }
+                        >
+                            {({ getFieldValue }) => {
+                                const isPrimary = getFieldValue("is_primary");
+                                const renderingControl =
+                                    getFieldValue("rendering_control");
+                                return !isPrimary &&
+                                    (renderingControl === "services" ||
+                                        renderingControl === "both") ? (
                                     <Form.Item
                                         name="services"
                                         label="Available for Services"
@@ -591,6 +797,47 @@ export default function Forms({ auth, forms, services, fieldTypes }) {
                                                     value={service.id}
                                                 >
                                                     {service.name}
+                                                </Option>
+                                            ))}
+                                        </Select>
+                                    </Form.Item>
+                                ) : null;
+                            }}
+                        </Form.Item>
+
+                        {/* Extras field - only show for custom fields */}
+                        <Form.Item
+                            noStyle
+                            shouldUpdate={(prevValues, currentValues) =>
+                                prevValues.is_primary !==
+                                    currentValues.is_primary ||
+                                prevValues.rendering_control !==
+                                    currentValues.rendering_control
+                            }
+                        >
+                            {({ getFieldValue }) => {
+                                const isPrimary = getFieldValue("is_primary");
+                                const renderingControl =
+                                    getFieldValue("rendering_control");
+                                return !isPrimary &&
+                                    (renderingControl === "extras" ||
+                                        renderingControl === "both") ? (
+                                    <Form.Item
+                                        name="extras"
+                                        label="Available for Extras"
+                                    >
+                                        <Select
+                                            mode="multiple"
+                                            placeholder="Select specific extras (leave empty to show for ALL extras)"
+                                            allowClear
+                                            style={{ width: "100%" }}
+                                        >
+                                            {extras.map((extra) => (
+                                                <Option
+                                                    key={extra.id}
+                                                    value={extra.id}
+                                                >
+                                                    {extra.name}
                                                 </Option>
                                             ))}
                                         </Select>

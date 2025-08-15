@@ -20,12 +20,12 @@ import {
     CreditCardOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import AppLayout from "../../Layouts/AppLayout";
+import BookingHeader from "../../Components/BookingHeader";
 import Logo from "../../Components/Logo";
 
 const { Title, Text, Paragraph } = Typography;
 
-export default function Success({ booking, payment_id }) {
+export default function Success({ booking, payment_id, auth }) {
     const formatTime = (time) => {
         return dayjs(time).format("h:mm A");
     };
@@ -54,8 +54,10 @@ export default function Success({ booking, payment_id }) {
     };
 
     return (
-        <AppLayout>
+        <div>
             <Head title="Booking Confirmed" />
+
+            <BookingHeader auth={auth} />
 
             <div
                 style={{ padding: "24px", maxWidth: "800px", margin: "0 auto" }}
@@ -180,6 +182,34 @@ export default function Success({ booking, payment_id }) {
                         </Descriptions>
                     )}
 
+                    {/* Custom Field Responses */}
+                    {booking?.form_responses &&
+                        booking.form_responses.length > 0 && (
+                            <Descriptions
+                                title="Additional Information"
+                                bordered
+                                size="small"
+                                style={{ marginBottom: 24 }}
+                            >
+                                {booking.form_responses
+                                    .filter(
+                                        (response) =>
+                                            response.form_field &&
+                                            !response.form_field.is_primary
+                                    )
+                                    .map((response) => (
+                                        <Descriptions.Item
+                                            key={response.id}
+                                            label={response.form_field.label}
+                                        >
+                                            {response.formatted_value ||
+                                                response.response_value ||
+                                                "Not provided"}
+                                        </Descriptions.Item>
+                                    ))}
+                            </Descriptions>
+                        )}
+
                     {/* Important Notes */}
                     <Card
                         title="Important Information"
@@ -235,6 +265,6 @@ export default function Success({ booking, payment_id }) {
                     </Card>
                 </Card>
             </div>
-        </AppLayout>
+        </div>
     );
 }

@@ -24,6 +24,7 @@ class FormField extends Model
         'options',
         'validation_rules',
         'settings',
+        'rendering_control',
     ];
 
     protected $casts = [
@@ -48,6 +49,15 @@ class FormField extends Model
     public function services(): BelongsToMany
     {
         return $this->belongsToMany(Service::class, 'form_field_services')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Get the extras that use this field (for custom fields)
+     */
+    public function extras(): BelongsToMany
+    {
+        return $this->belongsToMany(Extra::class, 'form_field_extras')
                     ->withTimestamps();
     }
 

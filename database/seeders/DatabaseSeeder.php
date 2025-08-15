@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             FormSeeder::class,
             ScheduleSeeder::class,
             ConsentSeeder::class,
+            CustomerSeeder::class,
         ]);
     }
 }

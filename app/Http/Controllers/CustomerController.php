@@ -36,4 +36,24 @@ class CustomerController extends Controller
             'stats' => $stats,
         ]);
     }
+
+    /**
+     * Show customer bookings
+     */
+    public function bookings()
+    {
+        $user = Auth::user();
+        
+        $bookings = $user->customerBookings()
+            ->with(['service', 'employee', 'extras'])
+            ->orderBy('appointment_time', 'desc')
+            ->get();
+
+        return Inertia::render('Customer/Bookings', [
+            'auth' => [
+                'user' => $user,
+            ],
+            'bookings' => $bookings,
+        ]);
+    }
 } 

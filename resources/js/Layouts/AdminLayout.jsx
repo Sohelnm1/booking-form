@@ -317,7 +317,17 @@ export default function AdminLayout({ children, auth }) {
             key: "logout",
             icon: <LogoutOutlined />,
             label: "Logout",
-            onClick: () => router.post(route("logout")),
+            onClick: () =>
+                router.post(
+                    route("logout"),
+                    {},
+                    {
+                        onSuccess: () => {
+                            // Force a page refresh to get a new CSRF token
+                            window.location.reload();
+                        },
+                    }
+                ),
         },
     ];
 

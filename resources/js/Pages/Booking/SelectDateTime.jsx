@@ -23,7 +23,7 @@ import {
     CheckOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import AppLayout from "../../Layouts/AppLayout";
+import BookingHeader from "../../Components/BookingHeader";
 import Logo from "../../Components/Logo";
 
 const { Title, Text } = Typography;
@@ -32,6 +32,7 @@ export default function SelectDateTime({
     service,
     selectedExtras,
     scheduleSettings,
+    auth,
 }) {
     const [selectedDate, setSelectedDate] = useState(null);
     const [selectedTime, setSelectedTime] = useState(null);
@@ -74,11 +75,24 @@ export default function SelectDateTime({
             console.log("Fetching slots for date:", date.format("YYYY-MM-DD"));
             console.log("Service ID:", service.id);
             console.log("Service duration:", service.duration);
+            console.log("Selected extras:", selectedExtras);
+            console.log("Total duration:", totalDuration);
+
+            // Build query parameters
+            const params = new URLSearchParams({
+                date: date.format("YYYY-MM-DD"),
+                service_id: service.id,
+            });
+
+            // Add extras if any are selected
+            if (selectedExtras.length > 0) {
+                selectedExtras.forEach((extra) => {
+                    params.append("extras[]", extra.id);
+                });
+            }
 
             const response = await fetch(
-                `${route("booking.available-slots")}?date=${date.format(
-                    "YYYY-MM-DD"
-                )}&service_id=${service.id}`
+                `${route("booking.available-slots")}?${params.toString()}`
             );
             const data = await response.json();
             console.log("Available slots response:", data);
@@ -87,39 +101,159 @@ export default function SelectDateTime({
                 setAvailableSlots(data.slots);
             } else {
                 console.log("No slots returned from backend, using fallback");
-                // Fallback time slots for testing
+                // Fallback time slots for testing - show as unavailable
                 const fallbackSlots = [
-                    { start: "09:00", end: "09:30", available: true },
-                    { start: "09:30", end: "10:00", available: true },
-                    { start: "10:00", end: "10:30", available: true },
-                    { start: "10:30", end: "11:00", available: true },
-                    { start: "11:00", end: "11:30", available: true },
-                    { start: "11:30", end: "12:00", available: true },
-                    { start: "14:00", end: "14:30", available: true },
-                    { start: "14:30", end: "15:00", available: true },
-                    { start: "15:00", end: "15:30", available: true },
-                    { start: "15:30", end: "16:00", available: true },
-                    { start: "16:00", end: "16:30", available: true },
-                    { start: "16:30", end: "17:00", available: true },
+                    {
+                        start: "09:00",
+                        end: "09:30",
+                        available: false,
+                        available_employees: 0,
+                    },
+                    {
+                        start: "09:30",
+                        end: "10:00",
+                        available: false,
+                        available_employees: 0,
+                    },
+                    {
+                        start: "10:00",
+                        end: "10:30",
+                        available: false,
+                        available_employees: 0,
+                    },
+                    {
+                        start: "10:30",
+                        end: "11:00",
+                        available: false,
+                        available_employees: 0,
+                    },
+                    {
+                        start: "11:00",
+                        end: "11:30",
+                        available: false,
+                        available_employees: 0,
+                    },
+                    {
+                        start: "11:30",
+                        end: "12:00",
+                        available: false,
+                        available_employees: 0,
+                    },
+                    {
+                        start: "14:00",
+                        end: "14:30",
+                        available: false,
+                        available_employees: 0,
+                    },
+                    {
+                        start: "14:30",
+                        end: "15:00",
+                        available: false,
+                        available_employees: 0,
+                    },
+                    {
+                        start: "15:00",
+                        end: "15:30",
+                        available: false,
+                        available_employees: 0,
+                    },
+                    {
+                        start: "15:30",
+                        end: "16:00",
+                        available: false,
+                        available_employees: 0,
+                    },
+                    {
+                        start: "16:00",
+                        end: "16:30",
+                        available: false,
+                        available_employees: 0,
+                    },
+                    {
+                        start: "16:30",
+                        end: "17:00",
+                        available: false,
+                        available_employees: 0,
+                    },
                 ];
                 setAvailableSlots(fallbackSlots);
             }
         } catch (error) {
             console.error("Error fetching slots:", error);
-            // Fallback time slots for testing
+            // Fallback time slots for testing - show as unavailable
             const fallbackSlots = [
-                { start: "09:00", end: "09:30", available: true },
-                { start: "09:30", end: "10:00", available: true },
-                { start: "10:00", end: "10:30", available: true },
-                { start: "10:30", end: "11:00", available: true },
-                { start: "11:00", end: "11:30", available: true },
-                { start: "11:30", end: "12:00", available: true },
-                { start: "14:00", end: "14:30", available: true },
-                { start: "14:30", end: "15:00", available: true },
-                { start: "15:00", end: "15:30", available: true },
-                { start: "15:30", end: "16:00", available: true },
-                { start: "16:00", end: "16:30", available: true },
-                { start: "16:30", end: "17:00", available: true },
+                {
+                    start: "09:00",
+                    end: "09:30",
+                    available: false,
+                    available_employees: 0,
+                },
+                {
+                    start: "09:30",
+                    end: "10:00",
+                    available: false,
+                    available_employees: 0,
+                },
+                {
+                    start: "10:00",
+                    end: "10:30",
+                    available: false,
+                    available_employees: 0,
+                },
+                {
+                    start: "10:30",
+                    end: "11:00",
+                    available: false,
+                    available_employees: 0,
+                },
+                {
+                    start: "11:00",
+                    end: "11:30",
+                    available: false,
+                    available_employees: 0,
+                },
+                {
+                    start: "11:30",
+                    end: "12:00",
+                    available: false,
+                    available_employees: 0,
+                },
+                {
+                    start: "14:00",
+                    end: "14:30",
+                    available: false,
+                    available_employees: 0,
+                },
+                {
+                    start: "14:30",
+                    end: "15:00",
+                    available: false,
+                    available_employees: 0,
+                },
+                {
+                    start: "15:00",
+                    end: "15:30",
+                    available: false,
+                    available_employees: 0,
+                },
+                {
+                    start: "15:30",
+                    end: "16:00",
+                    available: false,
+                    available_employees: 0,
+                },
+                {
+                    start: "16:00",
+                    end: "16:30",
+                    available: false,
+                    available_employees: 0,
+                },
+                {
+                    start: "16:30",
+                    end: "17:00",
+                    available: false,
+                    available_employees: 0,
+                },
             ];
             setAvailableSlots(fallbackSlots);
         } finally {
@@ -152,7 +286,37 @@ export default function SelectDateTime({
     };
 
     const formatTime = (time) => {
-        return dayjs(time, "HH:mm").format("h:mm A");
+        console.log("formatTime called with:", time, typeof time);
+        try {
+            // Handle different time formats
+            let timeString = time;
+
+            // If it's a dayjs object, format it as HH:mm
+            if (time && typeof time === "object" && time.format) {
+                timeString = time.format("HH:mm");
+            } else if (typeof time === "object" && time.start) {
+                timeString = time.start;
+            }
+
+            // Ensure we have a valid time string
+            if (!timeString || typeof timeString !== "string") {
+                console.error("Invalid time format:", time);
+                return "Invalid Time";
+            }
+
+            // Parse the time string
+            const parsedTime = dayjs(timeString, "HH:mm");
+
+            if (!parsedTime.isValid()) {
+                console.error("Invalid time string:", timeString);
+                return "Invalid Time";
+            }
+
+            return parsedTime.format("h:mm A");
+        } catch (error) {
+            console.error("Error formatting time:", error, time);
+            return "Invalid Time";
+        }
     };
 
     // Custom calendar functions
@@ -205,19 +369,39 @@ export default function SelectDateTime({
         const minDate = today.add(minAdvanceHours, "hour");
         const maxDate = today.add(maxAdvanceDays, "day");
 
-        const isWithinRange = date.isAfter(minDate) && date.isBefore(maxDate);
+        // Allow today's date to be selectable (the backend will handle minimum advance time)
+        const isToday = date.isSame(today, "day");
+        const isWithinRange =
+            isToday || (date.isAfter(minDate) && date.isBefore(maxDate));
 
         // Check if date is a working day
         const dayOfWeek = date.day(); // 0=Sunday, 1=Monday, etc.
         const adjustedDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek; // Convert to 1-7 format
         const isWorkingDay = workingDays.includes(adjustedDayOfWeek);
 
-        return isWithinRange && isWorkingDay;
+        const isSelectable = isWithinRange && isWorkingDay;
+
+        // Debug logging
+        if (date.isSame(today, "day")) {
+            console.log("Today date check:", {
+                date: date.format("YYYY-MM-DD"),
+                isToday,
+                isWithinRange,
+                isWorkingDay,
+                isSelectable,
+                minAdvanceHours,
+                workingDays,
+            });
+        }
+
+        return isSelectable;
     };
 
     return (
-        <AppLayout>
+        <div>
             <Head title="Select Date & Time - Book Appointment" />
+
+            <BookingHeader auth={auth} />
 
             <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px" }}>
                 {/* Header */}
@@ -583,6 +767,13 @@ export default function SelectDateTime({
                                                 typeof slot === "object"
                                                     ? slot.start
                                                     : slot;
+
+                                            console.log("Rendering slot:", {
+                                                slot,
+                                                slotStart,
+                                                index,
+                                            });
+
                                             const slotTime = dayjs(
                                                 slotStart,
                                                 "HH:mm"
@@ -834,6 +1025,6 @@ export default function SelectDateTime({
                     </Col>
                 </Row>
             </div>
-        </AppLayout>
+        </div>
     );
 }

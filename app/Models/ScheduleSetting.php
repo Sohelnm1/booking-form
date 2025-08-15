@@ -69,21 +69,25 @@ class ScheduleSetting extends Model
         $duration = $serviceDuration; // Use service duration instead of fixed slot duration
         $buffer = $this->buffer_time_minutes;
         
+        // Start from the actual start time
         $current = $start->copy();
         
         while ($current->addMinutes($duration) <= $end) {
             $slotStart = $current->copy()->subMinutes($duration);
             $slotEnd = $current->copy();
             
-            // Check if slot conflicts with break times
-            $isBreakTime = $this->isBreakTime($slotStart, $slotEnd);
-            
-            if (!$isBreakTime) {
-                $slots[] = [
-                    'start' => $slotStart->format('H:i'),
-                    'end' => $slotEnd->format('H:i'),
-                    'available' => true
-                ];
+            // Only add slots that start at or after the start time
+            if ($slotStart->gte($start)) {
+                // Check if slot conflicts with break times
+                $isBreakTime = $this->isBreakTime($slotStart, $slotEnd);
+                
+                if (!$isBreakTime) {
+                    $slots[] = [
+                        'start' => $slotStart->format('H:i'),
+                        'end' => $slotEnd->format('H:i'),
+                        'available' => true
+                    ];
+                }
             }
             
             $current->addMinutes($buffer);

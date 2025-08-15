@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -97,5 +99,109 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('welcome');
+    }
+
+    /**
+     * Handle customer login with OTP verification
+     */
+    public function customerLogin(Request $request)
+    {
+        $request->validate([
+            'phone_number' => 'required|string|min:10',
+            'otp' => 'required|string|size:6',
+        ]);
+
+        try {
+            $phoneNumber = $this->formatPhoneNumber($request->phone_number);
+            
+            $otp = $request->otp;
+            
+            // Get stored OTP and expiry
+            $storedOtp = session('otp_' . $phoneNumber);
+            $otpExpiry = session('otp_expiry_' . $phoneNumber);
+
+            if (!$storedOtp || !$otpExpiry) {
+                return response()->json(['error' => 'OTP expired or not found'], 400);
+            }
+
+            if (now()->isAfter($otpExpiry)) {
+                // Clear expired OTP
+                session()->forget(['otp_' . $phoneNumber, 'otp_expiry_' . $phoneNumber]);
+                return response()->json(['error' => 'OTP has expired'], 400);
+            }
+
+            if ($otp !== $storedOtp) {
+                return response()->json(['error' => 'Invalid OTP'], 400);
+            }
+
+            // Clear OTP after successful verification
+            session()->forget(['otp_' . $phoneNumber, 'otp_expiry_' . $phoneNumber]);
+            
+            // Find or create customer user
+            $customer = User::where('phone_number', $phoneNumber)->first();
+            
+            if (!$customer) {
+                // Create new customer
+                $customer = User::create([
+                    'name' => 'Customer', // Default name, can be updated later
+                    'phone_number' => $phoneNumber,
+                    'role' => 'customer',
+                    'password' => bcrypt(Str::random(12)), // Temporary password
+                ]);
+            }
+
+            // Log in the customer
+            Auth::login($customer);
+
+            return response()->json([
+                'success' => 'Login successful',
+                'user' => [
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'phone_number' => $customer->phone_number,
+                    'email' => $customer->email,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Customer login failed:', [
+                'phone' => $request->phone_number,
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json(['error' => 'Login failed'], 500);
+        }
+    }
+
+    /**
+     * Show customer dashboard
+     */
+    public function showCustomerDashboard()
+    {
+        return Inertia::render('Customer/Dashboard', [
+            'auth' => [
+                'user' => Auth::user(),
+            ],
+        ]);
+    }
+
+    /**
+     * Format phone number consistently
+     */
+    private function formatPhoneNumber($phoneNumber)
+    {
+        // Remove any non-digit characters except +
+        $phoneNumber = preg_replace('/[^0-9+]/', '', $phoneNumber);
+        
+        // If it starts with +, keep as is
+        if (str_starts_with($phoneNumber, '+')) {
+            return $phoneNumber;
+        }
+        
+        // If it starts with 91, add +
+        if (str_starts_with($phoneNumber, '91')) {
+            return '+' . $phoneNumber;
+        }
+        
+        // For Indian numbers, add +91 and remove leading 0
+        return '+91' . ltrim($phoneNumber, '0');
     }
 } 

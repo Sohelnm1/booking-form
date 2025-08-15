@@ -9,9 +9,12 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\BookingController;
 
 // Public routes
-Route::get('/', function () {
-    return Inertia::render('Welcome');
-})->name('welcome');
+Route::get('/', [AuthController::class, 'showCustomerDashboard'])->name('welcome');
+
+// Test CSRF route
+Route::post('/test-csrf', function () {
+    return response()->json(['success' => 'CSRF token is valid']);
+})->name('test-csrf');
 
 // Booking routes
 Route::prefix('booking')->name('booking.')->group(function () {
@@ -34,6 +37,7 @@ Route::prefix('booking')->name('booking.')->group(function () {
 // Authentication routes
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/customer-login', [AuthController::class, 'customerLogin'])->name('customer.login');
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -41,6 +45,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Customer routes
 Route::middleware(['auth', 'role:customer'])->group(function () {
     Route::get('/customer/dashboard', [CustomerController::class, 'dashboard'])->name('customer.dashboard');
+    Route::get('/customer/bookings', [CustomerController::class, 'bookings'])->name('customer.bookings');
 });
 
 // Employee routes

@@ -19,12 +19,12 @@ import {
     ArrowLeftOutlined,
     ArrowRightOutlined,
 } from "@ant-design/icons";
-import AppLayout from "../../Layouts/AppLayout";
+import BookingHeader from "../../Components/BookingHeader";
 import Logo from "../../Components/Logo";
 
 const { Title, Text } = Typography;
 
-export default function SelectExtras({ service, extras }) {
+export default function SelectExtras({ service, extras, auth }) {
     const [selectedExtras, setSelectedExtras] = useState([]);
 
     const handleExtraToggle = (extra) => {
@@ -85,8 +85,10 @@ export default function SelectExtras({ service, extras }) {
     };
 
     return (
-        <AppLayout>
+        <div>
             <Head title="Select Extras - Book Appointment" />
+
+            <BookingHeader auth={auth} />
 
             <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px" }}>
                 {/* Header */}
@@ -372,6 +374,6 @@ export default function SelectExtras({ service, extras }) {
                     </Col>
                 </Row>
             </div>
-        </AppLayout>
+        </div>
     );
 }

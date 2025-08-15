@@ -37,7 +37,7 @@ import {
     GiftOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import AppLayout from "../../Layouts/AppLayout";
+import BookingHeader from "../../Components/BookingHeader";
 import Logo from "../../Components/Logo";
 
 const { Title, Text, Paragraph } = Typography;
@@ -54,6 +54,7 @@ export default function Confirm({
     paymentSettings,
     totalPrice,
     verifiedPhone,
+    auth,
 }) {
     const [formInstance] = Form.useForm();
     const [loading, setLoading] = useState(false);
@@ -71,12 +72,45 @@ export default function Confirm({
 
     // Set initial form values when component mounts
     React.useEffect(() => {
-        if (verifiedPhone) {
-            formInstance.setFieldsValue({
-                customer_phone: verifiedPhone,
-            });
+        console.log("Confirm page - verifiedPhone received:", verifiedPhone);
+        console.log("Confirm page - formInstance available:", !!formInstance);
+        console.log("Confirm page - formFields:", formFields);
+
+        if (verifiedPhone && formFields) {
+            // Find the phone number field dynamically
+            const phoneField = formFields.find(
+                (field) =>
+                    field.is_primary &&
+                    (field.name === "customer_phone" ||
+                        field.name === "phone_number")
+            );
+
+            if (phoneField) {
+                console.log(
+                    "Found phone field:",
+                    phoneField.name,
+                    "Setting value:",
+                    verifiedPhone
+                );
+                formInstance.setFieldsValue({
+                    [phoneField.name]: verifiedPhone,
+                });
+
+                // Verify the value was set
+                setTimeout(() => {
+                    const currentValues = formInstance.getFieldsValue();
+                    console.log(
+                        "Form values after setting phone:",
+                        currentValues
+                    );
+                }, 100);
+            } else {
+                console.log("No phone field found in form fields");
+            }
+        } else {
+            console.log("No verified phone number available or no form fields");
         }
-    }, [verifiedPhone, formInstance]);
+    }, [verifiedPhone, formInstance, formFields]);
 
     const handleBack = () => {
         const extraIds = selectedExtras.map((extra) => extra.id);
@@ -159,24 +193,38 @@ export default function Confirm({
             const extraIds = selectedExtras.map((extra) => extra.id);
             const consentIds = consentSettings.map((consent) => consent.id);
 
+            // Build form data dynamically based on form fields
             const formData = {
                 service_id: service.id,
                 extras: extraIds,
                 date: date,
                 time: time,
                 consents: consentIds,
-                customer_name: values.customer_name,
-                customer_email: values.customer_email,
-                customer_phone: values.customer_phone,
+                verified_phone: verifiedPhone, // Include verified phone number
                 payment_method: values.payment_method,
                 special_requests: values.special_requests || "",
                 coupon_code: appliedCoupon ? appliedCoupon.code : null,
             };
 
+            // Add form field values dynamically
+            if (formFields) {
+                formFields.forEach((field) => {
+                    if (values[field.name] !== undefined) {
+                        formData[field.name] = values[field.name];
+                    }
+                });
+            }
+
             // Debug: Log what's being sent to backend
             console.log("Form data being sent to backend:", formData);
+            console.log("Form values from Ant Design:", values);
             console.log("Applied coupon:", appliedCoupon);
             console.log("Coupon code being sent:", formData.coupon_code);
+            console.log("Phone number debug:", {
+                verifiedPhone,
+                formValues: values,
+                finalFormData: formData,
+            });
 
             // Create booking and get Razorpay order
             const response = await fetch(route("booking.process"), {
@@ -242,7 +290,7 @@ export default function Confirm({
                     prefill: {
                         name: values.customer_name,
                         email: values.customer_email,
-                        contact: values.customer_phone,
+                        contact: verifiedPhone || values.customer_phone, // Use verified phone if available
                     },
                     theme: {
                         color: "#1890ff",
@@ -458,8 +506,10 @@ export default function Confirm({
     };
 
     return (
-        <AppLayout>
+        <div>
             <Head title="Confirm & Pay - Book Appointment" />
+
+            <BookingHeader auth={auth} />
 
             <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px" }}>
                 {/* Header */}
@@ -812,29 +862,54 @@ export default function Confirm({
                                                     ]}
                                                 >
                                                     <Input
-                                                        prefix={
-                                                            <PhoneOutlined />
-                                                        }
-                                                        placeholder={
-                                                            verifiedPhone
-                                                                ? "Phone number verified"
-                                                                : "Enter your phone number"
-                                                        }
-                                                        size="large"
+                                                        placeholder="Enter your phone number"
                                                         disabled={
                                                             !!verifiedPhone
                                                         }
-                                                        addonAfter={
-                                                            verifiedPhone ? (
-                                                                <CheckCircleOutlined
-                                                                    style={{
-                                                                        color: "green",
-                                                                    }}
-                                                                />
-                                                            ) : null
+                                                        addonBefore={
+                                                            <span
+                                                                style={{
+                                                                    color: verifiedPhone
+                                                                        ? "#52c41a"
+                                                                        : "inherit",
+                                                                }}
+                                                            >
+                                                                {verifiedPhone
+                                                                    ? "✓ Verified"
+                                                                    : "📱"}
+                                                            </span>
                                                         }
                                                     />
                                                 </Form.Item>
+                                                {verifiedPhone && (
+                                                    <Text
+                                                        type="success"
+                                                        style={{
+                                                            fontSize: "12px",
+                                                        }}
+                                                    >
+                                                        Phone number verified in
+                                                        previous step
+                                                    </Text>
+                                                )}
+                                                {verifiedPhone &&
+                                                    verifiedPhone !==
+                                                        formInstance.getFieldValue(
+                                                            "customer_phone"
+                                                        ) && (
+                                                        <Text
+                                                            type="warning"
+                                                            style={{
+                                                                fontSize:
+                                                                    "12px",
+                                                            }}
+                                                        >
+                                                            Note: Using verified
+                                                            phone number (
+                                                            {verifiedPhone}) for
+                                                            booking
+                                                        </Text>
+                                                    )}
                                             </Col>
                                         </Row>
 
@@ -1144,6 +1219,6 @@ export default function Confirm({
                     </Col>
                 </Row>
             </div>
-        </AppLayout>
+        </div>
     );
 }

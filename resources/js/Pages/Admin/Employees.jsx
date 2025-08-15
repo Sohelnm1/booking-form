@@ -389,12 +389,14 @@ export default function Employees({
 
                         <Form.Item
                             name="schedule_settings"
-                            label="Assigned Schedules"
+                            label="Assigned Schedules (Coming Soon)"
+                            disabled="true"
                         >
                             <Select
                                 mode="multiple"
                                 placeholder="Select schedules this employee follows (optional)"
                                 optionFilterProp="children"
+                                disabled={true}
                             >
                                 {scheduleSettings.map((schedule) => (
                                     <Option

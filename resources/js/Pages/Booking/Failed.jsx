@@ -8,11 +8,11 @@ import {
     PhoneOutlined,
     MailOutlined,
 } from "@ant-design/icons";
-import AppLayout from "../../Layouts/AppLayout";
+import BookingHeader from "../../Components/BookingHeader";
 
 const { Title, Text, Paragraph } = Typography;
 
-export default function Failed({ error, booking_id }) {
+export default function Failed({ error, booking_id, auth }) {
     const handleGoHome = () => {
         router.visit(route("welcome"));
     };
@@ -22,8 +22,10 @@ export default function Failed({ error, booking_id }) {
     };
 
     return (
-        <AppLayout>
+        <div>
             <Head title="Payment Failed" />
+
+            <BookingHeader auth={auth} />
 
             <div
                 style={{ padding: "24px", maxWidth: "600px", margin: "0 auto" }}
@@ -141,6 +143,6 @@ export default function Failed({ error, booking_id }) {
                     )}
                 </Card>
             </div>
-        </AppLayout>
+        </div>
     );
 }
