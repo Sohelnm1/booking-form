@@ -263,12 +263,14 @@ export default function SelectDateTime({
     };
 
     const handleDateSelect = (date) => {
+        console.log("Date selected:", date.format("YYYY-MM-DD"));
         setSelectedDate(date);
         setSelectedTime(null);
         fetchAvailableSlots(date);
     };
 
     const handleTimeSelect = (time) => {
+        console.log("Time selected:", time.format("HH:mm"));
         setSelectedTime(time);
     };
 
@@ -289,6 +291,12 @@ export default function SelectDateTime({
     const formatTime = (time) => {
         console.log("formatTime called with:", time, typeof time);
         try {
+            // Handle null/undefined values
+            if (!time) {
+                console.error("Time is null or undefined");
+                return "Invalid Time";
+            }
+
             // Handle different time formats
             let timeString = time;
 
@@ -776,122 +784,156 @@ export default function SelectDateTime({
                                     />
                                 ) : (
                                     <Row gutter={[12, 12]}>
-                                        {availableSlots.map((slot, index) => {
-                                            // Handle both object format (from backend) and string format (fallback)
-                                            const slotStart =
-                                                typeof slot === "object"
-                                                    ? slot.start
-                                                    : slot;
+                                        {availableSlots
+                                            .map((slot, index) => {
+                                                // Handle both object format (from backend) and string format (fallback)
+                                                const slotStart =
+                                                    typeof slot === "object"
+                                                        ? slot.start
+                                                        : slot;
 
-                                            console.log("Rendering slot:", {
-                                                slot,
-                                                slotStart,
-                                                index,
-                                            });
+                                                // Validate slotStart before processing
+                                                if (
+                                                    !slotStart ||
+                                                    typeof slotStart !==
+                                                        "string"
+                                                ) {
+                                                    console.error(
+                                                        "Invalid slot start time:",
+                                                        slotStart,
+                                                        "for slot:",
+                                                        slot
+                                                    );
+                                                    return null; // Skip rendering this slot
+                                                }
 
-                                            const slotTime = dayjs(
-                                                slotStart,
-                                                "HH:mm"
-                                            );
-                                            const isSelected =
-                                                selectedTime &&
-                                                selectedTime.format("HH:mm") ===
-                                                    slotStart;
+                                                console.log("Rendering slot:", {
+                                                    slot,
+                                                    slotStart,
+                                                    index,
+                                                });
 
-                                            // Check if slot is available (from backend or fallback)
-                                            const isAvailable =
-                                                typeof slot === "object"
-                                                    ? slot.available !== false
-                                                    : true;
+                                                const slotTime = dayjs(
+                                                    slotStart,
+                                                    "HH:mm"
+                                                );
 
-                                            return (
-                                                <Col
-                                                    xs={12}
-                                                    sm={8}
-                                                    md={6}
-                                                    key={index}
-                                                >
-                                                    <Button
-                                                        size="large"
-                                                        disabled={!isAvailable}
-                                                        style={{
-                                                            width: "100%",
-                                                            height: 48,
-                                                            border: isSelected
-                                                                ? "2px solid #1890ff"
-                                                                : isAvailable
-                                                                ? "1px solid #d9d9d9"
-                                                                : "1px solid #ffccc7",
-                                                            backgroundColor:
-                                                                isSelected
-                                                                    ? "#e6f7ff"
-                                                                    : isAvailable
-                                                                    ? "white"
-                                                                    : "#fff2f0",
-                                                            opacity: isAvailable
-                                                                ? 1
-                                                                : 0.6,
-                                                        }}
-                                                        onClick={() =>
-                                                            isAvailable &&
-                                                            handleTimeSelect(
-                                                                slotTime
-                                                            )
-                                                        }
+                                                // Validate dayjs parsing
+                                                if (!slotTime.isValid()) {
+                                                    console.error(
+                                                        "Invalid dayjs parsing for slot:",
+                                                        slotStart,
+                                                        "result:",
+                                                        slotTime
+                                                    );
+                                                    return null; // Skip rendering this slot
+                                                }
+                                                const isSelected =
+                                                    selectedTime &&
+                                                    selectedTime.format(
+                                                        "HH:mm"
+                                                    ) === slotStart;
+
+                                                // Check if slot is available (from backend or fallback)
+                                                const isAvailable =
+                                                    typeof slot === "object"
+                                                        ? slot.available !==
+                                                          false
+                                                        : true;
+
+                                                return (
+                                                    <Col
+                                                        xs={12}
+                                                        sm={8}
+                                                        md={6}
+                                                        key={index}
                                                     >
-                                                        <div
+                                                        <Button
+                                                            size="large"
+                                                            disabled={
+                                                                !isAvailable
+                                                            }
                                                             style={{
-                                                                display: "flex",
-                                                                flexDirection:
-                                                                    "column",
-                                                                alignItems:
-                                                                    "center",
-                                                                justifyContent:
-                                                                    "center",
+                                                                width: "100%",
+                                                                height: 48,
+                                                                border: isSelected
+                                                                    ? "2px solid #1890ff"
+                                                                    : isAvailable
+                                                                    ? "1px solid #d9d9d9"
+                                                                    : "1px solid #ffccc7",
+                                                                backgroundColor:
+                                                                    isSelected
+                                                                        ? "#e6f7ff"
+                                                                        : isAvailable
+                                                                        ? "white"
+                                                                        : "#fff2f0",
+                                                                opacity:
+                                                                    isAvailable
+                                                                        ? 1
+                                                                        : 0.6,
                                                             }}
+                                                            onClick={() =>
+                                                                isAvailable &&
+                                                                handleTimeSelect(
+                                                                    slotTime
+                                                                )
+                                                            }
                                                         >
                                                             <div
                                                                 style={{
                                                                     display:
                                                                         "flex",
+                                                                    flexDirection:
+                                                                        "column",
                                                                     alignItems:
                                                                         "center",
                                                                     justifyContent:
                                                                         "center",
                                                                 }}
                                                             >
-                                                                {isSelected && (
-                                                                    <CheckOutlined
-                                                                        style={{
-                                                                            marginRight: 8,
-                                                                            color: "#1890ff",
-                                                                        }}
-                                                                    />
-                                                                )}
-                                                                {formatTime(
-                                                                    slotStart
-                                                                )}
-                                                            </div>
-                                                            {!isAvailable && (
                                                                 <div
                                                                     style={{
-                                                                        fontSize:
-                                                                            "10px",
-                                                                        marginTop:
-                                                                            "2px",
-                                                                        color: "#ff4d4f",
-                                                                        fontWeight:
-                                                                            "normal",
+                                                                        display:
+                                                                            "flex",
+                                                                        alignItems:
+                                                                            "center",
+                                                                        justifyContent:
+                                                                            "center",
                                                                     }}
                                                                 >
-                                                                    Booked
+                                                                    {isSelected && (
+                                                                        <CheckOutlined
+                                                                            style={{
+                                                                                marginRight: 8,
+                                                                                color: "#1890ff",
+                                                                            }}
+                                                                        />
+                                                                    )}
+                                                                    {formatTime(
+                                                                        slotStart
+                                                                    )}
                                                                 </div>
-                                                            )}
-                                                        </div>
-                                                    </Button>
-                                                </Col>
-                                            );
-                                        })}
+                                                                {!isAvailable && (
+                                                                    <div
+                                                                        style={{
+                                                                            fontSize:
+                                                                                "10px",
+                                                                            marginTop:
+                                                                                "2px",
+                                                                            color: "#ff4d4f",
+                                                                            fontWeight:
+                                                                                "normal",
+                                                                        }}
+                                                                    >
+                                                                        Booked
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </Button>
+                                                    </Col>
+                                                );
+                                            })
+                                            .filter(Boolean)}
                                     </Row>
                                 )}
                             </Card>
@@ -1006,8 +1048,17 @@ export default function SelectDateTime({
                                         </Text>
                                         <div>
                                             <Text strong>
-                                                {selectedTime
-                                                    ? formatTime(selectedTime)
+                                                {selectedTime &&
+                                                selectedTime.isValid()
+                                                    ? (() => {
+                                                          console.log(
+                                                              "Calling formatTime with selectedTime:",
+                                                              selectedTime
+                                                          );
+                                                          return formatTime(
+                                                              selectedTime
+                                                          );
+                                                      })()
                                                     : "Not selected"}
                                             </Text>
                                         </div>
