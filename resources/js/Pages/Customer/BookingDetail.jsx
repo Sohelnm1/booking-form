@@ -162,7 +162,7 @@ export default function BookingDetail({ auth, booking }) {
             key: "services",
             icon: <BookOutlined />,
             label: "Services",
-            onClick: () => router.visit(route("welcome")),
+            onClick: () => router.visit(route("booking.select-service")),
         },
         {
             key: "bookings",

@@ -177,7 +177,7 @@ export default function CustomerDashboard({ auth }) {
             key: "services",
             icon: <BookOutlined />,
             label: "Services",
-            onClick: () => router.visit(route("welcome")),
+            onClick: () => router.visit(route("booking.select-service")),
         },
         ...(isLoggedIn && currentUser
             ? [
@@ -324,6 +324,7 @@ export default function CustomerDashboard({ auth }) {
                             size="large"
                             direction="vertical"
                             style={{ width: "100%" }}
+                            className="hero-buttons-container"
                         >
                             <Button
                                 type="primary"
@@ -340,6 +341,7 @@ export default function CustomerDashboard({ auth }) {
                                     fontWeight: 600,
                                     width: "100%",
                                 }}
+                                className="hero-primary-button"
                             >
                                 {isLoggedIn && currentUser
                                     ? "Book Appointment Now"
@@ -355,6 +357,7 @@ export default function CustomerDashboard({ auth }) {
                                         fontSize: 16,
                                         width: "100%",
                                     }}
+                                    className="hero-secondary-button"
                                 >
                                     Log In
                                 </Button>

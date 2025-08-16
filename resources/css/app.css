@@ -78,6 +78,18 @@ body {
         }
     }
 
+    /* Hero buttons responsive styling */
+    .hero-buttons-container {
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .hero-primary-button,
+    .hero-secondary-button {
+        width: 100%;
+    }
+
     .ant-layout {
         overflow-x: hidden;
     }
@@ -186,6 +198,40 @@ body {
 @media (min-width: 577px) {
     .visible-xs {
         display: none !important;
+    }
+}
+
+/* Hero buttons responsive styling for larger screens */
+@media (min-width: 768px) {
+    .hero-buttons-container {
+        flex-direction: row !important;
+        justify-content: center;
+        gap: 16px;
+        max-width: 500px;
+    }
+
+    .hero-primary-button,
+    .hero-secondary-button {
+        width: auto !important;
+        min-width: 160px;
+        max-width: 180px;
+        height: 40px !important;
+        padding: 0 24px !important;
+        font-size: 14px !important;
+    }
+}
+
+/* On very large screens, add more spacing */
+@media (min-width: 1200px) {
+    .hero-buttons-container {
+        gap: 20px;
+        max-width: 450px;
+    }
+
+    .hero-primary-button,
+    .hero-secondary-button {
+        min-width: 170px;
+        max-width: 190px;
     }
 }
 

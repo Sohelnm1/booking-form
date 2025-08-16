@@ -50,7 +50,7 @@ export default function BookingHeader({ auth }) {
             key: "services",
             icon: <BookOutlined />,
             label: "Services",
-            onClick: () => router.visit(route("welcome")),
+            onClick: () => router.visit(route("booking.select-service")),
         },
         ...(isLoggedIn && currentUser
             ? [
