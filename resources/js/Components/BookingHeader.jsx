@@ -7,12 +7,14 @@ import {
     LogoutOutlined,
 } from "@ant-design/icons";
 import Logo from "./Logo";
+import CustomerLoginModal from "./CustomerLoginModal";
 
 const { Header } = Layout;
 
 export default function BookingHeader({ auth }) {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
+    const [isLoginModalVisible, setIsLoginModalVisible] = useState(false);
 
     useEffect(() => {
         // Check if user is logged in
@@ -43,6 +45,15 @@ export default function BookingHeader({ auth }) {
                 },
             }
         );
+    };
+
+    const handleLogin = () => {
+        setIsLoginModalVisible(true);
+    };
+
+    const handleLoginSuccess = (user) => {
+        setIsLoggedIn(true);
+        setCurrentUser(user);
     };
 
     const menuItems = [
@@ -147,8 +158,25 @@ export default function BookingHeader({ auth }) {
                             <span className="hidden-xs">Logout</span>
                         </Button>
                     </Space>
-                ) : null}
+                ) : (
+                    <Button
+                        type="primary"
+                        onClick={handleLogin}
+                        size="middle"
+                        className="header-signin-btn"
+                    >
+                        <span className="hidden-xs">Sign In</span>
+                        <span className="visible-xs">Login</span>
+                    </Button>
+                )}
             </div>
+
+            {/* Customer Login Modal */}
+            <CustomerLoginModal
+                isVisible={isLoginModalVisible}
+                onClose={() => setIsLoginModalVisible(false)}
+                onSuccess={handleLoginSuccess}
+            />
         </Header>
     );
 }

@@ -40,7 +40,8 @@ body {
     background: #a8a8a8;
 }
 
-/* Mobile Responsive Utilities */
+/* Responsive Utilities */
+/* Hide elements on mobile (xs) */
 @media (max-width: 576px) {
     .hidden-xs {
         display: none !important;
@@ -194,10 +195,14 @@ body {
     }
 }
 
-/* Hide mobile view on larger screens */
+/* Show elements on larger screens */
 @media (min-width: 577px) {
     .visible-xs {
         display: none !important;
+    }
+
+    .hidden-xs {
+        display: block !important;
     }
 }
 
@@ -221,6 +226,24 @@ body {
     }
 }
 
+/* Tablet-specific styling (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .hero-buttons-container {
+        max-width: 600px;
+        gap: 20px;
+    }
+
+    .hero-primary-button,
+    .hero-secondary-button {
+        min-width: 200px !important;
+        max-width: 220px !important;
+        height: 48px !important;
+        padding: 0 32px !important;
+        font-size: 16px !important;
+        font-weight: 500 !important;
+    }
+}
+
 /* On very large screens, add more spacing */
 @media (min-width: 1200px) {
     .hero-buttons-container {
@@ -233,6 +256,30 @@ body {
         min-width: 170px;
         max-width: 190px;
     }
+}
+
+/* Professional Button Styles */
+.header-signin-btn {
+    background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%) !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    box-shadow: 0 2px 4px rgba(24, 144, 255, 0.2) !important;
+    height: 36px !important;
+    padding: 0 20px !important;
+    font-size: 14px !important;
+    transition: all 0.3s ease !important;
+}
+
+.header-signin-btn:hover {
+    background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%) !important;
+    box-shadow: 0 4px 8px rgba(24, 144, 255, 0.3) !important;
+    transform: translateY(-1px) !important;
+}
+
+.header-signin-btn:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 4px rgba(24, 144, 255, 0.2) !important;
 }
 
 /* Print styles */
