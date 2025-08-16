@@ -101,176 +101,24 @@ export default function SelectDateTime({
             if (data.slots && data.slots.length > 0) {
                 setAvailableSlots(data.slots);
             } else {
-                console.log("No slots returned from backend, using fallback");
-                // Fallback time slots for testing - show as unavailable
-                const fallbackSlots = [
-                    {
-                        start: "09:00",
-                        end: "09:30",
-                        available: false,
-                        available_employees: 0,
-                    },
-                    {
-                        start: "09:30",
-                        end: "10:00",
-                        available: false,
-                        available_employees: 0,
-                    },
-                    {
-                        start: "10:00",
-                        end: "10:30",
-                        available: false,
-                        available_employees: 0,
-                    },
-                    {
-                        start: "10:30",
-                        end: "11:00",
-                        available: false,
-                        available_employees: 0,
-                    },
-                    {
-                        start: "11:00",
-                        end: "11:30",
-                        available: false,
-                        available_employees: 0,
-                    },
-                    {
-                        start: "11:30",
-                        end: "12:00",
-                        available: false,
-                        available_employees: 0,
-                    },
-                    {
-                        start: "14:00",
-                        end: "14:30",
-                        available: false,
-                        available_employees: 0,
-                    },
-                    {
-                        start: "14:30",
-                        end: "15:00",
-                        available: false,
-                        available_employees: 0,
-                    },
-                    {
-                        start: "15:00",
-                        end: "15:30",
-                        available: false,
-                        available_employees: 0,
-                    },
-                    {
-                        start: "15:30",
-                        end: "16:00",
-                        available: false,
-                        available_employees: 0,
-                    },
-                    {
-                        start: "16:00",
-                        end: "16:30",
-                        available: false,
-                        available_employees: 0,
-                    },
-                    {
-                        start: "16:30",
-                        end: "17:00",
-                        available: false,
-                        available_employees: 0,
-                    },
-                ];
-                setAvailableSlots(fallbackSlots);
+                console.log("No slots returned from backend");
+                setAvailableSlots([]);
             }
         } catch (error) {
             console.error("Error fetching slots:", error);
-            // Fallback time slots for testing - show as unavailable
-            const fallbackSlots = [
-                {
-                    start: "09:00",
-                    end: "09:30",
-                    available: false,
-                    available_employees: 0,
-                },
-                {
-                    start: "09:30",
-                    end: "10:00",
-                    available: false,
-                    available_employees: 0,
-                },
-                {
-                    start: "10:00",
-                    end: "10:30",
-                    available: false,
-                    available_employees: 0,
-                },
-                {
-                    start: "10:30",
-                    end: "11:00",
-                    available: false,
-                    available_employees: 0,
-                },
-                {
-                    start: "11:00",
-                    end: "11:30",
-                    available: false,
-                    available_employees: 0,
-                },
-                {
-                    start: "11:30",
-                    end: "12:00",
-                    available: false,
-                    available_employees: 0,
-                },
-                {
-                    start: "14:00",
-                    end: "14:30",
-                    available: false,
-                    available_employees: 0,
-                },
-                {
-                    start: "14:30",
-                    end: "15:00",
-                    available: false,
-                    available_employees: 0,
-                },
-                {
-                    start: "15:00",
-                    end: "15:30",
-                    available: false,
-                    available_employees: 0,
-                },
-                {
-                    start: "15:30",
-                    end: "16:00",
-                    available: false,
-                    available_employees: 0,
-                },
-                {
-                    start: "16:00",
-                    end: "16:30",
-                    available: false,
-                    available_employees: 0,
-                },
-                {
-                    start: "16:30",
-                    end: "17:00",
-                    available: false,
-                    available_employees: 0,
-                },
-            ];
-            setAvailableSlots(fallbackSlots);
+            setAvailableSlots([]);
         } finally {
             setLoading(false);
         }
     };
 
     const handleDateSelect = (date) => {
-        console.log("Date selected:", date.format("YYYY-MM-DD"));
         setSelectedDate(date);
         setSelectedTime(null);
         fetchAvailableSlots(date);
     };
 
     const handleTimeSelect = (time) => {
-        console.log("Time selected:", time.format("HH:mm"));
         setSelectedTime(time);
     };
 
@@ -289,7 +137,6 @@ export default function SelectDateTime({
     };
 
     const formatTime = (time) => {
-        console.log("formatTime called with:", time, typeof time);
         try {
             // Handle null/undefined values
             if (!time) {
@@ -807,27 +654,50 @@ export default function SelectDateTime({
                                                     return null; // Skip rendering this slot
                                                 }
 
-                                                console.log("Rendering slot:", {
-                                                    slot,
-                                                    slotStart,
-                                                    index,
-                                                });
+                                                // Parse time string manually to create a valid dayjs object
+                                                const timeParts =
+                                                    slotStart.split(":");
+                                                if (timeParts.length !== 2) {
+                                                    console.error(
+                                                        "Invalid time format:",
+                                                        slotStart
+                                                    );
+                                                    return null;
+                                                }
 
-                                                const slotTime = dayjs(
-                                                    slotStart,
-                                                    "HH:mm"
+                                                const hours = parseInt(
+                                                    timeParts[0],
+                                                    10
+                                                );
+                                                const minutes = parseInt(
+                                                    timeParts[1],
+                                                    10
                                                 );
 
-                                                // Validate dayjs parsing
-                                                if (!slotTime.isValid()) {
+                                                // Validate hours and minutes
+                                                if (
+                                                    isNaN(hours) ||
+                                                    isNaN(minutes) ||
+                                                    hours < 0 ||
+                                                    hours > 23 ||
+                                                    minutes < 0 ||
+                                                    minutes > 59
+                                                ) {
                                                     console.error(
-                                                        "Invalid dayjs parsing for slot:",
-                                                        slotStart,
-                                                        "result:",
-                                                        slotTime
+                                                        "Invalid time values:",
+                                                        hours,
+                                                        minutes,
+                                                        "for slot:",
+                                                        slotStart
                                                     );
-                                                    return null; // Skip rendering this slot
+                                                    return null;
                                                 }
+
+                                                const slotTime = dayjs()
+                                                    .hour(hours)
+                                                    .minute(minutes)
+                                                    .second(0)
+                                                    .millisecond(0);
                                                 const isSelected =
                                                     selectedTime &&
                                                     selectedTime.format(
@@ -1050,15 +920,7 @@ export default function SelectDateTime({
                                             <Text strong>
                                                 {selectedTime &&
                                                 selectedTime.isValid()
-                                                    ? (() => {
-                                                          console.log(
-                                                              "Calling formatTime with selectedTime:",
-                                                              selectedTime
-                                                          );
-                                                          return formatTime(
-                                                              selectedTime
-                                                          );
-                                                      })()
+                                                    ? formatTime(selectedTime)
                                                     : "Not selected"}
                                             </Text>
                                         </div>
