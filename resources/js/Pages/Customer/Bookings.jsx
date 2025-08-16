@@ -133,12 +133,14 @@ export default function CustomerBookings({ auth, bookings }) {
             dataIndex: "service",
             key: "service",
             render: (service) => service?.name || "N/A",
+            responsive: ["md"],
         },
         {
             title: "Employee",
             dataIndex: "employee",
             key: "employee",
             render: (employee) => employee?.name || "Auto-assigned",
+            responsive: ["lg"],
         },
         {
             title: "Date & Time",
@@ -151,6 +153,7 @@ export default function CustomerBookings({ auth, bookings }) {
             dataIndex: "duration",
             key: "duration",
             render: (duration) => `${duration} minutes`,
+            responsive: ["md"],
         },
         {
             title: "Status",
@@ -171,12 +174,14 @@ export default function CustomerBookings({ auth, bookings }) {
                     {status.charAt(0).toUpperCase() + status.slice(1)}
                 </Tag>
             ),
+            responsive: ["md"],
         },
         {
             title: "Amount",
             dataIndex: "total_amount",
             key: "total_amount",
             render: (amount) => `₹${parseFloat(amount).toFixed(2)}`,
+            responsive: ["sm"],
         },
         {
             title: "Actions",
@@ -185,10 +190,11 @@ export default function CustomerBookings({ auth, bookings }) {
                 <Space>
                     <Button
                         size="small"
-                        onClick={() => {
-                            // TODO: Add view booking details functionality
-                            console.log("View booking:", record.id);
-                        }}
+                        onClick={() =>
+                            router.visit(
+                                route("customer.bookings.show", record.id)
+                            )
+                        }
                     >
                         View
                     </Button>
@@ -205,14 +211,26 @@ export default function CustomerBookings({ auth, bookings }) {
             <Header
                 style={{
                     background: "#fff",
-                    padding: "0 24px",
+                    padding: "0 16px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    height: "auto",
+                    minHeight: 64,
+                    maxWidth: "100vw",
+                    width: "100%",
+                    overflow: "hidden",
                 }}
             >
-                <div style={{ display: "flex", alignItems: "center" }}>
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        flexShrink: 0,
+                        minWidth: 0,
+                    }}
+                >
                     <Logo
                         variant="primary"
                         color="color"
@@ -221,15 +239,32 @@ export default function CustomerBookings({ auth, bookings }) {
                     />
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        flex: 1,
+                        justifyContent: "flex-end",
+                        minWidth: 0,
+                        overflow: "hidden",
+                    }}
+                >
                     <Menu
                         mode="horizontal"
                         items={menuItems}
                         selectedKeys={["bookings"]}
-                        style={{ border: "none", background: "transparent" }}
+                        style={{
+                            border: "none",
+                            background: "transparent",
+                            fontSize: "14px",
+                            minWidth: 0,
+                            flexShrink: 1,
+                            maxWidth: "100%",
+                        }}
                     />
 
-                    <Space>
+                    <Space size="small" style={{ flexShrink: 0 }}>
                         <Avatar
                             style={{
                                 backgroundColor: "#1890ff",
@@ -245,16 +280,19 @@ export default function CustomerBookings({ auth, bookings }) {
                             type="text"
                             icon={<LogoutOutlined />}
                             onClick={handleLogout}
+                            size="small"
                         >
-                            Logout
+                            <span className="hidden-xs">Logout</span>
                         </Button>
                     </Space>
                 </div>
             </Header>
 
             {/* Content */}
-            <Content style={{ padding: "24px" }}>
+            <Content style={{ padding: "16px" }}>
                 <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+                    {/* Add responsive top spacing for mobile */}
+                    <div className="mobile-top-spacing" />
                     {/* Header */}
                     <div style={{ marginBottom: 24 }}>
                         <Button
@@ -275,18 +313,138 @@ export default function CustomerBookings({ auth, bookings }) {
                     {/* Bookings Table */}
                     <Card>
                         {bookings && bookings.length > 0 ? (
-                            <Table
-                                columns={columns}
-                                dataSource={bookings}
-                                rowKey="id"
-                                pagination={{
-                                    pageSize: 10,
-                                    showSizeChanger: true,
-                                    showQuickJumper: true,
-                                    showTotal: (total, range) =>
-                                        `${range[0]}-${range[1]} of ${total} bookings`,
-                                }}
-                            />
+                            <>
+                                {/* Desktop Table View */}
+                                <div className="hidden-xs">
+                                    <Table
+                                        columns={columns}
+                                        dataSource={bookings}
+                                        rowKey="id"
+                                        pagination={{
+                                            pageSize: 10,
+                                            showSizeChanger: true,
+                                            showQuickJumper: true,
+                                            showTotal: (total, range) =>
+                                                `${range[0]}-${range[1]} of ${total} bookings`,
+                                        }}
+                                    />
+                                </div>
+
+                                {/* Mobile Card View */}
+                                <div className="visible-xs">
+                                    {bookings.map((booking) => (
+                                        <Card
+                                            key={booking.id}
+                                            style={{ marginBottom: 16 }}
+                                            bodyStyle={{ padding: 16 }}
+                                        >
+                                            <div style={{ marginBottom: 12 }}>
+                                                <div
+                                                    style={{
+                                                        display: "flex",
+                                                        justifyContent:
+                                                            "space-between",
+                                                        alignItems:
+                                                            "flex-start",
+                                                        marginBottom: 8,
+                                                    }}
+                                                >
+                                                    <Text
+                                                        strong
+                                                        style={{ fontSize: 16 }}
+                                                    >
+                                                        {booking.service?.name}
+                                                    </Text>
+                                                    <Tag
+                                                        color={getStatusColor(
+                                                            booking.status
+                                                        )}
+                                                    >
+                                                        {booking.status
+                                                            .charAt(0)
+                                                            .toUpperCase() +
+                                                            booking.status.slice(
+                                                                1
+                                                            )}
+                                                    </Tag>
+                                                </div>
+                                                <Text type="secondary">
+                                                    {formatDateTime(
+                                                        booking.appointment_time
+                                                    )}
+                                                </Text>
+                                            </div>
+
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent:
+                                                        "space-between",
+                                                    alignItems: "center",
+                                                    marginBottom: 12,
+                                                }}
+                                            >
+                                                <div>
+                                                    <Text type="secondary">
+                                                        Duration:{" "}
+                                                    </Text>
+                                                    <Text>
+                                                        {booking.duration}{" "}
+                                                        minutes
+                                                    </Text>
+                                                </div>
+                                                <div>
+                                                    <Text type="secondary">
+                                                        Amount:{" "}
+                                                    </Text>
+                                                    <Text strong>
+                                                        ₹
+                                                        {parseFloat(
+                                                            booking.total_amount
+                                                        ).toFixed(2)}
+                                                    </Text>
+                                                </div>
+                                            </div>
+
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent:
+                                                        "space-between",
+                                                    alignItems: "center",
+                                                }}
+                                            >
+                                                <Tag
+                                                    color={getPaymentStatusColor(
+                                                        booking.payment_status
+                                                    )}
+                                                >
+                                                    {booking.payment_status
+                                                        .charAt(0)
+                                                        .toUpperCase() +
+                                                        booking.payment_status.slice(
+                                                            1
+                                                        )}
+                                                </Tag>
+                                                <Button
+                                                    size="small"
+                                                    type="primary"
+                                                    onClick={() =>
+                                                        router.visit(
+                                                            route(
+                                                                "customer.bookings.show",
+                                                                booking.id
+                                                            )
+                                                        )
+                                                    }
+                                                >
+                                                    View Details
+                                                </Button>
+                                            </div>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </>
                         ) : (
                             <Empty
                                 description="No bookings found"

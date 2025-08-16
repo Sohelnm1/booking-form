@@ -511,7 +511,16 @@ export default function Confirm({
 
             <BookingHeader auth={auth} />
 
-            <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px" }}>
+            <div
+                style={{
+                    maxWidth: 1200,
+                    margin: "0 auto",
+                    padding: "16px",
+                    overflow: "hidden",
+                }}
+            >
+                {/* Add responsive top spacing for mobile */}
+                <div className="mobile-top-spacing" />
                 {/* Header */}
                 <div style={{ textAlign: "center", marginBottom: 48 }}>
                     <Logo
@@ -541,7 +550,7 @@ export default function Confirm({
                     </div>
                 </div>
 
-                <Row gutter={[32, 32]}>
+                <Row gutter={[16, 16]}>
                     {/* Main Content */}
                     <Col xs={24} lg={16}>
                         {/* Booking Summary */}
@@ -1008,12 +1017,19 @@ export default function Confirm({
                                 />
 
                                 {/* Action Buttons */}
-                                <div style={{ display: "flex", gap: 16 }}>
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        gap: 16,
+                                        flexDirection: "column",
+                                        width: "100%",
+                                    }}
+                                >
                                     <Button
                                         size="large"
                                         icon={<ArrowLeftOutlined />}
                                         onClick={handleBack}
-                                        style={{ flex: 1 }}
+                                        style={{ width: "100%" }}
                                     >
                                         Back to Terms
                                     </Button>
@@ -1023,9 +1039,13 @@ export default function Confirm({
                                         htmlType="submit"
                                         loading={loading}
                                         icon={<CheckCircleOutlined />}
-                                        style={{ flex: 2 }}
+                                        style={{ width: "100%" }}
                                     >
-                                        Confirm & Pay {formatPrice(finalPrice)}
+                                        <span className="hidden-xs">
+                                            Confirm & Pay
+                                        </span>
+                                        <span className="visible-xs">Pay</span>{" "}
+                                        {formatPrice(finalPrice)}
                                     </Button>
                                 </div>
                             </Form>

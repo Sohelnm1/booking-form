@@ -62,6 +62,8 @@ export default function SelectService({ services, auth }) {
                         padding: "24px",
                     }}
                 >
+                    {/* Add responsive top spacing for mobile */}
+                    <div className="mobile-top-spacing" />
                     {/* Header */}
                     <div style={{ textAlign: "center", marginBottom: 48 }}>
                         <Logo

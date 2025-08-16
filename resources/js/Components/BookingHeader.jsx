@@ -68,7 +68,7 @@ export default function BookingHeader({ auth }) {
         <Header
             style={{
                 background: "#fff",
-                padding: "0 24px",
+                padding: "0 16px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
@@ -76,9 +76,21 @@ export default function BookingHeader({ auth }) {
                 position: "sticky",
                 top: 0,
                 zIndex: 1000,
+                height: "auto",
+                minHeight: 64,
+                overflow: "hidden",
+                maxWidth: "100vw",
+                width: "100%",
             }}
         >
-            <div style={{ display: "flex", alignItems: "center" }}>
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexShrink: 0,
+                    minWidth: 0,
+                }}
+            >
                 <Logo
                     variant="primary"
                     color="color"
@@ -87,16 +99,34 @@ export default function BookingHeader({ auth }) {
                 />
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    flexWrap: "wrap",
+                    flex: 1,
+                    justifyContent: "flex-end",
+                    minWidth: 0,
+                    overflow: "hidden",
+                }}
+            >
                 <Menu
                     mode="horizontal"
                     items={menuItems}
                     selectedKeys={["services"]}
-                    style={{ border: "none", background: "transparent" }}
+                    style={{
+                        border: "none",
+                        background: "transparent",
+                        fontSize: "14px",
+                        minWidth: 0,
+                        flexShrink: 1,
+                        maxWidth: "100%",
+                    }}
                 />
 
                 {isLoggedIn && currentUser ? (
-                    <Space>
+                    <Space size="small" style={{ flexShrink: 0 }}>
                         <Avatar
                             style={{
                                 backgroundColor: "#1890ff",
@@ -112,8 +142,9 @@ export default function BookingHeader({ auth }) {
                             type="text"
                             icon={<LogoutOutlined />}
                             onClick={handleLogout}
+                            size="small"
                         >
-                            Logout
+                            <span className="hidden-xs">Logout</span>
                         </Button>
                     </Space>
                 ) : null}

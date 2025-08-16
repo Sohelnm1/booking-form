@@ -56,4 +56,23 @@ class CustomerController extends Controller
             'bookings' => $bookings,
         ]);
     }
+
+    /**
+     * Show individual booking details
+     */
+    public function showBooking($id)
+    {
+        $user = Auth::user();
+        
+        $booking = $user->customerBookings()
+            ->with(['service', 'employee', 'extras', 'formResponses.formField'])
+            ->findOrFail($id);
+
+        return Inertia::render('Customer/BookingDetail', [
+            'auth' => [
+                'user' => $user,
+            ],
+            'booking' => $booking,
+        ]);
+    }
 } 

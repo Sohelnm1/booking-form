@@ -199,14 +199,26 @@ export default function CustomerDashboard({ auth }) {
             <Header
                 style={{
                     background: "#fff",
-                    padding: "0 24px",
+                    padding: "0 16px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    height: "auto",
+                    minHeight: 64,
+                    maxWidth: "100vw",
+                    width: "100%",
+                    overflow: "hidden",
                 }}
             >
-                <div style={{ display: "flex", alignItems: "center" }}>
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        flexShrink: 0,
+                        minWidth: 0,
+                    }}
+                >
                     <Logo
                         variant="primary"
                         color="color"
@@ -215,15 +227,32 @@ export default function CustomerDashboard({ auth }) {
                     />
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        flex: 1,
+                        justifyContent: "flex-end",
+                        minWidth: 0,
+                        overflow: "hidden",
+                    }}
+                >
                     <Menu
                         mode="horizontal"
                         items={menuItems}
-                        style={{ border: "none", background: "transparent" }}
+                        style={{
+                            border: "none",
+                            background: "transparent",
+                            fontSize: "14px",
+                            minWidth: 0,
+                            flexShrink: 1,
+                            maxWidth: "100%",
+                        }}
                     />
 
                     {isLoggedIn && currentUser ? (
-                        <Space>
+                        <Space size="small" style={{ flexShrink: 0 }}>
                             <Avatar
                                 style={{
                                     backgroundColor: "#1890ff",
@@ -239,30 +268,38 @@ export default function CustomerDashboard({ auth }) {
                                 type="text"
                                 icon={<LogoutOutlined />}
                                 onClick={handleLogout}
+                                size="small"
                             >
-                                Logout
+                                <span className="hidden-xs">Logout</span>
                             </Button>
                         </Space>
                     ) : (
-                        <Button type="primary" onClick={handleLogin}>
-                            Sign In
+                        <Button
+                            type="primary"
+                            onClick={handleLogin}
+                            size="small"
+                        >
+                            <span className="hidden-xs">Sign In</span>
+                            <span className="visible-xs">Login</span>
                         </Button>
                     )}
                 </div>
             </Header>
 
             {/* Content */}
-            <Content style={{ padding: "64px 24px" }}>
+            <Content style={{ padding: "16px" }}>
                 <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+                    {/* Add responsive top spacing for mobile */}
+                    <div className="mobile-top-spacing" />
                     {/* Hero Section */}
                     <div
                         style={{
                             background:
                                 "linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%)",
-                            padding: "64px 24px",
+                            padding: "32px 16px",
                             borderRadius: "16px",
                             textAlign: "center",
-                            marginBottom: 64,
+                            marginBottom: 32,
                         }}
                     >
                         <Title
@@ -283,7 +320,11 @@ export default function CustomerDashboard({ auth }) {
                             user-friendly platform. Find and reserve your
                             perfect spot with just a few clicks.
                         </Paragraph>
-                        <Space size="large">
+                        <Space
+                            size="large"
+                            direction="vertical"
+                            style={{ width: "100%" }}
+                        >
                             <Button
                                 type="primary"
                                 size="large"
@@ -297,6 +338,7 @@ export default function CustomerDashboard({ auth }) {
                                     padding: "0 32px",
                                     fontSize: 16,
                                     fontWeight: 600,
+                                    width: "100%",
                                 }}
                             >
                                 {isLoggedIn && currentUser
@@ -311,6 +353,7 @@ export default function CustomerDashboard({ auth }) {
                                         height: 48,
                                         padding: "0 32px",
                                         fontSize: 16,
+                                        width: "100%",
                                     }}
                                 >
                                     Log In

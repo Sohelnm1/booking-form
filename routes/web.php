@@ -46,6 +46,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware(['auth', 'role:customer'])->group(function () {
     Route::get('/customer/dashboard', [CustomerController::class, 'dashboard'])->name('customer.dashboard');
     Route::get('/customer/bookings', [CustomerController::class, 'bookings'])->name('customer.bookings');
+    Route::get('/customer/bookings/{id}', [CustomerController::class, 'showBooking'])->name('customer.bookings.show');
 });
 
 // Employee routes
