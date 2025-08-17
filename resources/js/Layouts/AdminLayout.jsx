@@ -101,6 +101,11 @@ export default function AdminLayout({ children, auth }) {
             ) {
                 newSelectedKey = "coupons";
             } else if (
+                currentPath === "/admin/booking-policies" ||
+                currentPath.startsWith("/admin/booking-policies/")
+            ) {
+                newSelectedKey = "booking-policies";
+            } else if (
                 currentPath === "/admin/times" ||
                 currentPath.startsWith("/admin/times/")
             ) {
@@ -261,6 +266,17 @@ export default function AdminLayout({ children, auth }) {
             },
         },
         {
+            key: "booking-policies",
+            icon: <SettingOutlined />,
+            label: "Booking Policies",
+            onClick: () => {
+                setSelectedKey("booking-policies");
+                router.visit(route("admin.booking-policies"), {
+                    replace: true,
+                });
+            },
+        },
+        {
             key: "times",
             icon: <ClockCircleOutlined />,
             label: "Times",
@@ -294,6 +310,15 @@ export default function AdminLayout({ children, auth }) {
             onClick: () => {
                 setSelectedKey("integration");
                 router.visit(route("admin.integration"), { replace: true });
+            },
+        },
+        {
+            key: "invoices",
+            icon: <FileTextOutlined />,
+            label: "Invoices",
+            onClick: () => {
+                setSelectedKey("invoices");
+                router.visit(route("admin.invoices"), { replace: true });
             },
         },
         {

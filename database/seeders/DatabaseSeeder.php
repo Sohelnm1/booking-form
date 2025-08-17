@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             ScheduleSeeder::class,
             ConsentSeeder::class,
             CustomerSeeder::class,
+            BookingPolicySeeder::class,
         ]);
     }
 }

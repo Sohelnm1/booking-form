@@ -184,6 +184,37 @@ export default function CustomerBookings({ auth, bookings }) {
             responsive: ["sm"],
         },
         {
+            title: "Reschedule",
+            key: "reschedule",
+            render: (_, record) => (
+                <div>
+                    {record.reschedule_attempts > 0 ? (
+                        <Space direction="vertical" size="small">
+                            <Text type="secondary" style={{ fontSize: "12px" }}>
+                                {record.reschedule_attempts} time(s)
+                            </Text>
+                            {record.reschedule_payment_amount > 0 && (
+                                <Text
+                                    type="secondary"
+                                    style={{
+                                        fontSize: "12px",
+                                        color: "#52c41a",
+                                    }}
+                                >
+                                    Fee: ₹{record.reschedule_payment_amount}
+                                </Text>
+                            )}
+                        </Space>
+                    ) : (
+                        <Text type="secondary" style={{ fontSize: "12px" }}>
+                            Never
+                        </Text>
+                    )}
+                </div>
+            ),
+            responsive: ["md"],
+        },
+        {
             title: "Actions",
             key: "actions",
             render: (_, record) => (
@@ -336,7 +367,7 @@ export default function CustomerBookings({ auth, bookings }) {
                                         <Card
                                             key={booking.id}
                                             style={{ marginBottom: 16 }}
-                                            bodyStyle={{ padding: 16 }}
+                                            styles={{ body: { padding: 16 } }}
                                         >
                                             <div style={{ marginBottom: 12 }}>
                                                 <div

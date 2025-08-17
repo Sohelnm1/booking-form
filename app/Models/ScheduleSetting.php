@@ -59,7 +59,7 @@ class ScheduleSetting extends Model
     /**
      * Get available time slots for a given date and service duration
      */
-    public function getAvailableSlots($date = null, $serviceDuration = 30)
+    public function getAvailableSlots($date = null, $serviceDuration = 30, $excludeBookingId = null)
     {
         $date = $date ?? now();
         $slots = [];
@@ -69,31 +69,145 @@ class ScheduleSetting extends Model
         $duration = $serviceDuration; // Use service duration instead of fixed slot duration
         $buffer = $this->buffer_time_minutes;
         
+        \Log::info('ScheduleSetting getAvailableSlots', [
+            'schedule_name' => $this->name,
+            'start_time' => $start->format('H:i'),
+            'end_time' => $end->format('H:i'),
+            'service_duration' => $duration,
+            'buffer_time' => $buffer,
+            'date' => $date->format('Y-m-d'),
+            'exclude_booking_id' => $excludeBookingId
+        ]);
+        
         // Start from the actual start time
         $current = $start->copy();
         
-        while ($current->addMinutes($duration) <= $end) {
-            $slotStart = $current->copy()->subMinutes($duration);
-            $slotEnd = $current->copy();
+        while ($current->copy()->addMinutes($duration) <= $end) {
+            $slotStart = $current->copy();
+            $slotEnd = $current->copy()->addMinutes($duration);
             
-            // Only add slots that start at or after the start time
-            if ($slotStart->gte($start)) {
-                // Check if slot conflicts with break times
-                $isBreakTime = $this->isBreakTime($slotStart, $slotEnd);
+            // Check if slot conflicts with break times
+            $isBreakTime = $this->isBreakTime($slotStart, $slotEnd);
+            
+            if (!$isBreakTime) {
+                // Check if slot conflicts with existing bookings (excluding the specified booking)
+                $isConflicting = $this->hasConflictingBookings($date, $slotStart, $slotEnd, $excludeBookingId);
                 
-                if (!$isBreakTime) {
+
+                
+                if (!$isConflicting) {
                     $slots[] = [
                         'start' => $slotStart->format('H:i'),
                         'end' => $slotEnd->format('H:i'),
                         'available' => true
                     ];
+                    
+                    \Log::info('Slot created', [
+                        'start' => $slotStart->format('H:i'),
+                        'end' => $slotEnd->format('H:i'),
+                        'next_slot_start' => $current->copy()->addMinutes($duration + $buffer)->format('H:i')
+                    ]);
+                } else {
+                    \Log::info('Slot excluded - conflicts with existing booking', [
+                        'start' => $slotStart->format('H:i'),
+                        'end' => $slotEnd->format('H:i')
+                    ]);
                 }
             }
             
-            $current->addMinutes($buffer);
+            // Move to next slot: service duration + buffer time
+            $current->addMinutes($duration + $buffer);
         }
         
         return $slots;
+    }
+
+
+//     public function getAvailableSlots($date = null, $serviceDuration = 30, $excludeBookingId = null)
+// {
+//     $date = $date ?? now();
+//     $slots = [];
+    
+//     $start = \Carbon\Carbon::parse($this->start_time);
+//     $end = \Carbon\Carbon::parse($this->end_time);
+//     $duration = $serviceDuration;
+//     $buffer = $this->buffer_time_minutes;
+    
+//     // Get original booking time if we're excluding a booking
+//     $originalBookingTime = null;
+//     if ($excludeBookingId) {
+//         $booking = \App\Models\Booking::find($excludeBookingId);
+//         if ($booking) {
+//             $originalBookingTime = \Carbon\Carbon::parse($booking->appointment_time);
+//         }
+//     }
+    
+//     $current = $start->copy();
+    
+//     while ($current->copy()->addMinutes($duration) <= $end) {
+//         $slotStart = $current->copy();
+//         $slotEnd = $current->copy()->addMinutes($duration);
+        
+//         // Skip if this is the original booking time
+//         if ($originalBookingTime && $slotStart->format('H:i') == $originalBookingTime->format('H:i')) {
+//             $current->addMinutes($duration + $buffer);
+//             continue;
+//         }
+        
+//         $isBreakTime = $this->isBreakTime($slotStart, $slotEnd);
+        
+//         if (!$isBreakTime) {
+//             $isConflicting = $this->hasConflictingBookings($date, $slotStart, $slotEnd, $excludeBookingId);
+            
+//             if (!$isConflicting) {
+//                 $slots[] = [
+//                     'start' => $slotStart->format('H:i'),
+//                     'end' => $slotEnd->format('H:i'),
+//                     'available' => true
+//                 ];
+//             }
+//         }
+        
+//         $current->addMinutes($duration + $buffer);
+//     }
+    
+//     return $slots;
+// }
+    /**
+     * Check if a time slot conflicts with existing bookings
+     */
+    private function hasConflictingBookings($date, $slotStart, $slotEnd, $excludeBookingId = null)
+    {
+        // Convert slot times to full datetime for proper comparison
+        $slotStartDateTime = $date->copy()->setTimeFromTimeString($slotStart->format('H:i:s'));
+        $slotEndDateTime = $date->copy()->setTimeFromTimeString($slotEnd->format('H:i:s'));
+        
+        $query = \App\Models\Booking::whereDate('appointment_time', $date)
+            ->whereNotIn('status', ['cancelled']) // Only consider active bookings
+            ->where(function($query) use ($slotStartDateTime, $slotEndDateTime) {
+                // Two time periods overlap if: start1 < end2 AND start2 < end1
+                // Fixed: Use <= and >= to include exact matches
+                $query->where('appointment_time', '<=', $slotEndDateTime)
+                      ->whereRaw('DATE_ADD(appointment_time, INTERVAL duration MINUTE) >= ?', [$slotStartDateTime]);
+            });
+        
+        // Exclude the specified booking if provided (for rescheduling)
+        if ($excludeBookingId) {
+            \Log::info('excluding booking id', [
+                'exclude_booking_id' => $excludeBookingId
+            ]);
+            $query->where('id', '!=', (int) $excludeBookingId);
+        }
+        
+        \Log::info('Conflict check query', [
+            'date' => $date->format('Y-m-d'),
+            'slot_start' => $slotStartDateTime->format('Y-m-d H:i:s'),
+            'slot_end' => $slotEndDateTime->format('Y-m-d H:i:s'),
+            'exclude_booking_id' => $excludeBookingId,
+            'conflicts_found' => $query->exists()
+        ]);
+        
+        return $query->exists();
     }
 
     /**

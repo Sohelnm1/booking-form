@@ -20,6 +20,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\AppointmentsExport;
 use App\Models\Coupon;
+use App\Models\BookingPolicySetting;
 
 class AdminController extends Controller
 {
@@ -1314,5 +1315,156 @@ class AdminController extends Controller
 
         $coupon->delete();
         return redirect()->route('admin.coupons')->with('success', 'Coupon deleted successfully!');
+    }
+
+    /**
+     * Show booking policies page
+     */
+    public function bookingPolicies()
+    {
+        $policies = BookingPolicySetting::ordered()->get();
+        
+        return Inertia::render('Admin/BookingPolicies', [
+            'auth' => [
+                'user' => Auth::user(),
+            ],
+            'policies' => $policies,
+        ]);
+    }
+
+    /**
+     * Store a new booking policy
+     */
+    public function storeBookingPolicy(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'cancellation_window_hours' => 'required|integer|min:0',
+            'cancellation_policy' => 'required|in:full_refund,partial_refund,no_refund,credit_only',
+            'late_cancellation_fee' => 'required|numeric|min:0',
+            'late_cancellation_window_hours' => 'required|integer|min:0',
+            'require_cancellation_reason' => 'nullable|boolean',
+            'auto_cancel_no_show' => 'nullable|boolean',
+            'no_show_minutes' => 'required|integer|min:1',
+            'reschedule_window_hours' => 'required|integer|min:0',
+            'max_reschedule_attempts' => 'required|integer|min:0',
+            'reschedule_fee' => 'required|numeric|min:0',
+            'reschedule_advance_notice_hours' => 'required|integer|min:0',
+            'allow_same_day_reschedule' => 'nullable|boolean',
+            'allow_next_day_reschedule' => 'nullable|boolean',
+            'send_reminder_24h' => 'nullable|boolean',
+            'send_reminder_2h' => 'nullable|boolean',
+            'send_reminder_1h' => 'nullable|boolean',
+            'notify_admin_on_cancellation' => 'nullable|boolean',
+            'notify_admin_on_reschedule' => 'nullable|boolean',
+            'notify_employee_on_cancellation' => 'nullable|boolean',
+            'notify_employee_on_reschedule' => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
+            'sort_order' => 'nullable|integer|min:0',
+        ]);
+
+        BookingPolicySetting::create([
+            'name' => $request->name,
+            'description' => $request->description,
+            'cancellation_window_hours' => $request->cancellation_window_hours,
+            'cancellation_policy' => $request->cancellation_policy,
+            'late_cancellation_fee' => $request->late_cancellation_fee,
+            'late_cancellation_window_hours' => $request->late_cancellation_window_hours,
+            'require_cancellation_reason' => $request->boolean('require_cancellation_reason'),
+            'auto_cancel_no_show' => $request->boolean('auto_cancel_no_show'),
+            'no_show_minutes' => $request->no_show_minutes,
+            'reschedule_window_hours' => $request->reschedule_window_hours,
+            'max_reschedule_attempts' => $request->max_reschedule_attempts,
+            'reschedule_fee' => $request->reschedule_fee,
+            'reschedule_advance_notice_hours' => $request->reschedule_advance_notice_hours,
+            'allow_same_day_reschedule' => $request->boolean('allow_same_day_reschedule'),
+            'allow_next_day_reschedule' => $request->boolean('allow_next_day_reschedule'),
+            'send_reminder_24h' => $request->boolean('send_reminder_24h'),
+            'send_reminder_2h' => $request->boolean('send_reminder_2h'),
+            'send_reminder_1h' => $request->boolean('send_reminder_1h'),
+            'notify_admin_on_cancellation' => $request->boolean('notify_admin_on_cancellation'),
+            'notify_admin_on_reschedule' => $request->boolean('notify_admin_on_reschedule'),
+            'notify_employee_on_cancellation' => $request->boolean('notify_employee_on_cancellation'),
+            'notify_employee_on_reschedule' => $request->boolean('notify_employee_on_reschedule'),
+            'is_active' => $request->boolean('is_active', true),
+            'sort_order' => $request->sort_order ?? 0,
+        ]);
+
+        return redirect()->route('admin.booking-policies')->with('success', 'Booking policy created successfully!');
+    }
+
+    /**
+     * Update a booking policy
+     */
+    public function updateBookingPolicy(Request $request, $id)
+    {
+        $policy = BookingPolicySetting::findOrFail($id);
+        
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'cancellation_window_hours' => 'required|integer|min:0',
+            'cancellation_policy' => 'required|in:full_refund,partial_refund,no_refund,credit_only',
+            'late_cancellation_fee' => 'required|numeric|min:0',
+            'late_cancellation_window_hours' => 'required|integer|min:0',
+            'require_cancellation_reason' => 'nullable|boolean',
+            'auto_cancel_no_show' => 'nullable|boolean',
+            'no_show_minutes' => 'required|integer|min:1',
+            'reschedule_window_hours' => 'required|integer|min:0',
+            'max_reschedule_attempts' => 'required|integer|min:0',
+            'reschedule_fee' => 'required|numeric|min:0',
+            'reschedule_advance_notice_hours' => 'required|integer|min:0',
+            'allow_same_day_reschedule' => 'nullable|boolean',
+            'allow_next_day_reschedule' => 'nullable|boolean',
+            'send_reminder_24h' => 'nullable|boolean',
+            'send_reminder_2h' => 'nullable|boolean',
+            'send_reminder_1h' => 'nullable|boolean',
+            'notify_admin_on_cancellation' => 'nullable|boolean',
+            'notify_admin_on_reschedule' => 'nullable|boolean',
+            'notify_employee_on_cancellation' => 'nullable|boolean',
+            'notify_employee_on_reschedule' => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
+            'sort_order' => 'nullable|integer|min:0',
+        ]);
+
+        $policy->update([
+            'name' => $request->name,
+            'description' => $request->description,
+            'cancellation_window_hours' => $request->cancellation_window_hours,
+            'cancellation_policy' => $request->cancellation_policy,
+            'late_cancellation_fee' => $request->late_cancellation_fee,
+            'late_cancellation_window_hours' => $request->late_cancellation_window_hours,
+            'require_cancellation_reason' => $request->boolean('require_cancellation_reason'),
+            'auto_cancel_no_show' => $request->boolean('auto_cancel_no_show'),
+            'no_show_minutes' => $request->no_show_minutes,
+            'reschedule_window_hours' => $request->reschedule_window_hours,
+            'max_reschedule_attempts' => $request->max_reschedule_attempts,
+            'reschedule_fee' => $request->reschedule_fee,
+            'reschedule_advance_notice_hours' => $request->reschedule_advance_notice_hours,
+            'allow_same_day_reschedule' => $request->boolean('allow_same_day_reschedule'),
+            'allow_next_day_reschedule' => $request->boolean('allow_next_day_reschedule'),
+            'send_reminder_24h' => $request->boolean('send_reminder_24h'),
+            'send_reminder_2h' => $request->boolean('send_reminder_2h'),
+            'send_reminder_1h' => $request->boolean('send_reminder_1h'),
+            'notify_admin_on_cancellation' => $request->boolean('notify_admin_on_cancellation'),
+            'notify_admin_on_reschedule' => $request->boolean('notify_admin_on_reschedule'),
+            'notify_employee_on_cancellation' => $request->boolean('notify_employee_on_cancellation'),
+            'notify_employee_on_reschedule' => $request->boolean('notify_employee_on_reschedule'),
+            'is_active' => $request->boolean('is_active', true),
+            'sort_order' => $request->sort_order ?? 0,
+        ]);
+
+        return redirect()->route('admin.booking-policies')->with('success', 'Booking policy updated successfully!');
+    }
+
+    /**
+     * Delete a booking policy
+     */
+    public function deleteBookingPolicy($id)
+    {
+        $policy = BookingPolicySetting::findOrFail($id);
+        $policy->delete();
+        return redirect()->route('admin.booking-policies')->with('success', 'Booking policy deleted successfully!');
     }
 } 

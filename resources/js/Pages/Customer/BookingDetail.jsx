@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Head, router } from "@inertiajs/react";
 import {
     Button,
@@ -30,14 +30,35 @@ import {
     ExclamationCircleOutlined,
     FileTextOutlined,
     PrinterOutlined,
+    DownloadOutlined,
 } from "@ant-design/icons";
 import Logo from "../../Components/Logo";
+import RescheduleModal from "../../Components/RescheduleModal";
 import dayjs from "dayjs";
 
 const { Title, Text, Paragraph } = Typography;
 const { Header, Content } = Layout;
 
 export default function BookingDetail({ auth, booking }) {
+    const [rescheduleModalVisible, setRescheduleModalVisible] = useState(false);
+
+    // Debug logging for schedule settings
+    console.log("BookingDetail component - Schedule settings:", {
+        scheduleSettings: booking?.schedule_settings,
+        scheduleSettingsLength: booking?.schedule_settings?.length,
+        firstSchedule: booking?.schedule_settings?.[0],
+    });
+
+    const handleRescheduleSuccess = (data) => {
+        setRescheduleModalVisible(false);
+        // Refresh the page to show updated booking details
+        window.location.reload();
+    };
+
+    const handleRescheduleCancel = () => {
+        setRescheduleModalVisible(false);
+    };
+
     // Add safety check for auth prop
     if (!auth || !auth.user) {
         return (
@@ -393,6 +414,36 @@ export default function BookingDetail({ auth, booking }) {
                                             </div>
                                         </div>
                                     </Col>
+                                    <Col xs={24} sm={12}>
+                                        <div style={{ marginBottom: 16 }}>
+                                            <Text strong>
+                                                Reschedule Attempts
+                                            </Text>
+                                            <div>
+                                                <Text>
+                                                    {booking.reschedule_attempts ||
+                                                        0}{" "}
+                                                    attempts
+                                                </Text>
+                                            </div>
+                                        </div>
+                                    </Col>
+                                    {booking.rescheduled_at && (
+                                        <Col xs={24} sm={12}>
+                                            <div style={{ marginBottom: 16 }}>
+                                                <Text strong>
+                                                    Last Rescheduled
+                                                </Text>
+                                                <div>
+                                                    <Text>
+                                                        {formatDateTime(
+                                                            booking.rescheduled_at
+                                                        )}
+                                                    </Text>
+                                                </div>
+                                            </div>
+                                        </Col>
+                                    )}
                                 </Row>
                             </Card>
 
@@ -498,6 +549,117 @@ export default function BookingDetail({ auth, booking }) {
                                     style={{ marginBottom: 24 }}
                                 >
                                     <Paragraph>{booking.notes}</Paragraph>
+                                </Card>
+                            )}
+
+                            {/* Reschedule Information */}
+                            {(booking.reschedule_attempts > 0 ||
+                                booking.reschedule_payment_amount > 0) && (
+                                <Card
+                                    title="Reschedule Information"
+                                    style={{ marginBottom: 24 }}
+                                >
+                                    <Row gutter={[16, 16]}>
+                                        {booking.reschedule_attempts > 0 && (
+                                            <Col xs={24} sm={12}>
+                                                <div
+                                                    style={{ marginBottom: 16 }}
+                                                >
+                                                    <Text strong>
+                                                        Reschedule Attempts
+                                                    </Text>
+                                                    <div>
+                                                        <Text>
+                                                            {
+                                                                booking.reschedule_attempts
+                                                            }{" "}
+                                                            time(s)
+                                                        </Text>
+                                                    </div>
+                                                </div>
+                                            </Col>
+                                        )}
+                                        {booking.rescheduled_at && (
+                                            <Col xs={24} sm={12}>
+                                                <div
+                                                    style={{ marginBottom: 16 }}
+                                                >
+                                                    <Text strong>
+                                                        Last Rescheduled
+                                                    </Text>
+                                                    <div>
+                                                        <Text>
+                                                            {formatDateTime(
+                                                                booking.rescheduled_at
+                                                            )}
+                                                        </Text>
+                                                    </div>
+                                                </div>
+                                            </Col>
+                                        )}
+                                        {booking.reschedule_payment_amount >
+                                            0 && (
+                                            <Col xs={24} sm={12}>
+                                                <div
+                                                    style={{ marginBottom: 16 }}
+                                                >
+                                                    <Text strong>
+                                                        Reschedule Fee Paid
+                                                    </Text>
+                                                    <div>
+                                                        <Text
+                                                            style={{
+                                                                color: "#52c41a",
+                                                                fontWeight:
+                                                                    "bold",
+                                                            }}
+                                                        >
+                                                            ₹
+                                                            {
+                                                                booking.reschedule_payment_amount
+                                                            }
+                                                        </Text>
+                                                    </div>
+                                                </div>
+                                            </Col>
+                                        )}
+                                        {booking.reschedule_payment_id && (
+                                            <Col xs={24} sm={12}>
+                                                <div
+                                                    style={{ marginBottom: 16 }}
+                                                >
+                                                    <Text strong>
+                                                        Payment ID
+                                                    </Text>
+                                                    <div>
+                                                        <Text code>
+                                                            {
+                                                                booking.reschedule_payment_id
+                                                            }
+                                                        </Text>
+                                                    </div>
+                                                </div>
+                                            </Col>
+                                        )}
+                                        {booking.reschedule_payment_date && (
+                                            <Col xs={24} sm={12}>
+                                                <div
+                                                    style={{ marginBottom: 16 }}
+                                                >
+                                                    <Text strong>
+                                                        Payment Date
+                                                    </Text>
+                                                    <div>
+                                                        <Text>
+                                                            {formatDateTime(
+                                                                booking.reschedule_payment_date
+                                                            )}
+                                                        </Text>
+                                                    </div>
+                                                </div>
+                                            </Col>
+                                        )}
+                                    </Row>
                                 </Card>
                             )}
                         </Col>
@@ -637,12 +799,24 @@ export default function BookingDetail({ auth, booking }) {
                                             type="primary"
                                             block
                                             onClick={() =>
-                                                message.info(
-                                                    "Reschedule functionality coming soon"
-                                                )
+                                                setRescheduleModalVisible(true)
                                             }
                                         >
                                             Reschedule
+                                        </Button>
+                                    )}
+                                    {booking.invoice && (
+                                        <Button
+                                            icon={<DownloadOutlined />}
+                                            block
+                                            onClick={() =>
+                                                window.open(
+                                                    `/customer/invoices/${booking.invoice.id}/download`,
+                                                    "_blank"
+                                                )
+                                            }
+                                        >
+                                            Download Invoice
                                         </Button>
                                     )}
                                     <Button
@@ -661,6 +835,15 @@ export default function BookingDetail({ auth, booking }) {
                     </Row>
                 </div>
             </Content>
+
+            {/* Reschedule Modal */}
+            <RescheduleModal
+                visible={rescheduleModalVisible}
+                onCancel={handleRescheduleCancel}
+                onSuccess={handleRescheduleSuccess}
+                booking={booking}
+                scheduleSettings={booking.schedule_settings || []}
+            />
         </Layout>
     );
 }

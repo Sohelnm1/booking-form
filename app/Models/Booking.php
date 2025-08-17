@@ -33,6 +33,15 @@ class Booking extends Model
         'coupon_id',
         'discount_amount',
         'coupon_code',
+        'reschedule_attempts',
+        'cancellation_reason',
+        'cancelled_at',
+        'rescheduled_at',
+        'booking_policy_setting_id',
+        'reschedule_payment_amount',
+        'reschedule_payment_id',
+        'reschedule_payment_date',
+        'reschedule_payment_status',
     ];
 
     protected $casts = [
@@ -44,6 +53,10 @@ class Booking extends Model
         'otp_verified_at' => 'datetime',
         'consent_given_at' => 'datetime',
         'discount_amount' => 'decimal:2',
+        'cancelled_at' => 'datetime',
+        'rescheduled_at' => 'datetime',
+        'reschedule_payment_amount' => 'decimal:2',
+        'reschedule_payment_date' => 'datetime',
     ];
 
     /**
@@ -102,6 +115,14 @@ class Booking extends Model
     public function couponUsage(): HasMany
     {
         return $this->hasMany(CouponUsage::class);
+    }
+
+    /**
+     * Get the booking policy setting for this booking
+     */
+    public function bookingPolicySetting(): BelongsTo
+    {
+        return $this->belongsTo(BookingPolicySetting::class);
     }
 
     /**
@@ -197,8 +218,8 @@ class Booking extends Model
             $bookingStart = $booking->appointment_time;
             $bookingEnd = $booking->getEndTimeAttribute();
             
-            // Check if there's any overlap
-            if ($newStartTime < $bookingEnd && $newEndTime > $bookingStart) {
+            // Check if there's any overlap - Fixed: Use <= and >= to include exact matches
+            if ($newStartTime <= $bookingEnd && $newEndTime >= $bookingStart) {
                 return false; // Conflict found
             }
         }
@@ -229,8 +250,8 @@ class Booking extends Model
             $bookingStart = $booking->appointment_time;
             $bookingEnd = $booking->getEndTimeAttribute();
             
-            // Check if there's any overlap
-            if ($newStartTime < $bookingEnd && $newEndTime > $bookingStart) {
+            // Check if there's any overlap - Fixed: Use <= and >= to include exact matches
+            if ($newStartTime <= $bookingEnd && $newEndTime >= $bookingStart) {
                 $conflictingBookings->push($booking);
             }
         }
@@ -265,5 +286,148 @@ class Booking extends Model
             'refunded' => 'Refunded',
             default => ucfirst($this->payment_status)
         };
+    }
+
+    /**
+     * Check if booking can be cancelled
+     */
+    public function canBeCancelled(): bool
+    {
+        if ($this->status === 'cancelled' || $this->status === 'completed') {
+            return false;
+        }
+
+        $policy = $this->bookingPolicySetting;
+        if (!$policy) {
+            // Default policy if none assigned
+            $policy = BookingPolicySetting::active()->first();
+        }
+
+        if (!$policy) {
+            return true; // Allow if no policy exists
+        }
+
+        return $policy->canCancelBooking($this);
+    }
+
+    /**
+     * Check if booking can be rescheduled
+     */
+    public function canBeRescheduled(): bool
+    {
+        if ($this->status === 'cancelled' || $this->status === 'completed') {
+            return false;
+        }
+
+        $policy = $this->bookingPolicySetting;
+        if (!$policy) {
+            // Default policy if none assigned
+            $policy = BookingPolicySetting::active()->first();
+        }
+
+        if (!$policy) {
+            return true; // Allow if no policy exists
+        }
+
+        return $policy->canRescheduleBooking($this);
+    }
+
+    /**
+     * Cancel the booking
+     */
+    public function cancel($reason = null): bool
+    {
+        if (!$this->canBeCancelled()) {
+            return false;
+        }
+
+        $this->update([
+            'status' => 'cancelled',
+            'cancellation_reason' => $reason,
+            'cancelled_at' => now(),
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Reschedule the booking
+     */
+    public function reschedule($newDateTime): bool
+    {
+        if (!$this->canBeRescheduled()) {
+            return false;
+        }
+
+        $policy = $this->bookingPolicySetting;
+        if (!$policy) {
+            $policy = BookingPolicySetting::active()->first();
+        }
+
+        if ($policy && $this->reschedule_attempts >= $policy->max_reschedule_attempts) {
+            return false;
+        }
+
+        $this->update([
+            'appointment_time' => $newDateTime,
+            'appointment_date_time' => $newDateTime,
+            'reschedule_attempts' => $this->reschedule_attempts + 1,
+            'rescheduled_at' => now(),
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Get the cancellation fee for this booking
+     */
+    public function getCancellationFee(): float
+    {
+        $policy = $this->bookingPolicySetting;
+        if (!$policy) {
+            $policy = BookingPolicySetting::active()->first();
+        }
+
+        if (!$policy) {
+            return 0;
+        }
+
+        return $policy->getCancellationFee($this);
+    }
+
+    /**
+     * Get the invoice for this booking
+     */
+    public function invoice()
+    {
+        return $this->hasOne(Invoice::class);
+    }
+
+    /**
+     * Create or update invoice for this booking
+     */
+    public function createOrUpdateInvoice(): Invoice
+    {
+        // Check if invoice already exists
+        $invoice = $this->invoice;
+        
+        if ($invoice) {
+            // Update existing invoice
+            $invoice->update([
+                'subtotal' => $this->service->price + ($this->extras ? $this->extras->sum('pivot.price') : 0),
+                'discount_amount' => $this->discount_amount ?? 0,
+                'reschedule_fee' => $this->reschedule_payment_amount ?? 0,
+                'total_amount' => $this->total_amount,
+                'payment_status' => $this->payment_status,
+                'payment_date' => $this->payment_status === 'paid' ? now() : null,
+                'status' => $this->payment_status === 'paid' ? 'paid' : 'pending',
+                'paid_date' => $this->payment_status === 'paid' ? now() : null,
+            ]);
+            
+            return $invoice;
+        } else {
+            // Create new invoice
+            return Invoice::createFromBooking($this);
+        }
     }
 } 

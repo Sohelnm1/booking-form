@@ -7,6 +7,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\InvoiceController;
 
 // Public routes
 Route::get('/', [AuthController::class, 'showCustomerDashboard'])->name('welcome');
@@ -28,7 +29,7 @@ Route::prefix('booking')->name('booking.')->group(function () {
     Route::get('/payment-success', [BookingController::class, 'paymentSuccess'])->name('payment-success');
     Route::get('/payment-failed', [BookingController::class, 'paymentFailed'])->name('payment-failed');
     Route::get('/payment-cancelled', [BookingController::class, 'paymentCancelled'])->name('payment-cancelled');
-    Route::get('/available-slots', [BookingController::class, 'getAvailableSlots'])->name('available-slots');
+    Route::match(['GET', 'POST'], '/available-slots', [BookingController::class, 'getAvailableSlots'])->name('available-slots');
     Route::post('/send-otp', [BookingController::class, 'sendOtp'])->name('send-otp');
     Route::post('/verify-otp', [BookingController::class, 'verifyOtp'])->name('verify-otp');
     Route::post('/validate-coupon', [BookingController::class, 'validateCoupon'])->name('validate-coupon');
@@ -47,6 +48,20 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
     Route::get('/customer/dashboard', [CustomerController::class, 'dashboard'])->name('customer.dashboard');
     Route::get('/customer/bookings', [CustomerController::class, 'bookings'])->name('customer.bookings');
     Route::get('/customer/bookings/{id}', [CustomerController::class, 'showBooking'])->name('customer.bookings.show');
+    
+    // Booking management routes
+    Route::post('/customer/bookings/{id}/cancel', [CustomerController::class, 'cancelBooking'])->name('customer.bookings.cancel');
+    Route::post('/customer/bookings/{id}/reschedule', [CustomerController::class, 'rescheduleBooking'])->name('customer.bookings.reschedule');
+    Route::get('/customer/bookings/{id}/policy', [CustomerController::class, 'getBookingPolicy'])->name('customer.bookings.policy');
+    
+    // Reschedule payment routes
+    Route::post('/customer/reschedule/payment-success', [CustomerController::class, 'reschedulePaymentSuccess'])->name('customer.reschedule.payment-success');
+    Route::post('/customer/reschedule/payment-failed', [CustomerController::class, 'reschedulePaymentFailed'])->name('customer.reschedule.payment-failed');
+    
+    // Invoice routes
+    Route::get('/customer/invoices', [InvoiceController::class, 'customerIndex'])->name('customer.invoices');
+    Route::get('/customer/invoices/{id}', [InvoiceController::class, 'show'])->name('customer.invoices.show');
+    Route::get('/customer/invoices/{id}/download', [InvoiceController::class, 'downloadPdf'])->name('customer.invoices.download');
 });
 
 // Employee routes
@@ -112,6 +127,13 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::patch('/admin/coupons/{id}', [AdminController::class, 'updateCoupon'])->name('admin.coupons.patch');
     Route::post('/admin/coupons/{id}/delete', [AdminController::class, 'deleteCoupon'])->name('admin.coupons.delete');
 
+    // Booking policies routes
+    Route::get('/admin/booking-policies', [AdminController::class, 'bookingPolicies'])->name('admin.booking-policies');
+    Route::post('/admin/booking-policies', [AdminController::class, 'storeBookingPolicy'])->name('admin.booking-policies.store');
+    Route::put('/admin/booking-policies/{id}', [AdminController::class, 'updateBookingPolicy'])->name('admin.booking-policies.update');
+    Route::patch('/admin/booking-policies/{id}', [AdminController::class, 'updateBookingPolicy'])->name('admin.booking-policies.patch');
+    Route::post('/admin/booking-policies/{id}/delete', [AdminController::class, 'deleteBookingPolicy'])->name('admin.booking-policies.delete');
+
     Route::get('/admin/custom-fields', [AdminController::class, 'customFields'])->name('admin.custom-fields');
     Route::get('/admin/times', [AdminController::class, 'times'])->name('admin.times');
     Route::get('/admin/calendar', [AdminController::class, 'calendar'])->name('admin.calendar');
@@ -120,4 +142,14 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/admin/integration/update', [AdminController::class, 'updateIntegration'])->name('admin.integration.update');
     Route::post('/admin/integration/test', [AdminController::class, 'testIntegration'])->name('admin.integration.test');
     Route::get('/admin/notification', [AdminController::class, 'notification'])->name('admin.notification');
+    
+    // Invoice routes
+    Route::get('/admin/invoices', [InvoiceController::class, 'adminIndex'])->name('admin.invoices');
+    Route::get('/admin/invoices/{id}', [InvoiceController::class, 'show'])->name('admin.invoices.show');
+    Route::get('/admin/invoices/{id}/download', [InvoiceController::class, 'adminDownloadPdf'])->name('admin.invoices.download');
+    Route::post('/admin/invoices/{id}/send-email', [InvoiceController::class, 'sendEmail'])->name('admin.invoices.send-email');
+    Route::post('/admin/invoices/{id}/mark-paid', [InvoiceController::class, 'markAsPaid'])->name('admin.invoices.mark-paid');
+    Route::post('/admin/invoices/{id}/mark-cancelled', [InvoiceController::class, 'markAsCancelled'])->name('admin.invoices.mark-cancelled');
+    Route::get('/admin/invoices/stats', [InvoiceController::class, 'getStats'])->name('admin.invoices.stats');
+    Route::get('/admin/invoices/search', [InvoiceController::class, 'search'])->name('admin.invoices.search');
 });

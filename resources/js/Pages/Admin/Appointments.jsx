@@ -302,6 +302,14 @@ export default function Appointments({ auth, bookings }) {
                             }
                         />
                     </Space>
+                    {record.reschedule_attempts > 0 && (
+                        <Space>
+                            <Text type="secondary" style={{ fontSize: "12px" }}>
+                                Rescheduled: {record.reschedule_attempts}{" "}
+                                time(s)
+                            </Text>
+                        </Space>
+                    )}
                 </Space>
             ),
         },
@@ -525,6 +533,19 @@ export default function Appointments({ auth, bookings }) {
                                         ₹{selectedBooking.total_amount}
                                     </Text>
                                 </Descriptions.Item>
+                                {selectedBooking.reschedule_attempts > 0 && (
+                                    <Descriptions.Item label="Reschedule Attempts">
+                                        {selectedBooking.reschedule_attempts}{" "}
+                                        time(s)
+                                    </Descriptions.Item>
+                                )}
+                                {selectedBooking.rescheduled_at && (
+                                    <Descriptions.Item label="Last Rescheduled">
+                                        {formatDateTime(
+                                            selectedBooking.rescheduled_at
+                                        )}
+                                    </Descriptions.Item>
+                                )}
                             </Descriptions>
 
                             <Divider />
@@ -634,6 +655,93 @@ export default function Appointments({ auth, bookings }) {
                                                   )
                                                 : "Not recorded"}
                                         </Descriptions.Item>
+                                    </Descriptions>
+                                </>
+                            )}
+
+                            {/* Reschedule Information */}
+                            {(selectedBooking.reschedule_attempts > 0 ||
+                                selectedBooking.reschedule_payment_amount >
+                                    0) && (
+                                <>
+                                    <Divider />
+                                    <Descriptions
+                                        title="Reschedule Information"
+                                        bordered
+                                        size="small"
+                                    >
+                                        {selectedBooking.reschedule_attempts >
+                                            0 && (
+                                            <Descriptions.Item label="Reschedule Attempts">
+                                                {
+                                                    selectedBooking.reschedule_attempts
+                                                }{" "}
+                                                time(s)
+                                            </Descriptions.Item>
+                                        )}
+                                        {selectedBooking.rescheduled_at && (
+                                            <Descriptions.Item label="Last Rescheduled">
+                                                {formatDateTime(
+                                                    selectedBooking.rescheduled_at
+                                                )}
+                                            </Descriptions.Item>
+                                        )}
+                                        {selectedBooking.reschedule_payment_amount >
+                                            0 && (
+                                            <Descriptions.Item label="Reschedule Fee Paid">
+                                                <Text
+                                                    strong
+                                                    style={{ color: "#52c41a" }}
+                                                >
+                                                    ₹
+                                                    {
+                                                        selectedBooking.reschedule_payment_amount
+                                                    }
+                                                </Text>
+                                            </Descriptions.Item>
+                                        )}
+                                        {selectedBooking.reschedule_payment_id && (
+                                            <Descriptions.Item label="Payment ID">
+                                                <Text code>
+                                                    {
+                                                        selectedBooking.reschedule_payment_id
+                                                    }
+                                                </Text>
+                                            </Descriptions.Item>
+                                        )}
+                                        {selectedBooking.reschedule_payment_date && (
+                                            <Descriptions.Item label="Payment Date">
+                                                {formatDateTime(
+                                                    selectedBooking.reschedule_payment_date
+                                                )}
+                                            </Descriptions.Item>
+                                        )}
+                                        {selectedBooking.reschedule_payment_status && (
+                                            <Descriptions.Item label="Payment Status">
+                                                <Badge
+                                                    status={
+                                                        selectedBooking.reschedule_payment_status ===
+                                                        "paid"
+                                                            ? "success"
+                                                            : selectedBooking.reschedule_payment_status ===
+                                                              "pending"
+                                                            ? "warning"
+                                                            : selectedBooking.reschedule_payment_status ===
+                                                              "failed"
+                                                            ? "error"
+                                                            : "default"
+                                                    }
+                                                    text={
+                                                        selectedBooking.reschedule_payment_status
+                                                            .charAt(0)
+                                                            .toUpperCase() +
+                                                        selectedBooking.reschedule_payment_status
+                                                            .slice(1)
+                                                            .replace("_", " ")
+                                                    }
+                                                />
+                                            </Descriptions.Item>
+                                        )}
                                     </Descriptions>
                                 </>
                             )}

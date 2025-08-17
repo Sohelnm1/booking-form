@@ -60,4 +60,12 @@ class Service extends Model
                     ->withTimestamps()
                     ->wherePivot('is_active', true);
     }
+
+    /**
+     * Check if a time slot is available for this service
+     */
+    public function isSlotAvailable($date, $time, $duration, $excludeBookingId = null): bool
+    {
+        return Booking::isSlotAvailable($date, $time, $duration, $excludeBookingId);
+    }
 } 

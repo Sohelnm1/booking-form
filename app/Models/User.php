@@ -167,8 +167,8 @@ class User extends Authenticatable
         $conflictingBookings = $this->bookings()
             ->whereDate('appointment_time', $date)
             ->where(function($query) use ($newStartTime, $newEndTime) {
-                $query->where('appointment_time', '<', $newEndTime)
-                      ->whereRaw('DATE_ADD(appointment_time, INTERVAL duration MINUTE) > ?', [$newStartTime]);
+                $query->where('appointment_time', '<=', $newEndTime)
+                      ->whereRaw('DATE_ADD(appointment_time, INTERVAL duration MINUTE) >= ?', [$newStartTime]);
             })
             ->count();
         
@@ -178,7 +178,7 @@ class User extends Authenticatable
     /**
      * Get available employees for a specific service and time slot
      */
-    public static function getAvailableEmployeesForSlot($serviceId, $date, $startTime, $duration)
+    public static function getAvailableEmployeesForSlot($serviceId, $date, $startTime, $duration, $excludeBookingId = null)
     {
         // Debug: Check total employees
         $totalEmployees = self::where('role', 'employee')->count();
@@ -211,8 +211,8 @@ class User extends Authenticatable
                 
                 $query->whereDate('appointment_time', $date)
                       ->where(function($subQuery) use ($newStartTime, $newEndTime) {
-                          $subQuery->where('appointment_time', '<', $newEndTime)
-                                   ->whereRaw('DATE_ADD(appointment_time, INTERVAL duration MINUTE) > ?', [$newStartTime]);
+                          $subQuery->where('appointment_time', '<=', $newEndTime)
+                                   ->whereRaw('DATE_ADD(appointment_time, INTERVAL duration MINUTE) >= ?', [$newStartTime]);
                       });
             })->count();
         \Log::info('Employees with conflicts', ['count' => $employeesWithConflicts]);
@@ -222,19 +222,30 @@ class User extends Authenticatable
             ->whereHas('services', function($query) use ($serviceId) {
                 $query->where('services.id', $serviceId);
             })
-            ->whereDoesntHave('bookings', function($query) use ($date, $startTime, $duration) {
+            ->whereDoesntHave('bookings', function($query) use ($date, $startTime, $duration, $excludeBookingId) {
                 $newStartTime = \Carbon\Carbon::parse($date . ' ' . $startTime);
                 $newEndTime = $newStartTime->copy()->addMinutes($duration);
                 
                 $query->whereDate('appointment_time', $date)
                       ->where(function($subQuery) use ($newStartTime, $newEndTime) {
-                          $subQuery->where('appointment_time', '<', $newEndTime)
-                                   ->whereRaw('DATE_ADD(appointment_time, INTERVAL duration MINUTE) > ?', [$newStartTime]);
+                          $subQuery->where('appointment_time', '<=', $newEndTime)
+                                   ->whereRaw('DATE_ADD(appointment_time, INTERVAL duration MINUTE) >= ?', [$newStartTime]);
                       });
+                
+                // Exclude the specified booking if provided (for rescheduling)
+                if ($excludeBookingId) {
+                    $query->where('bookings.id', '!=', $excludeBookingId);
+                }
             })
             ->get();
             
-        \Log::info('Final available employees', ['count' => $availableEmployees->count()]);
+        \Log::info('Final available employees', [
+            'count' => $availableEmployees->count(),
+            'exclude_booking_id' => $excludeBookingId,
+            'date' => $date,
+            'start_time' => $startTime,
+            'service_id' => $serviceId
+        ]);
         
         return $availableEmployees;
     }

@@ -772,6 +772,16 @@ class BookingController extends Controller
             return redirect()->route('booking.failed')->with('error', 'Failed to fetch payment details.');
         }
 
+        // Get the default booking policy
+        $defaultPolicy = \App\Models\BookingPolicySetting::active()->first();
+        
+        \Log::info('Assigning policy to new booking', [
+            'default_policy_id' => $defaultPolicy ? $defaultPolicy->id : null,
+            'default_policy_name' => $defaultPolicy ? $defaultPolicy->name : 'No policy found',
+            'reschedule_window_hours' => $defaultPolicy ? $defaultPolicy->reschedule_window_hours : 'N/A',
+            'max_reschedule_attempts' => $defaultPolicy ? $defaultPolicy->max_reschedule_attempts : 'N/A',
+        ]);
+        
         // Create the actual booking record
         $booking = Booking::create([
             'user_id' => $bookingData['user_id'],
@@ -785,18 +795,28 @@ class BookingController extends Controller
             'payment_status' => 'paid',
             'payment_method' => $paymentDetails->method ?? 'razorpay',
             'transaction_id' => $request->razorpay_payment_id,
+        ]);
+
+        // Create invoice for the booking
+        $booking->createOrUpdateInvoice();
+
+        // Update additional booking fields
+        $booking->update([
             'consent_given' => $bookingData['consent_given'],
             'consent_given_at' => $bookingData['consent_given_at'],
             'coupon_id' => $bookingData['coupon_id'],
             'discount_amount' => $bookingData['discount_amount'],
             'coupon_code' => $bookingData['coupon_code'],
+            'booking_policy_setting_id' => $defaultPolicy ? $defaultPolicy->id : null,
         ]);
 
         \Log::info('Payment success - booking created', [
             'booking_id' => $booking->id,
             'user_id' => $booking->user_id,
             'service_id' => $booking->service_id,
-            'total_amount' => $booking->total_amount
+            'total_amount' => $booking->total_amount,
+            'booking_policy_setting_id' => $booking->booking_policy_setting_id,
+            'policy_name' => $booking->bookingPolicySetting ? $booking->bookingPolicySetting->name : 'No policy assigned'
         ]);
 
         // Attach extras to booking
@@ -891,6 +911,8 @@ class BookingController extends Controller
                 'service_id' => 'required|exists:services,id',
                 'extras' => 'nullable|array',
                 'extras.*' => 'exists:extras,id',
+                'exclude_booking_id' => 'nullable|exists:bookings,id',
+                'duration' => 'nullable|integer', // Add duration parameter for reschedule
             ]);
 
             $service = Service::findOrFail($request->service_id);
@@ -900,6 +922,7 @@ class BookingController extends Controller
             $totalDuration = $service->duration;
             $selectedExtras = [];
             
+            // Always calculate from extras if provided (for both new bookings and reschedule)
             if ($request->extras && is_array($request->extras)) {
                 $selectedExtras = Extra::whereIn('id', $request->extras)->get();
                 foreach ($selectedExtras as $extra) {
@@ -907,13 +930,20 @@ class BookingController extends Controller
                 }
             }
             
+            // Override with provided duration if specified (for backward compatibility)
+            if ($request->duration) {
+                $totalDuration = $request->duration;
+            }
+            
             \Log::info('Available slots request', [
                 'date' => $date->format('Y-m-d'),
                 'service_id' => $service->id,
                 'service_name' => $service->name,
                 'service_duration' => $service->duration,
-                'extras' => $request->extras,
-                'total_duration' => $totalDuration
+                'request_duration' => $request->duration,
+                'request_extras' => $request->extras,
+                'calculated_total_duration' => $totalDuration,
+                'exclude_booking_id' => $request->exclude_booking_id
             ]);
             
             // Get the most appropriate schedule setting
@@ -941,10 +971,10 @@ class BookingController extends Controller
             $useFlexibleSlots = false; // Set to false to use sequential slots
             
             if ($useFlexibleSlots) {
-                $slots = $this->generateFlexibleSlots($date, $service, $scheduleSetting, $totalDuration);
+                $slots = $this->generateFlexibleSlots($date, $service, $scheduleSetting, $totalDuration, $request->exclude_booking_id);
             } else {
                 // Fallback to sequential slot generation
-                $slots = $scheduleSetting->getAvailableSlots($date, $totalDuration);
+                $slots = $scheduleSetting->getAvailableSlots($date, $totalDuration, $request->exclude_booking_id);
                 
                 // Process sequential slots for employee availability
                 $processedSlots = [];
@@ -953,12 +983,22 @@ class BookingController extends Controller
                         $service->id,
                         $date->format('Y-m-d'),
                         $slot['start'],
-                        $totalDuration
+                        $totalDuration,
+                        $request->exclude_booking_id // Pass the booking ID to exclude
                     );
                     
-                    $slot['available'] = $availableEmployees->count() > 0;
-                    $slot['available_employees'] = $availableEmployees->count();
-                    $processedSlots[] = $slot;
+                    // Only include slots that have available employees
+                    if ($availableEmployees->count() > 0) {
+                        $slot['available'] = true;
+                        $slot['available_employees'] = $availableEmployees->count();
+                        $processedSlots[] = $slot;
+                    } else {
+                        \Log::info('Slot excluded - no available employees', [
+                            'slot' => $slot['start'],
+                            'service_id' => $service->id,
+                            'exclude_booking_id' => $request->exclude_booking_id
+                        ]);
+                    }
                 }
                 $slots = $processedSlots;
             }
@@ -1552,7 +1592,7 @@ class BookingController extends Controller
     /**
      * Generate flexible time slots starting from current time
      */
-    private function generateFlexibleSlots($date, $service, $scheduleSetting, $totalDuration = null)
+    private function generateFlexibleSlots($date, $service, $scheduleSetting, $totalDuration = null, $excludeBookingId = null)
     {
         $now = now();
         $currentTime = $now->format('H:i');
@@ -1589,7 +1629,8 @@ class BookingController extends Controller
                 $service->id,
                 $date->format('Y-m-d'),
                 $slotStartTime->format('H:i'),
-                $serviceDuration
+                $serviceDuration,
+                $excludeBookingId
             );
             
             if ($availableEmployees->count() > 0) {

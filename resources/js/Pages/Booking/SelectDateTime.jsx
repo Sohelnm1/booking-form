@@ -41,6 +41,13 @@ export default function SelectDateTime({
     const [loading, setLoading] = useState(false);
     const [currentMonth, setCurrentMonth] = useState(dayjs());
 
+    // Debug logging for schedule settings
+    console.log("SelectDateTime component - Schedule settings:", {
+        scheduleSettings,
+        scheduleSettingsLength: scheduleSettings?.length,
+        firstSchedule: scheduleSettings?.[0],
+    });
+
     // Calculate total duration for slot calculation
     const totalDuration =
         service.duration +
@@ -91,6 +98,9 @@ export default function SelectDateTime({
                     params.append("extras[]", extra.id);
                 });
             }
+
+            console.log("Normal booking - Request params:", params.toString());
+            console.log("Normal booking - Selected extras:", selectedExtras);
 
             const response = await fetch(
                 `${route("booking.available-slots")}?${params.toString()}`
@@ -223,17 +233,14 @@ export default function SelectDateTime({
         // Get schedule settings for date range calculation
         const defaultSchedule = scheduleSettings?.[0];
         if (!defaultSchedule) {
-            // Fallback to basic logic if no schedule settings
-            return (
-                date.isAfter(today.subtract(1, "day")) &&
-                date.isBefore(today.add(31, "day"))
-            );
+            // No fallback - if no schedule settings, return false
+            return false;
         }
 
         // Use schedule settings for date range
-        const minAdvanceHours = defaultSchedule.min_advance_hours || 2;
-        const maxAdvanceDays = defaultSchedule.max_advance_days || 30;
-        const workingDays = defaultSchedule.working_days || [1, 2, 3, 4, 5];
+        const minAdvanceHours = defaultSchedule.min_advance_hours;
+        const maxAdvanceDays = defaultSchedule.max_advance_days;
+        const workingDays = defaultSchedule.working_days;
 
         // Check if date is within booking window
         const minDate = today.add(minAdvanceHours, "hour");
@@ -242,7 +249,9 @@ export default function SelectDateTime({
         // Allow today's date to be selectable (the backend will handle minimum advance time)
         const isToday = date.isSame(today, "day");
         const isWithinRange =
-            isToday || (date.isAfter(minDate) && date.isBefore(maxDate));
+            isToday ||
+            (date.isAfter(minDate) &&
+                (date.isBefore(maxDate) || date.isSame(maxDate, "day")));
 
         // Check if date is a working day
         const dayOfWeek = date.day(); // 0=Sunday, 1=Monday, etc.
@@ -251,16 +260,25 @@ export default function SelectDateTime({
 
         const isSelectable = isWithinRange && isWorkingDay;
 
-        // Debug logging
-        if (date.isSame(today, "day")) {
-            console.log("Today date check:", {
+        // Debug logging for troubleshooting
+        if (
+            date.isSame(today, "day") ||
+            date.format("YYYY-MM-DD") === "2025-08-18"
+        ) {
+            console.log("Date selectability check:", {
                 date: date.format("YYYY-MM-DD"),
                 isToday,
                 isWithinRange,
                 isWorkingDay,
                 isSelectable,
                 minAdvanceHours,
+                maxAdvanceDays,
                 workingDays,
+                adjustedDayOfWeek,
+                minDate: minDate.format("YYYY-MM-DD"),
+                maxDate: maxDate.format("YYYY-MM-DD"),
+                scheduleSettings: scheduleSettings,
+                defaultSchedule: defaultSchedule,
             });
         }
 
@@ -513,11 +531,10 @@ export default function SelectDateTime({
                                                     const defaultSchedule =
                                                         scheduleSettings?.[0];
                                                     const workingDays =
-                                                        defaultSchedule?.working_days || [
-                                                            1, 2, 3, 4, 5,
-                                                        ];
+                                                        defaultSchedule?.working_days;
 
                                                     if (
+                                                        workingDays &&
                                                         !workingDays.includes(
                                                             adjustedDayOfWeek
                                                         )

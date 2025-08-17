@@ -50,13 +50,16 @@ class RazorpayService
             }
 
             $orderData = [
-                'receipt' => 'booking_' . $booking->id,
+                'receipt' => str_starts_with($booking->id, 'reschedule_') 
+                    ? 'reschedule_' . str_replace('reschedule_', '', $booking->id)
+                    : 'booking_' . $booking->id,
                 'amount' => $booking->total_amount * 100, // Convert to paise
                 'currency' => 'INR',
                 'notes' => [
                     'booking_id' => $booking->id,
                     'customer_name' => $customerName,
                     'service_name' => $serviceName,
+                    'type' => str_starts_with($booking->id, 'reschedule_') ? 'reschedule_fee' : 'booking',
                 ]
             ];
 
