@@ -21,11 +21,15 @@ class Booking extends Model
         'appointment_date_time',
         'duration',
         'total_amount',
+        'refund_amount',
+        'cancellation_fee_charged',
         'status',
         'notes',
         'payment_status',
+        'refund_status',
         'payment_method',
         'transaction_id',
+        'refund_transaction_id',
         'otp',
         'otp_verified_at',
         'consent_given',
@@ -42,12 +46,19 @@ class Booking extends Model
         'reschedule_payment_id',
         'reschedule_payment_date',
         'reschedule_payment_status',
+        'refund_processed_at',
+        'refund_notes',
+        'refund_method',
+        'cancelled_by',
+        'refund_processed_by',
     ];
 
     protected $casts = [
         'appointment_time' => 'datetime',
         'appointment_date_time' => 'datetime',
         'total_amount' => 'decimal:2',
+        'refund_amount' => 'decimal:2',
+        'cancellation_fee_charged' => 'decimal:2',
         'duration' => 'integer',
         'consent_given' => 'boolean',
         'otp_verified_at' => 'datetime',
@@ -57,6 +68,7 @@ class Booking extends Model
         'rescheduled_at' => 'datetime',
         'reschedule_payment_amount' => 'decimal:2',
         'reschedule_payment_date' => 'datetime',
+        'refund_processed_at' => 'datetime',
     ];
 
     /**
@@ -335,19 +347,75 @@ class Booking extends Model
     /**
      * Cancel the booking
      */
-    public function cancel($reason = null): bool
+    public function cancel($reason = null, $cancelledBy = null): bool
     {
         if (!$this->canBeCancelled()) {
             return false;
         }
 
+        // Calculate refund and fee information
+        $policy = $this->bookingPolicySetting;
+        if (!$policy) {
+            $policy = BookingPolicySetting::active()->first();
+        }
+
+        $cancellationFee = $this->getCancellationFee();
+        $refundAmount = $this->calculateRefundAmount($policy);
+
         $this->update([
             'status' => 'cancelled',
             'cancellation_reason' => $reason,
             'cancelled_at' => now(),
+            'cancelled_by' => $cancelledBy,
+            'cancellation_fee_charged' => $cancellationFee,
+            'refund_amount' => $refundAmount,
+            'refund_status' => $refundAmount > 0 ? 'pending' : 'not_applicable',
         ]);
 
         return true;
+    }
+
+    /**
+     * Calculate refund amount based on policy
+     */
+    private function calculateRefundAmount($policy = null): float
+    {
+        // First calculate the base refund amount based on policy
+        $baseRefundAmount = 0;
+        
+        if (!$policy) {
+            $baseRefundAmount = $this->total_amount; // Full refund by default
+        } else {
+            switch ($policy->cancellation_policy) {
+                case 'full_refund':
+                    $baseRefundAmount = $this->total_amount;
+                    break;
+                
+                case 'partial_refund':
+                    // You can customize the partial refund percentage
+                    $baseRefundAmount = $this->total_amount * 0.5; // 50% refund
+                    break;
+                
+                case 'credit_only':
+                    $baseRefundAmount = 0; // No refund, credit only
+                    break;
+                
+                case 'no_refund':
+                    $baseRefundAmount = 0;
+                    break;
+                
+                default:
+                    $baseRefundAmount = $this->total_amount;
+                    break;
+            }
+        }
+
+        // Then subtract the cancellation fee
+        $cancellationFee = $this->getCancellationFee();
+        $finalRefundAmount = $baseRefundAmount - $cancellationFee;
+
+        // Ensure refund amount is not negative
+        return max(0, $finalRefundAmount);
     }
 
     /**
@@ -401,6 +469,145 @@ class Booking extends Model
     public function invoice()
     {
         return $this->hasOne(Invoice::class);
+    }
+
+    /**
+     * Get the admin who cancelled this booking
+     */
+    public function cancelledBy()
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    /**
+     * Get the admin who processed the refund
+     */
+    public function refundProcessedBy()
+    {
+        return $this->belongsTo(User::class, 'refund_processed_by');
+    }
+
+    /**
+     * Check if booking is eligible for refund
+     */
+    public function isEligibleForRefund(): bool
+    {
+        return $this->payment_status === 'paid' && 
+               $this->refund_status === 'pending' &&
+               $this->status === 'cancelled';
+    }
+
+    /**
+     * Check if refund has been processed
+     */
+    public function isRefundProcessed(): bool
+    {
+        return $this->refund_status === 'processed';
+    }
+
+    /**
+     * Get refund status as readable text
+     */
+    public function getRefundStatusTextAttribute(): string
+    {
+        return match($this->refund_status) {
+            'pending' => 'Pending',
+            'processed' => 'Processed',
+            'failed' => 'Failed',
+            'not_applicable' => 'Not Applicable',
+            default => ucfirst($this->refund_status)
+        };
+    }
+
+    /**
+     * Process refund for this booking
+     */
+    public function processRefund($refundMethod = null, $refundNotes = null, $processedBy = null): bool
+    {
+        \Log::info('Processing refund in Booking model', [
+            'booking_id' => $this->id,
+            'refund_method' => $refundMethod,
+            'refund_notes' => $refundNotes,
+            'processed_by' => $processedBy,
+            'is_eligible' => $this->isEligibleForRefund(),
+        ]);
+
+        if (!$this->isEligibleForRefund()) {
+            \Log::warning('Booking not eligible for refund in model', [
+                'booking_id' => $this->id,
+                'payment_status' => $this->payment_status,
+                'refund_status' => $this->refund_status,
+                'status' => $this->status,
+            ]);
+            return false;
+        }
+
+        try {
+            $refundTransactionId = null;
+            $razorpayRefundId = null;
+
+                    // Process refund through Razorpay if payment was made via Razorpay
+        // Check for both 'razorpay' payment method and Razorpay transaction ID pattern
+        if (($this->payment_method === 'razorpay' || $this->payment_method === 'card') && 
+            $this->transaction_id && 
+            strpos($this->transaction_id, 'pay_') === 0) {
+                $razorpayService = new \App\Services\RazorpayRefundService();
+                
+                $refundResult = $razorpayService->processRefund(
+                    $this->transaction_id,
+                    $this->refund_amount,
+                    $refundNotes
+                );
+
+                if ($refundResult['success']) {
+                    $razorpayRefundId = $refundResult['refund_id'];
+                    $refundTransactionId = 'RZP_' . $razorpayRefundId;
+                    
+                    \Log::info('Razorpay refund processed successfully', [
+                        'booking_id' => $this->id,
+                        'razorpay_refund_id' => $razorpayRefundId,
+                        'amount' => $refundResult['amount']
+                    ]);
+                } else {
+                    throw new \Exception('Razorpay refund failed: ' . $refundResult['error']);
+                }
+            } else {
+                // For non-Razorpay payments, generate a local transaction ID
+                $refundTransactionId = 'REF_' . time() . '_' . $this->id;
+            }
+
+            \Log::info('Updating booking with refund details', [
+                'booking_id' => $this->id,
+                'refund_transaction_id' => $refundTransactionId,
+                'razorpay_refund_id' => $razorpayRefundId,
+            ]);
+
+            $this->update([
+                'refund_status' => 'processed',
+                'refund_transaction_id' => $refundTransactionId,
+                'refund_processed_at' => now(),
+                'refund_notes' => $refundNotes,
+                'refund_method' => $refundMethod ?? $this->payment_method,
+                'refund_processed_by' => $processedBy,
+                'payment_status' => 'refunded', // Update payment status
+            ]);
+
+            \Log::info('Refund processed successfully in model', ['booking_id' => $this->id]);
+            return true;
+        } catch (\Exception $e) {
+            \Log::error('Refund processing failed in model', [
+                'booking_id' => $this->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            $this->update([
+                'refund_status' => 'failed',
+                'refund_notes' => 'Refund processing failed: ' . $e->getMessage(),
+            ]);
+
+            return false;
+        }
     }
 
     /**

@@ -166,6 +166,7 @@ class User extends Authenticatable
         
         $conflictingBookings = $this->bookings()
             ->whereDate('appointment_time', $date)
+            ->whereNotIn('status', ['cancelled']) // Exclude cancelled bookings
             ->where(function($query) use ($newStartTime, $newEndTime) {
                 $query->where('appointment_time', '<=', $newEndTime)
                       ->whereRaw('DATE_ADD(appointment_time, INTERVAL duration MINUTE) >= ?', [$newStartTime]);
@@ -210,6 +211,7 @@ class User extends Authenticatable
                 $newEndTime = $newStartTime->copy()->addMinutes($duration);
                 
                 $query->whereDate('appointment_time', $date)
+                      ->whereNotIn('status', ['cancelled']) // Exclude cancelled bookings
                       ->where(function($subQuery) use ($newStartTime, $newEndTime) {
                           $subQuery->where('appointment_time', '<=', $newEndTime)
                                    ->whereRaw('DATE_ADD(appointment_time, INTERVAL duration MINUTE) >= ?', [$newStartTime]);
@@ -227,6 +229,7 @@ class User extends Authenticatable
                 $newEndTime = $newStartTime->copy()->addMinutes($duration);
                 
                 $query->whereDate('appointment_time', $date)
+                      ->whereNotIn('status', ['cancelled']) // Exclude cancelled bookings
                       ->where(function($subQuery) use ($newStartTime, $newEndTime) {
                           $subQuery->where('appointment_time', '<=', $newEndTime)
                                    ->whereRaw('DATE_ADD(appointment_time, INTERVAL duration MINUTE) >= ?', [$newStartTime]);

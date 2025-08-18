@@ -34,6 +34,7 @@ import {
 } from "@ant-design/icons";
 import Logo from "../../Components/Logo";
 import RescheduleModal from "../../Components/RescheduleModal";
+import CancelModal from "../../Components/CancelModal";
 import dayjs from "dayjs";
 
 const { Title, Text, Paragraph } = Typography;
@@ -41,6 +42,7 @@ const { Header, Content } = Layout;
 
 export default function BookingDetail({ auth, booking }) {
     const [rescheduleModalVisible, setRescheduleModalVisible] = useState(false);
+    const [cancelModalVisible, setCancelModalVisible] = useState(false);
 
     // Debug logging for schedule settings
     console.log("BookingDetail component - Schedule settings:", {
@@ -57,6 +59,17 @@ export default function BookingDetail({ auth, booking }) {
 
     const handleRescheduleCancel = () => {
         setRescheduleModalVisible(false);
+    };
+
+    const handleCancelSuccess = (data) => {
+        setCancelModalVisible(false);
+        message.success("Booking cancelled successfully");
+        // Refresh the page to show updated booking details
+        window.location.reload();
+    };
+
+    const handleCancelModalCancel = () => {
+        setCancelModalVisible(false);
     };
 
     // Add safety check for auth prop
@@ -780,15 +793,14 @@ export default function BookingDetail({ auth, booking }) {
                                     direction="vertical"
                                     style={{ width: "100%" }}
                                 >
-                                    {booking.status === "pending" && (
+                                    {(booking.status === "pending" ||
+                                        booking.status === "confirmed") && (
                                         <Button
                                             type="primary"
                                             block
                                             danger
                                             onClick={() =>
-                                                message.info(
-                                                    "Cancel booking functionality coming soon"
-                                                )
+                                                setCancelModalVisible(true)
                                             }
                                         >
                                             Cancel Booking
@@ -843,6 +855,14 @@ export default function BookingDetail({ auth, booking }) {
                 onSuccess={handleRescheduleSuccess}
                 booking={booking}
                 scheduleSettings={booking.schedule_settings || []}
+            />
+
+            {/* Cancel Modal */}
+            <CancelModal
+                visible={cancelModalVisible}
+                onCancel={handleCancelModalCancel}
+                onSuccess={handleCancelSuccess}
+                booking={booking}
             />
         </Layout>
     );

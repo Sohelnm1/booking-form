@@ -27,6 +27,7 @@ import {
     NotificationOutlined,
     FileTextOutlined,
     GiftOutlined,
+    DollarOutlined,
 } from "@ant-design/icons";
 import { router } from "@inertiajs/react";
 import Logo from "../Components/Logo";
@@ -55,6 +56,11 @@ export default function AdminLayout({ children, auth }) {
                 currentPath.startsWith("/admin/appointments/")
             ) {
                 newSelectedKey = "appointments";
+            } else if (
+                currentPath === "/admin/refunds" ||
+                currentPath.startsWith("/admin/refunds/")
+            ) {
+                newSelectedKey = "refunds";
             } else if (
                 currentPath === "/admin/employees" ||
                 currentPath.startsWith("/admin/employees/")
@@ -182,6 +188,15 @@ export default function AdminLayout({ children, auth }) {
             onClick: () => {
                 setSelectedKey("appointments");
                 router.visit(route("admin.appointments"), { replace: true });
+            },
+        },
+        {
+            key: "refunds",
+            icon: <DollarOutlined />,
+            label: "Refunds",
+            onClick: () => {
+                setSelectedKey("refunds");
+                router.visit(route("admin.refunds"), { replace: true });
             },
         },
         {

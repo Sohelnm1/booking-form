@@ -75,6 +75,11 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/appointments', [AdminController::class, 'appointments'])->name('admin.appointments');
     Route::get('/admin/appointments/{id}/pdf', [AdminController::class, 'downloadAppointmentPdf'])->name('admin.appointments.pdf');
     Route::get('/admin/appointments/export-excel', [AdminController::class, 'exportAppointmentsExcel'])->name('admin.appointments.excel');
+    Route::get('/admin/appointments/{id}/policy', [AdminController::class, 'getBookingPolicy'])->name('admin.appointments.policy');
+    Route::post('/admin/appointments/{id}/cancel', [AdminController::class, 'cancelBooking'])->name('admin.appointments.cancel');
+    Route::post('/admin/appointments/{id}/refund', [AdminController::class, 'processRefund'])->name('admin.appointments.refund');
+    Route::get('/admin/appointments/{id}/refund-details', [AdminController::class, 'getRefundDetails'])->name('admin.appointments.refund-details');
+    Route::get('/admin/refunds', [AdminController::class, 'refunds'])->name('admin.refunds');
     Route::get('/admin/employees', [AdminController::class, 'employees'])->name('admin.employees');
     Route::post('/admin/employees', [AdminController::class, 'storeEmployee'])->name('admin.employees.store');
     Route::put('/admin/employees/{id}', [AdminController::class, 'updateEmployee'])->name('admin.employees.update');

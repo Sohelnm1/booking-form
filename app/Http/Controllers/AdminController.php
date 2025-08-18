@@ -1467,4 +1467,330 @@ class AdminController extends Controller
         $policy->delete();
         return redirect()->route('admin.booking-policies')->with('success', 'Booking policy deleted successfully!');
     }
+
+    /**
+     * Get booking policy for admin
+     */
+    public function getBookingPolicy($id)
+    {
+        $booking = Booking::where('id', $id)
+            ->with('bookingPolicySetting')
+            ->firstOrFail();
+
+        $policy = $booking->bookingPolicySetting;
+        if (!$policy) {
+            $policy = BookingPolicySetting::active()->first();
+        }
+
+        if (!$policy) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No booking policy found.',
+            ], 404);
+        }
+
+        $hoursUntilAppointment = now()->diffInHours($booking->appointment_time, false);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'policy' => [
+                    'name' => $policy->name,
+                    'description' => $policy->description,
+                    'cancellation' => [
+                        'allowed' => true, // Admin can always cancel
+                        'window_hours' => $policy->cancellation_window_hours,
+                        'policy' => $policy->cancellation_policy_text,
+                        'late_fee' => $policy->late_cancellation_fee,
+                        'late_fee_window' => $policy->late_cancellation_window_hours,
+                        'require_reason' => $policy->require_cancellation_reason,
+                        'hours_until_appointment' => $hoursUntilAppointment,
+                    ],
+                    'reschedule' => [
+                        'allowed' => true, // Admin can always reschedule
+                        'window_hours' => $policy->reschedule_window_hours,
+                        'max_attempts' => $policy->max_reschedule_attempts,
+                        'current_attempts' => $booking->reschedule_attempts,
+                        'fee' => $policy->reschedule_fee,
+                        'advance_notice_hours' => $policy->reschedule_advance_notice_hours,
+                        'allow_same_day' => $policy->allow_same_day_reschedule,
+                        'allow_next_day' => $policy->allow_next_day_reschedule,
+                        'hours_until_appointment' => $hoursUntilAppointment,
+                    ],
+                ],
+                'booking' => [
+                    'id' => $booking->id,
+                    'appointment_time' => $booking->appointment_time->format('Y-m-d H:i:s'),
+                    'status' => $booking->status,
+                    'reschedule_attempts' => $booking->reschedule_attempts,
+                ]
+            ]
+        ]);
+    }
+
+    /**
+     * Handle admin cancellation request
+     */
+    public function cancelBooking(Request $request, $id)
+    {
+        // Find the booking
+        $booking = Booking::where('id', $id)
+            ->with('bookingPolicySetting')
+            ->firstOrFail();
+
+        // Get the applicable policy
+        $policy = $booking->bookingPolicySetting;
+        if (!$policy) {
+            $policy = BookingPolicySetting::active()->first();
+        }
+
+        // Check if reason is required
+        if ($policy && $policy->require_cancellation_reason && !$request->reason) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cancellation reason is required.',
+            ], 400);
+        }
+
+        // Calculate cancellation fee
+        $cancellationFee = $booking->getCancellationFee();
+
+        // Perform the cancellation
+        $success = $booking->cancel($request->reason, Auth::id());
+
+        if (!$success) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to cancel booking.',
+            ], 500);
+        }
+
+        // Send notifications if enabled
+        if ($policy) {
+            $this->sendCancellationNotifications($booking, $policy);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Booking cancelled successfully.',
+            'data' => [
+                'booking_id' => $booking->id,
+                'cancellation_fee' => $cancellationFee,
+                'refund_amount' => $this->calculateRefundAmount($booking, $policy),
+                'policy_applied' => $policy ? $policy->name : 'Default Policy',
+            ]
+        ]);
+    }
+
+    /**
+     * Send cancellation notifications
+     */
+    private function sendCancellationNotifications($booking, $policy)
+    {
+        // TODO: Implement actual notification sending
+        // This would integrate with your notification system (email, SMS, etc.)
+        
+        if ($policy->notify_admin_on_cancellation) {
+            // Send notification to admin
+            // Mail::to(admin_email)->send(new BookingCancelledMail($booking));
+        }
+        
+        if ($policy->notify_employee_on_cancellation && $booking->employee) {
+            // Send notification to assigned employee
+            // Mail::to($booking->employee->email)->send(new BookingCancelledMail($booking));
+        }
+    }
+
+    /**
+     * Calculate refund amount based on policy
+     */
+    private function calculateRefundAmount($booking, $policy)
+    {
+        if (!$policy) {
+            return $booking->total_amount; // Full refund by default
+        }
+
+        switch ($policy->cancellation_policy) {
+            case 'full_refund':
+                return $booking->total_amount;
+            
+            case 'partial_refund':
+                // You can customize the partial refund percentage
+                return $booking->total_amount * 0.5; // 50% refund
+            
+            case 'credit_only':
+                return 0; // No refund, credit only
+            
+            case 'no_refund':
+                return 0;
+            
+            default:
+                return $booking->total_amount;
+        }
+    }
+
+    /**
+     * Process refund for a cancelled booking
+     */
+    public function processRefund(Request $request, $id)
+    {
+        \Log::info('Processing refund for booking', ['booking_id' => $id, 'request_data' => $request->all()]);
+
+        $booking = Booking::where('id', $id)
+            ->with(['customer', 'service', 'bookingPolicySetting'])
+            ->firstOrFail();
+
+        \Log::info('Found booking', [
+            'booking_id' => $booking->id,
+            'status' => $booking->status,
+            'payment_status' => $booking->payment_status,
+            'refund_status' => $booking->refund_status,
+            'refund_amount' => $booking->refund_amount,
+        ]);
+
+        // Validate request
+        $request->validate([
+            'refund_method' => 'nullable|string|in:original_payment_method,credit_note,bank_transfer,cash',
+            'refund_notes' => 'nullable|string|max:500',
+        ]);
+
+        // Check if booking is eligible for refund
+        if (!$booking->isEligibleForRefund()) {
+            \Log::warning('Booking not eligible for refund', [
+                'booking_id' => $booking->id,
+                'payment_status' => $booking->payment_status,
+                'refund_status' => $booking->refund_status,
+                'booking_status' => $booking->status,
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Booking is not eligible for refund.',
+                'details' => [
+                    'payment_status' => $booking->payment_status,
+                    'refund_status' => $booking->refund_status,
+                    'booking_status' => $booking->status,
+                ]
+            ], 400);
+        }
+
+        // Process the refund
+        \Log::info('Attempting to process refund', [
+            'booking_id' => $booking->id,
+            'refund_method' => $request->refund_method,
+            'refund_notes' => $request->refund_notes,
+            'admin_id' => Auth::id(),
+        ]);
+
+        $success = $booking->processRefund(
+            $request->refund_method,
+            $request->refund_notes,
+            Auth::id()
+        );
+
+        if (!$success) {
+            \Log::error('Failed to process refund', ['booking_id' => $booking->id]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to process refund.',
+            ], 500);
+        }
+
+        \Log::info('Refund processed successfully', ['booking_id' => $booking->id]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Refund processed successfully.',
+            'data' => [
+                'booking_id' => $booking->id,
+                'refund_amount' => $booking->refund_amount,
+                'refund_transaction_id' => $booking->refund_transaction_id,
+                'refund_method' => $booking->refund_method,
+                'processed_at' => $booking->refund_processed_at,
+            ]
+        ]);
+    }
+
+    /**
+     * Show refund management page
+     */
+    public function refunds()
+    {
+        $refunds = Booking::where('status', 'cancelled')
+            ->with(['customer', 'service', 'employee', 'bookingPolicySetting', 'cancelledBy', 'refundProcessedBy'])
+            ->orderBy('cancelled_at', 'desc')
+            ->get();
+
+        // Calculate analytics
+        $totalRefunds = $refunds->count();
+        $pendingRefunds = $refunds->where('refund_status', 'pending')->count();
+        $processedRefunds = $refunds->where('refund_status', 'processed')->count();
+        $totalRefundAmount = $refunds->where('refund_status', 'processed')->sum('refund_amount');
+        $processingRate = $totalRefunds > 0 ? round(($processedRefunds / $totalRefunds) * 100, 1) : 0;
+
+        $analytics = [
+            'total_refunds' => $totalRefunds,
+            'pending_refunds' => $pendingRefunds,
+            'processed_refunds' => $processedRefunds,
+            'total_refund_amount' => $totalRefundAmount,
+            'processing_rate' => $processingRate,
+        ];
+
+        return Inertia::render('Admin/Refunds', [
+            'auth' => Auth::user(),
+            'refunds' => $refunds,
+            'analytics' => $analytics,
+        ]);
+    }
+
+    /**
+     * Get refund details for a booking
+     */
+    public function getRefundDetails($id)
+    {
+        $booking = Booking::where('id', $id)
+            ->with(['customer', 'service', 'bookingPolicySetting', 'cancelledBy', 'refundProcessedBy'])
+            ->firstOrFail();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'booking' => [
+                    'id' => $booking->id,
+                    'total_amount' => $booking->total_amount,
+                    'refund_amount' => $booking->refund_amount,
+                    'cancellation_fee_charged' => $booking->cancellation_fee_charged,
+                    'payment_status' => $booking->payment_status,
+                    'refund_status' => $booking->refund_status,
+                    'refund_transaction_id' => $booking->refund_transaction_id,
+                    'refund_processed_at' => $booking->refund_processed_at,
+                    'refund_notes' => $booking->refund_notes,
+                    'refund_method' => $booking->refund_method,
+                    'cancellation_reason' => $booking->cancellation_reason,
+                    'cancelled_at' => $booking->cancelled_at,
+                ],
+                'customer' => [
+                    'name' => $booking->customer->name,
+                    'email' => $booking->customer->email,
+                    'phone' => $booking->customer->phone_number,
+                ],
+                'service' => [
+                    'name' => $booking->service->name,
+                    'price' => $booking->service->price,
+                ],
+                'policy' => $booking->bookingPolicySetting ? [
+                    'name' => $booking->bookingPolicySetting->name,
+                    'cancellation_policy' => $booking->bookingPolicySetting->cancellation_policy_text,
+                ] : null,
+                'cancelled_by' => $booking->cancelledBy ? [
+                    'name' => $booking->cancelledBy->name,
+                    'email' => $booking->cancelledBy->email,
+                ] : null,
+                'refund_processed_by' => $booking->refundProcessedBy ? [
+                    'name' => $booking->refundProcessedBy->name,
+                    'email' => $booking->refundProcessedBy->email,
+                ] : null,
+            ]
+        ]);
+    }
 } 

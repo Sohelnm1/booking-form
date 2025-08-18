@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Head, router } from "@inertiajs/react";
 import {
     Button,
@@ -22,12 +22,16 @@ import {
     ArrowLeftOutlined,
 } from "@ant-design/icons";
 import Logo from "../../Components/Logo";
+import CancelModal from "../../Components/CancelModal";
 import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
 const { Header, Content } = Layout;
 
 export default function CustomerBookings({ auth, bookings }) {
+    const [cancelModalVisible, setCancelModalVisible] = useState(false);
+    const [selectedBooking, setSelectedBooking] = useState(null);
+
     // Add safety check for auth prop
     if (!auth || !auth.user) {
         return (
@@ -98,6 +102,24 @@ export default function CustomerBookings({ auth, bookings }) {
             .join("")
             .toUpperCase()
             .slice(0, 2);
+    };
+
+    const handleCancelBooking = (booking) => {
+        setSelectedBooking(booking);
+        setCancelModalVisible(true);
+    };
+
+    const handleCancelSuccess = (data) => {
+        setCancelModalVisible(false);
+        setSelectedBooking(null);
+        message.success("Booking cancelled successfully");
+        // Refresh the page to show updated booking details
+        window.location.reload();
+    };
+
+    const handleCancelModalCancel = () => {
+        setCancelModalVisible(false);
+        setSelectedBooking(null);
     };
 
     const handleLogout = () => {
@@ -229,6 +251,16 @@ export default function CustomerBookings({ auth, bookings }) {
                     >
                         View
                     </Button>
+                    {(record.status === "pending" ||
+                        record.status === "confirmed") && (
+                        <Button
+                            size="small"
+                            danger
+                            onClick={() => handleCancelBooking(record)}
+                        >
+                            Cancel
+                        </Button>
+                    )}
                 </Space>
             ),
         },
@@ -496,6 +528,14 @@ export default function CustomerBookings({ auth, bookings }) {
                     </Card>
                 </div>
             </Content>
+
+            {/* Cancel Modal */}
+            <CancelModal
+                visible={cancelModalVisible}
+                onCancel={handleCancelModalCancel}
+                onSuccess={handleCancelSuccess}
+                booking={selectedBooking}
+            />
         </Layout>
     );
 }

@@ -35,6 +35,8 @@ import {
     PrinterOutlined,
 } from "@ant-design/icons";
 import AdminLayout from "../../Layouts/AdminLayout";
+import CancelModal from "../../Components/CancelModal";
+import RefundModal from "../../Components/RefundModal";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -49,6 +51,10 @@ const { Search } = Input;
 export default function Appointments({ auth, bookings }) {
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
+    const [cancelModalVisible, setCancelModalVisible] = useState(false);
+    const [bookingToCancel, setBookingToCancel] = useState(null);
+    const [refundModalVisible, setRefundModalVisible] = useState(false);
+    const [bookingToRefund, setBookingToRefund] = useState(null);
     const [searchText, setSearchText] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [dateFilter, setDateFilter] = useState(null);
@@ -69,6 +75,41 @@ export default function Appointments({ auth, bookings }) {
 
     const handleExportExcel = () => {
         window.open("/admin/appointments/export-excel", "_blank");
+    };
+
+    const handleCancelBooking = (booking) => {
+        setBookingToCancel(booking);
+        setCancelModalVisible(true);
+    };
+
+    const handleCancelSuccess = (data) => {
+        setCancelModalVisible(false);
+        setBookingToCancel(null);
+        message.success("Booking cancelled successfully");
+        // Refresh the page to show updated booking details
+        window.location.reload();
+    };
+
+    const handleCancelModalCancel = () => {
+        setCancelModalVisible(false);
+        setBookingToCancel(null);
+    };
+
+    const handleProcessRefund = (booking) => {
+        setBookingToRefund(booking);
+        setRefundModalVisible(true);
+    };
+
+    const handleRefundSuccess = (data) => {
+        setRefundModalVisible(false);
+        setBookingToRefund(null);
+        message.success("Refund processed successfully");
+        window.location.reload();
+    };
+
+    const handleRefundModalCancel = () => {
+        setRefundModalVisible(false);
+        setBookingToRefund(null);
     };
 
     const getStatusColor = (status) => {
@@ -97,6 +138,21 @@ export default function Appointments({ auth, bookings }) {
             case "failed":
                 return "error";
             case "refunded":
+                return "default";
+            default:
+                return "default";
+        }
+    };
+
+    const getRefundStatusColor = (status) => {
+        switch (status) {
+            case "pending":
+                return "warning";
+            case "processed":
+                return "success";
+            case "failed":
+                return "error";
+            case "not_applicable":
                 return "default";
             default:
                 return "default";
@@ -302,6 +358,30 @@ export default function Appointments({ auth, bookings }) {
                             }
                         />
                     </Space>
+                    {record.status === "cancelled" &&
+                        record.refund_amount > 0 && (
+                            <Space>
+                                <Text
+                                    type="secondary"
+                                    style={{ fontSize: "12px" }}
+                                >
+                                    Refund: ₹{record.refund_amount}
+                                </Text>
+                            </Space>
+                        )}
+                    {record.status === "cancelled" && record.refund_status && (
+                        <Space>
+                            <Badge
+                                status={getRefundStatusColor(
+                                    record.refund_status
+                                )}
+                                text={
+                                    record.refund_status_text ||
+                                    record.refund_status
+                                }
+                            />
+                        </Space>
+                    )}
                     {record.reschedule_attempts > 0 && (
                         <Space>
                             <Text type="secondary" style={{ fontSize: "12px" }}>
@@ -336,6 +416,36 @@ export default function Appointments({ auth, bookings }) {
                     >
                         Download PDF
                     </Button>
+                    {(record.status === "pending" ||
+                        record.status === "confirmed") && (
+                        <Button
+                            type="default"
+                            danger
+                            icon={<CloseCircleOutlined />}
+                            size="small"
+                            onClick={() => handleCancelBooking(record)}
+                            style={{ width: "100%" }}
+                        >
+                            Cancel
+                        </Button>
+                    )}
+                    {record.status === "cancelled" &&
+                        record.refund_status === "pending" &&
+                        record.payment_status === "paid" && (
+                            <Button
+                                type="default"
+                                style={{
+                                    width: "100%",
+                                    backgroundColor: "#52c41a",
+                                    color: "white",
+                                    borderColor: "#52c41a",
+                                }}
+                                size="small"
+                                onClick={() => handleProcessRefund(record)}
+                            >
+                                Process Refund
+                            </Button>
+                        )}
                 </Space>
             ),
         },
@@ -574,6 +684,115 @@ export default function Appointments({ auth, bookings }) {
                                     </>
                                 )}
 
+                            {/* Refund Information */}
+                            {selectedBooking.status === "cancelled" && (
+                                <>
+                                    <Divider />
+                                    <Descriptions
+                                        title="Refund Information"
+                                        bordered
+                                        size="small"
+                                    >
+                                        <Descriptions.Item label="Refund Status">
+                                            <Badge
+                                                status={getRefundStatusColor(
+                                                    selectedBooking.refund_status
+                                                )}
+                                                text={
+                                                    selectedBooking.refund_status_text ||
+                                                    selectedBooking.refund_status
+                                                }
+                                            />
+                                        </Descriptions.Item>
+                                        {selectedBooking.refund_amount > 0 && (
+                                            <Descriptions.Item label="Refund Amount">
+                                                <Text
+                                                    strong
+                                                    style={{
+                                                        color: "#52c41a",
+                                                        fontSize: "16px",
+                                                    }}
+                                                >
+                                                    ₹
+                                                    {
+                                                        selectedBooking.refund_amount
+                                                    }
+                                                </Text>
+                                            </Descriptions.Item>
+                                        )}
+                                        {selectedBooking.cancellation_fee_charged >
+                                            0 && (
+                                            <Descriptions.Item label="Cancellation Fee">
+                                                <Text
+                                                    strong
+                                                    style={{
+                                                        color: "#ff4d4f",
+                                                        fontSize: "16px",
+                                                    }}
+                                                >
+                                                    ₹
+                                                    {
+                                                        selectedBooking.cancellation_fee_charged
+                                                    }
+                                                </Text>
+                                            </Descriptions.Item>
+                                        )}
+                                        {selectedBooking.refund_transaction_id && (
+                                            <Descriptions.Item label="Refund Transaction ID">
+                                                <Text copyable>
+                                                    {
+                                                        selectedBooking.refund_transaction_id
+                                                    }
+                                                </Text>
+                                            </Descriptions.Item>
+                                        )}
+                                        {selectedBooking.refund_processed_at && (
+                                            <Descriptions.Item label="Refund Processed At">
+                                                {formatDateTime(
+                                                    selectedBooking.refund_processed_at
+                                                )}
+                                            </Descriptions.Item>
+                                        )}
+                                        {selectedBooking.refund_method && (
+                                            <Descriptions.Item label="Refund Method">
+                                                {selectedBooking.refund_method}
+                                            </Descriptions.Item>
+                                        )}
+                                        {selectedBooking.refund_notes && (
+                                            <Descriptions.Item
+                                                label="Refund Notes"
+                                                span={2}
+                                            >
+                                                <Text>
+                                                    {
+                                                        selectedBooking.refund_notes
+                                                    }
+                                                </Text>
+                                            </Descriptions.Item>
+                                        )}
+                                        {selectedBooking.cancellation_reason && (
+                                            <Descriptions.Item
+                                                label="Cancellation Reason"
+                                                span={2}
+                                            >
+                                                <Text>
+                                                    {
+                                                        selectedBooking.cancellation_reason
+                                                    }
+                                                </Text>
+                                            </Descriptions.Item>
+                                        )}
+                                        {selectedBooking.cancelled_at && (
+                                            <Descriptions.Item label="Cancelled At">
+                                                {formatDateTime(
+                                                    selectedBooking.cancelled_at
+                                                )}
+                                            </Descriptions.Item>
+                                        )}
+                                    </Descriptions>
+                                </>
+                            )}
+
                             {/* Custom Field Responses */}
                             {(() => {
                                 // Use form_responses (snake_case) instead of formResponses (camelCase)
@@ -748,6 +967,23 @@ export default function Appointments({ auth, bookings }) {
                         </div>
                     )}
                 </Modal>
+
+                {/* Cancel Modal */}
+                <CancelModal
+                    visible={cancelModalVisible}
+                    onCancel={handleCancelModalCancel}
+                    onSuccess={handleCancelSuccess}
+                    booking={bookingToCancel}
+                    isAdmin={true}
+                />
+
+                {/* Refund Modal */}
+                <RefundModal
+                    visible={refundModalVisible}
+                    onCancel={handleRefundModalCancel}
+                    onSuccess={handleRefundSuccess}
+                    booking={bookingToRefund}
+                />
             </div>
         </AdminLayout>
     );
