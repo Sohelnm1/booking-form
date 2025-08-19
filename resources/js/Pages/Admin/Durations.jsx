@@ -29,9 +29,11 @@ const { Title, Text } = Typography;
 export default function Durations({ auth, durations, errors }) {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingDuration, setEditingDuration] = useState(null);
-    const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
     const [deletingDurationId, setDeletingDurationId] = useState(null);
+
+    // Move form instance inside the component to fix useForm warning
+    const [form] = Form.useForm();
 
     // Use backend data
     const durationsData = durations || [];
@@ -39,6 +41,7 @@ export default function Durations({ auth, durations, errors }) {
     // Handle validation errors
     useEffect(() => {
         if (errors && Object.keys(errors).length > 0) {
+            console.log("Validation errors received:", errors);
             // Set form errors if they exist
             Object.keys(errors).forEach((key) => {
                 form.setFields([
@@ -50,6 +53,9 @@ export default function Durations({ auth, durations, errors }) {
             });
             // Show modal if there are errors (form was submitted)
             setIsModalVisible(true);
+        } else {
+            // Clear any existing errors when there are no errors
+            form.setFields([]);
         }
     }, [errors, form]);
 
@@ -62,24 +68,31 @@ export default function Durations({ auth, durations, errors }) {
                     name: editingDuration.name,
                     hours: editingDuration.hours || 0,
                     minutes: editingDuration.minutes || 0,
-                    label: editingDuration.label,
+                    label: editingDuration.label || editingDuration.Label, // Handle both cases
                     is_active: editingDuration.is_active,
                     sort_order: editingDuration.sort_order || 0,
                 };
 
+                // Clear any existing errors first
+                form.setFields([]);
+
+                // Set form values immediately without delay
+                form.setFieldsValue(formValues);
+                console.log("Form values set in useEffect:", formValues);
+
+                // Verify form values were set correctly
                 setTimeout(() => {
-                    form.setFieldsValue(formValues);
+                    const currentValues = form.getFieldsValue();
+                    console.log("Form values after setting:", currentValues);
                 }, 100);
             } else {
                 // Set default values when adding new duration
-                setTimeout(() => {
-                    form.setFieldsValue({
-                        hours: 0,
-                        minutes: 0,
-                        is_active: true,
-                        sort_order: 0,
-                    });
-                }, 100);
+                form.setFieldsValue({
+                    hours: 0,
+                    minutes: 0,
+                    is_active: true,
+                    sort_order: 0,
+                });
             }
         }
     }, [isModalVisible, editingDuration, form]);
@@ -171,6 +184,13 @@ export default function Durations({ auth, durations, errors }) {
         setEditingDuration(null);
         form.resetFields();
         form.setFields([]);
+        // Clear any existing values
+        form.setFieldsValue({
+            hours: 0,
+            minutes: 0,
+            is_active: true,
+            sort_order: 0,
+        });
         setIsModalVisible(true);
     };
 
@@ -178,6 +198,21 @@ export default function Durations({ auth, durations, errors }) {
         setEditingDuration(duration);
         form.setFields([]);
         form.resetFields();
+
+        // Set form values immediately - handle case sensitivity
+        const formValues = {
+            name: duration.name,
+            hours: duration.hours || 0,
+            minutes: duration.minutes || 0,
+            label: duration.label || duration.Label, // Handle both cases
+            is_active: duration.is_active,
+            sort_order: duration.sort_order || 0,
+        };
+
+        // Set form values immediately
+        form.setFieldsValue(formValues);
+        console.log("Form values set:", formValues);
+
         setIsModalVisible(true);
     };
 
@@ -211,28 +246,43 @@ export default function Durations({ auth, durations, errors }) {
     };
 
     const handleModalOk = () => {
-        form.validateFields().then((values) => {
-            setLoading(true);
+        form.validateFields()
+            .then((values) => {
+                setLoading(true);
 
-            // Create FormData for file upload
-            const formData = new FormData();
+                // Debug logging
+                console.log("Form values after validation:", values);
+                console.log("Editing duration:", editingDuration);
 
-            // Append all form values
-            Object.keys(values).forEach((key) => {
-                if (values[key] !== undefined && values[key] !== null) {
-                    if (key === "is_active") {
-                        formData.append(key, values[key] ? "1" : "0");
-                    } else {
-                        formData.append(key, values[key]);
-                    }
-                }
-            });
+                // Prepare data for submission
+                const submitData = {
+                    name: values.name,
+                    hours: values.hours,
+                    minutes: values.minutes,
+                    label: values.label,
+                    is_active: values.is_active ? 1 : 0,
+                    sort_order: values.sort_order || 0,
+                };
 
-            if (editingDuration) {
-                router.put(
-                    route("admin.durations.update", editingDuration.id),
-                    formData,
-                    {
+                // Debug logging
+                console.log("Submit data:", submitData);
+
+                if (editingDuration) {
+                    router.put(
+                        route("admin.durations.update", editingDuration.id),
+                        submitData,
+                        {
+                            onSuccess: () => {
+                                setIsModalVisible(false);
+                                setLoading(false);
+                            },
+                            onError: () => {
+                                setLoading(false);
+                            },
+                        }
+                    );
+                } else {
+                    router.post(route("admin.durations.store"), submitData, {
                         onSuccess: () => {
                             setIsModalVisible(false);
                             setLoading(false);
@@ -240,26 +290,20 @@ export default function Durations({ auth, durations, errors }) {
                         onError: () => {
                             setLoading(false);
                         },
-                    }
-                );
-            } else {
-                router.post(route("admin.durations.store"), formData, {
-                    onSuccess: () => {
-                        setIsModalVisible(false);
-                        setLoading(false);
-                    },
-                    onError: () => {
-                        setLoading(false);
-                    },
-                });
-            }
-        });
+                    });
+                }
+            })
+            .catch((error) => {
+                console.error("Form validation failed:", error);
+                setLoading(false);
+            });
     };
 
     const handleModalCancel = () => {
         setIsModalVisible(false);
         setEditingDuration(null);
         form.resetFields();
+        form.setFields([]); // Clear any validation errors
     };
 
     return (
@@ -342,8 +386,12 @@ export default function Durations({ auth, durations, errors }) {
                             <Col span={12}>
                                 <Form.Item
                                     name="hours"
-                                    label="Hours"
+                                    label="Hours*"
                                     rules={[
+                                        {
+                                            required: true,
+                                            message: "Please enter hours",
+                                        },
                                         {
                                             type: "number",
                                             min: 0,

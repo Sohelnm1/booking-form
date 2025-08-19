@@ -114,6 +114,7 @@ Route::put('/admin/extras/{id}/update-sort-order', [AdminController::class, 'upd
 
     // Durations routes
     Route::get('/admin/durations', [AdminController::class, 'durations'])->name('admin.durations');
+    Route::get('/admin/durations/{id}', [AdminController::class, 'showDuration'])->name('admin.durations.show');
     Route::post('/admin/durations', [AdminController::class, 'storeDuration'])->name('admin.durations.store');
     Route::put('/admin/durations/{id}', [AdminController::class, 'updateDuration'])->name('admin.durations.update');
     Route::patch('/admin/durations/{id}', [AdminController::class, 'updateDuration'])->name('admin.durations.patch');

@@ -652,6 +652,22 @@ class AdminController extends Controller
     }
 
     /**
+     * Show a specific duration
+     */
+    public function showDuration($id)
+    {
+        $duration = Duration::findOrFail($id);
+        
+        return Inertia::render('Admin/Durations', [
+            'auth' => [
+                'user' => Auth::user(),
+            ],
+            'durations' => Duration::ordered()->get(),
+            'editDuration' => $duration,
+        ]);
+    }
+
+    /**
      * Store a new duration
      */
     public function storeDuration(Request $request)
