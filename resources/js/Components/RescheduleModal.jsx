@@ -50,7 +50,7 @@ export default function RescheduleModal({
 
     // Calculate total duration for slot calculation
     const totalDuration =
-        booking.service.duration +
+        (booking.pricingTier?.duration_minutes || booking.service.duration) +
         (booking.extras
             ? booking.extras.reduce((sum, extra) => {
                   // Check if durationRelation exists and calculate total minutes
@@ -110,6 +110,16 @@ export default function RescheduleModal({
                 exclude_booking_id: booking.id, // This is the only difference from normal booking
             });
 
+            // Add pricing tier information if available
+            if (booking.pricingTier) {
+                params.append("pricing_tier_id", booking.pricingTier.id);
+                params.append(
+                    "selected_duration",
+                    booking.pricingTier.duration_minutes
+                );
+                params.append("selected_price", booking.pricingTier.price);
+            }
+
             // Add extras if any are selected (same as normal booking flow)
             if (booking.extras && booking.extras.length > 0) {
                 booking.extras.forEach((extra) => {
@@ -121,6 +131,16 @@ export default function RescheduleModal({
                 "Reschedule modal - Request params:",
                 params.toString()
             );
+            console.log("Reschedule modal - Booking data:", {
+                bookingId: booking.id,
+                serviceId: booking.service_id,
+                pricingTier: booking.pricingTier,
+                pricingTierId: booking.pricingTier?.id,
+                pricingTierDuration: booking.pricingTier?.duration_minutes,
+                serviceDuration: booking.service.duration,
+                totalDuration: totalDuration,
+                extras: booking.extras,
+            });
 
             // Use GET request exactly like the normal booking flow
             const response = await fetch(
