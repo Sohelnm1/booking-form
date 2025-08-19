@@ -51,6 +51,19 @@ export default function BookingDetail({ auth, booking }) {
         firstSchedule: booking?.schedule_settings?.[0],
     });
 
+    // Debug logging for booking data
+    console.log("BookingDetail component - Booking data:", {
+        bookingId: booking?.id,
+        serviceName: booking?.service?.name,
+        pricingTierId: booking?.pricing_tier_id,
+        pricingTier: booking?.pricingTier,
+        pricingTierName: booking?.pricingTier?.name,
+        servicePrice: booking?.service?.price,
+        pricingTierPrice: booking?.pricingTier?.price,
+        pricingTierPriceParsed: parseFloat(booking?.pricingTier?.price),
+        totalAmount: booking?.total_amount,
+    });
+
     const handleRescheduleSuccess = (data) => {
         setRescheduleModalVisible(false);
         // Refresh the page to show updated booking details
@@ -322,6 +335,17 @@ export default function BookingDetail({ auth, booking }) {
                                 </Title>
                                 <Text type="secondary">
                                     {booking.service?.name}
+                                    {booking?.pricingTier && (
+                                        <Tag
+                                            color="blue"
+                                            style={{
+                                                marginLeft: 8,
+                                                fontSize: 10,
+                                            }}
+                                        >
+                                            {booking.pricingTier.name}
+                                        </Tag>
+                                    )}
                                 </Text>
                             </div>
                             <Space>
@@ -349,6 +373,21 @@ export default function BookingDetail({ auth, booking }) {
                                             <div>
                                                 <Text>
                                                     {booking.service?.name}
+                                                    {booking?.pricingTier && (
+                                                        <Tag
+                                                            color="blue"
+                                                            style={{
+                                                                marginLeft: 8,
+                                                                fontSize: 10,
+                                                            }}
+                                                        >
+                                                            {
+                                                                booking
+                                                                    .pricingTier
+                                                                    .name
+                                                            }
+                                                        </Tag>
+                                                    )}
                                                 </Text>
                                             </div>
                                         </div>
@@ -467,47 +506,85 @@ export default function BookingDetail({ auth, booking }) {
                                     style={{ marginBottom: 24 }}
                                 >
                                     <Row gutter={[16, 16]}>
-                                        {booking.extras.map((extra) => (
-                                            <Col xs={24} sm={12} key={extra.id}>
-                                                <div
-                                                    style={{
-                                                        display: "flex",
-                                                        justifyContent:
-                                                            "space-between",
-                                                        alignItems: "center",
-                                                        padding: "12px",
-                                                        border: "1px solid #f0f0f0",
-                                                        borderRadius: "8px",
-                                                    }}
+                                        {booking.extras.map((extra) => {
+                                            const quantity =
+                                                extra.pivot?.quantity || 1;
+                                            const totalPrice =
+                                                parseFloat(
+                                                    extra.pivot?.price ||
+                                                        extra.price
+                                                ) * quantity;
+                                            const totalDuration =
+                                                extra.duration_relation
+                                                    ? (extra.duration_relation
+                                                          .hours *
+                                                          60 +
+                                                          extra
+                                                              .duration_relation
+                                                              .minutes) *
+                                                      quantity
+                                                    : (extra.total_duration ||
+                                                          0) * quantity;
+
+                                            return (
+                                                <Col
+                                                    xs={24}
+                                                    sm={12}
+                                                    key={extra.id}
                                                 >
-                                                    <div>
-                                                        <Text strong>
-                                                            {extra.name}
-                                                        </Text>
-                                                        <br />
-                                                        <Text
-                                                            type="secondary"
-                                                            style={{
-                                                                fontSize:
-                                                                    "12px",
-                                                            }}
-                                                        >
-                                                            {formatDuration(
-                                                                extra.duration ||
-                                                                    0
+                                                    <div
+                                                        style={{
+                                                            display: "flex",
+                                                            justifyContent:
+                                                                "space-between",
+                                                            alignItems:
+                                                                "center",
+                                                            padding: "12px",
+                                                            border: "1px solid #f0f0f0",
+                                                            borderRadius: "8px",
+                                                        }}
+                                                    >
+                                                        <div>
+                                                            <Text strong>
+                                                                {extra.name}
+                                                                {quantity >
+                                                                    1 && (
+                                                                    <Text
+                                                                        type="secondary"
+                                                                        style={{
+                                                                            fontSize: 12,
+                                                                            marginLeft: 8,
+                                                                        }}
+                                                                    >
+                                                                        ×{" "}
+                                                                        {
+                                                                            quantity
+                                                                        }
+                                                                    </Text>
+                                                                )}
+                                                            </Text>
+                                                            <br />
+                                                            <Text
+                                                                type="secondary"
+                                                                style={{
+                                                                    fontSize:
+                                                                        "12px",
+                                                                }}
+                                                            >
+                                                                {formatDuration(
+                                                                    totalDuration
+                                                                )}
+                                                            </Text>
+                                                        </div>
+                                                        <Text>
+                                                            {formatPrice(
+                                                                totalPrice
                                                             )}
                                                         </Text>
                                                     </div>
-                                                    <Text>
-                                                        {formatPrice(
-                                                            extra.pivot
-                                                                ?.price ||
-                                                                extra.price
-                                                        )}
-                                                    </Text>
-                                                </div>
-                                            </Col>
-                                        ))}
+                                                </Col>
+                                            );
+                                        })}
                                     </Row>
                                 </Card>
                             )}
@@ -691,10 +768,29 @@ export default function BookingDetail({ auth, booking }) {
                                             marginBottom: 8,
                                         }}
                                     >
-                                        <Text>Service</Text>
+                                        <Text>
+                                            Service
+                                            {booking?.pricingTier && (
+                                                <Tag
+                                                    color="blue"
+                                                    style={{
+                                                        marginLeft: 8,
+                                                        fontSize: 10,
+                                                    }}
+                                                >
+                                                    {booking.pricingTier.name}
+                                                </Tag>
+                                            )}
+                                        </Text>
                                         <Text>
                                             {formatPrice(
-                                                booking.service?.price || 0
+                                                parseFloat(
+                                                    booking?.pricingTier?.price
+                                                ) ||
+                                                    parseFloat(
+                                                        booking.service?.price
+                                                    ) ||
+                                                    0
                                             )}
                                         </Text>
                                     </div>
@@ -712,14 +808,25 @@ export default function BookingDetail({ auth, booking }) {
                                                 <Text>
                                                     {formatPrice(
                                                         booking.extras.reduce(
-                                                            (sum, extra) =>
-                                                                sum +
-                                                                parseFloat(
+                                                            (sum, extra) => {
+                                                                const quantity =
                                                                     extra.pivot
-                                                                        ?.price ||
-                                                                        extra.price ||
-                                                                        0
-                                                                ),
+                                                                        ?.quantity ||
+                                                                    1;
+                                                                const price =
+                                                                    parseFloat(
+                                                                        extra
+                                                                            .pivot
+                                                                            ?.price ||
+                                                                            extra.price ||
+                                                                            0
+                                                                    );
+                                                                return (
+                                                                    sum +
+                                                                    price *
+                                                                        quantity
+                                                                );
+                                                            },
                                                             0
                                                         )
                                                     )}

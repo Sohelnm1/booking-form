@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         // Call the seeders to create test data
         $this->call([
             AdminSeeder::class,
+            DurationSeeder::class,
             ServiceSeeder::class,
             SettingSeeder::class,
             ExtraSeeder::class,

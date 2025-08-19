@@ -21,6 +21,9 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\AppointmentsExport;
 use App\Models\Coupon;
 use App\Models\BookingPolicySetting;
+use App\Models\Duration;
+use App\Models\BookingSetting;
+use App\Models\ServicePricingTier;
 
 class AdminController extends Controller
 {
@@ -61,20 +64,33 @@ class AdminController extends Controller
         $bookings = Booking::with([
             'customer',
             'service',
+            'pricingTier',
             'employee',
-            'extras',
+            'extras.durationRelation',
             'formResponses.formField'
         ])
         ->orderBy('appointment_time', 'desc')
         ->get();
 
-
+        // Ensure pricing tier data is explicitly included for each booking
+        $bookingsData = $bookings->map(function($booking) {
+            $bookingData = $booking->toArray();
+            if ($booking->pricingTier) {
+                $bookingData['pricingTier'] = [
+                    'id' => $booking->pricingTier->id,
+                    'name' => $booking->pricingTier->name,
+                    'price' => $booking->pricingTier->price,
+                    'duration_minutes' => $booking->pricingTier->duration_minutes,
+                ];
+            }
+            return $bookingData;
+        });
 
         return Inertia::render('Admin/Appointments', [
             'auth' => [
                 'user' => Auth::user(),
             ],
-            'bookings' => $bookings,
+            'bookings' => $bookingsData,
         ]);
     }
 
@@ -129,25 +145,19 @@ class AdminController extends Controller
      */
     public function services()
     {
-        $services = Service::ordered()->get();
-        $categories = ['Default', 'Hair Services', 'Skin Care', 'Nail Services', 'Massage'];
-        $durations = [
-            ['value' => 15, 'label' => '15 minutes'],
-            ['value' => 30, 'label' => '30 minutes'],
-            ['value' => 45, 'label' => '45 minutes'],
-            ['value' => 60, 'label' => '1 hour'],
-            ['value' => 90, 'label' => '1.5 hours'],
-            ['value' => 120, 'label' => '2 hours'],
-            ['value' => 150, 'label' => '2.5 hours'],
-            ['value' => 180, 'label' => '3 hours'],
-        ];
+        $services = Service::with('pricingTiers')->ordered()->get();
+        $durations = Duration::active()->ordered()->get()->map(function($duration) {
+            return [
+                'value' => $duration->total_minutes,
+                'label' => $duration->label
+            ];
+        });
 
         return Inertia::render('Admin/Services', [
             'auth' => [
                 'user' => Auth::user(),
             ],
             'services' => $services,
-            'categories' => $categories,
             'durations' => $durations,
             'editService' => request()->get('editService'),
         ]);
@@ -162,24 +172,18 @@ class AdminController extends Controller
             $serviceModel = Service::findOrFail($id);
             
             // Get related data for the service view
-            $categories = ['Default', 'Hair Services', 'Skin Care', 'Nail Services', 'Massage'];
-            $durations = [
-                ['value' => 15, 'label' => '15 minutes'],
-                ['value' => 30, 'label' => '30 minutes'],
-                ['value' => 45, 'label' => '45 minutes'],
-                ['value' => 60, 'label' => '1 hour'],
-                ['value' => 90, 'label' => '1.5 hours'],
-                ['value' => 120, 'label' => '2 hours'],
-                ['value' => 150, 'label' => '2.5 hours'],
-                ['value' => 180, 'label' => '3 hours'],
-            ];
+            $durations = Duration::active()->ordered()->get()->map(function($duration) {
+                return [
+                    'value' => $duration->minutes,
+                    'label' => $duration->label
+                ];
+            });
 
             return Inertia::render('Admin/ServiceDetail', [
                 'auth' => [
                     'user' => Auth::user(),
                 ],
                 'service' => $serviceModel,
-                'categories' => $categories,
                 'durations' => $durations,
             ]);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -189,7 +193,6 @@ class AdminController extends Controller
                     'user' => Auth::user(),
                 ],
                 'service' => null,
-                'categories' => [],
                 'durations' => [],
             ]);
         }
@@ -208,19 +211,27 @@ class AdminController extends Controller
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'duration' => 'required|integer|min:1',
-            'category' => 'required|string|max:255',
             'color' => 'nullable|string|max:7',
+            'sort_order' => 'nullable|integer|min:0|max:999',
             'is_active' => 'nullable|in:0,1,true,false',
+            'is_upcoming' => 'nullable|boolean',
+            'has_flexible_duration' => 'nullable|boolean',
+            'has_tba_pricing' => 'nullable|boolean',
+            'coming_soon_description' => 'nullable|string',
         ]);
 
         $data = $request->only([
             'name', 'description', 'price', 'duration', 
-            'category', 'color', 'is_active'
+            'color', 'sort_order', 'is_active',
+            'is_upcoming', 'has_flexible_duration', 'has_tba_pricing', 'coming_soon_description'
         ]);
         
-        // Convert is_active to boolean
-        if (isset($data['is_active'])) {
-            $data['is_active'] = in_array($data['is_active'], ['1', 'true', true], true);
+        // Convert boolean fields
+        $booleanFields = ['is_active', 'is_upcoming', 'has_flexible_duration', 'has_tba_pricing'];
+        foreach ($booleanFields as $field) {
+            if (isset($data[$field])) {
+                $data[$field] = in_array($data[$field], ['1', 'true', true], true);
+            }
         }
         
         // Log the processed data
@@ -262,19 +273,27 @@ class AdminController extends Controller
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'duration' => 'required|integer|min:1',
-            'category' => 'required|string|max:255',
             'color' => 'nullable|string|max:7',
+            'sort_order' => 'nullable|integer|min:0|max:999',
             'is_active' => 'nullable|in:0,1,true,false',
+            'is_upcoming' => 'nullable|boolean',
+            'has_flexible_duration' => 'nullable|boolean',
+            'has_tba_pricing' => 'nullable|boolean',
+            'coming_soon_description' => 'nullable|string',
         ]);
 
         $data = $request->only([
             'name', 'description', 'price', 'duration', 
-            'category', 'color', 'is_active'
+            'color', 'sort_order', 'is_active',
+            'is_upcoming', 'has_flexible_duration', 'has_tba_pricing', 'coming_soon_description'
         ]);
         
-        // Convert is_active to boolean
-        if (isset($data['is_active'])) {
-            $data['is_active'] = in_array($data['is_active'], ['1', 'true', true], true);
+        // Convert boolean fields
+        $booleanFields = ['is_active', 'is_upcoming', 'has_flexible_duration', 'has_tba_pricing'];
+        foreach ($booleanFields as $field) {
+            if (isset($data[$field])) {
+                $data[$field] = in_array($data[$field], ['1', 'true', true], true);
+            }
         }
         
         // Log the processed data
@@ -294,6 +313,49 @@ class AdminController extends Controller
         $serviceModel->update($data);
 
         return redirect()->back()->with('success', 'Service updated successfully');
+    }
+
+    /**
+     * Update service sort order
+     */
+    public function updateServiceSortOrder(Request $request, $id)
+    {
+        try {
+            $service = Service::findOrFail($id);
+            
+            $request->validate([
+                'sort_order' => 'required|integer|min:0|max:999',
+            ]);
+
+            $service->update([
+                'sort_order' => $request->sort_order
+            ]);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Sort order updated successfully'
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Sort order updated successfully');
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to update service sort order:', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+            ]);
+            
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Failed to update sort order'
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Failed to update sort order');
+        }
     }
 
     /**
@@ -353,14 +415,16 @@ class AdminController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'duration' => 'required|integer|min:0',
+            'duration_id' => 'nullable|exists:durations,id',
+            'max_quantity' => 'nullable|integer|min:1|max:20',
+            'sort_order' => 'nullable|integer|min:0|max:999',
             'is_active' => 'nullable|boolean',
             'services' => 'nullable|array',
             'services.*' => 'exists:services,id',
         ]);
 
         $data = $request->only([
-            'name', 'description', 'price', 'duration', 'is_active'
+            'name', 'description', 'price', 'duration_id', 'max_quantity', 'sort_order', 'is_active'
         ]);
 
         // Handle image upload
@@ -390,14 +454,23 @@ class AdminController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'duration' => 'required|integer|min:0',
+            'duration_id' => 'nullable|exists:durations,id',
+            'max_quantity' => 'nullable|integer|min:1|max:20',
+            'sort_order' => 'nullable|integer|min:0|max:999',
             'is_active' => 'nullable|boolean',
             'services' => 'nullable|array',
             'services.*' => 'exists:services,id',
         ]);
 
         $data = $request->only([
-            'name', 'description', 'price', 'duration', 'is_active'
+            'name', 'description', 'price', 'duration_id', 'max_quantity', 'sort_order', 'is_active'
+        ]);
+
+        // Debug logging
+        \Log::info('UpdateExtra - Request data:', [
+            'extra_id' => $id,
+            'request_data' => $request->all(),
+            'processed_data' => $data,
         ]);
 
         // Handle image upload
@@ -415,6 +488,19 @@ class AdminController extends Controller
 
         // Sync services
         $extra->services()->sync($request->services ?? []);
+
+        // Debug logging after update
+        \Log::info('UpdateExtra - After update:', [
+            'extra_id' => $extra->id,
+            'duration_id' => $extra->duration_id,
+            'durationRelation' => $extra->durationRelation ? [
+                'id' => $extra->durationRelation->id,
+                'label' => $extra->durationRelation->label,
+                'hours' => $extra->durationRelation->hours,
+                'minutes' => $extra->durationRelation->minutes,
+                'calculated_total_minutes' => ($extra->durationRelation->hours * 60) + $extra->durationRelation->minutes,
+            ] : null,
+        ]);
 
         return redirect()->back()->with('success', 'Extra updated successfully');
     }
@@ -446,20 +532,201 @@ class AdminController extends Controller
     }
 
     /**
+     * Update extra sort order
+     */
+    public function updateExtraSortOrder(Request $request, $id)
+    {
+        try {
+            $extra = Extra::findOrFail($id);
+            
+            $request->validate([
+                'sort_order' => 'required|integer|min:0|max:999',
+            ]);
+
+            $extra->update([
+                'sort_order' => $request->sort_order
+            ]);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Sort order updated successfully'
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Sort order updated successfully');
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to update extra sort order:', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+            ]);
+            
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Failed to update sort order'
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Failed to update sort order');
+        }
+    }
+
+    /**
      * Show extras page
      */
     public function extras()
     {
-        $extras = Extra::with('services')->ordered()->get();
+        $extras = Extra::with(['services', 'durationRelation'])->ordered()->get();
+        
+        // Debug: Check if durationRelation is loaded
+        foreach ($extras as $extra) {
+            \Log::info("Extra {$extra->id} ({$extra->name}) - duration_id: {$extra->duration_id}, durationRelation: " . ($extra->durationRelation ? 'loaded' : 'null'));
+        }
+        
+        // Manually load duration data to ensure it's available
+        $extrasWithDuration = $extras->map(function($extra) {
+            $extraData = $extra->toArray();
+            if ($extra->durationRelation) {
+                $extraData['durationRelation'] = [
+                    'id' => $extra->durationRelation->id,
+                    'label' => $extra->durationRelation->label,
+                    'hours' => $extra->durationRelation->hours,
+                    'minutes' => $extra->durationRelation->minutes,
+                    'calculated_total_minutes' => ($extra->durationRelation->hours * 60) + $extra->durationRelation->minutes,
+                ];
+            } else {
+                $extraData['durationRelation'] = null;
+            }
+            return $extraData;
+        });
+        
         $services = Service::active()->ordered()->get();
+        $durations = Duration::active()->ordered()->get();
+        
+        // Debug logging
+        \Log::info('Admin Extras - Extras data:', [
+            'extras_count' => $extras->count(),
+            'extras_data' => $extras->map(function($extra) {
+                return [
+                    'id' => $extra->id,
+                    'name' => $extra->name,
+                    'duration_id' => $extra->duration_id,
+                    'durationRelation' => $extra->durationRelation ? [
+                        'id' => $extra->durationRelation->id,
+                        'label' => $extra->durationRelation->label,
+                        'hours' => $extra->durationRelation->hours,
+                        'minutes' => $extra->durationRelation->minutes,
+                        'calculated_total_minutes' => ($extra->durationRelation->hours * 60) + $extra->durationRelation->minutes,
+                    ] : null,
+                    'total_duration' => $extra->total_duration,
+                ];
+            })->toArray()
+        ]);
         
         return Inertia::render('Admin/Extras', [
             'auth' => [
                 'user' => Auth::user(),
             ],
-            'extras' => $extras,
+            'extras' => $extrasWithDuration,
             'services' => $services,
+            'durations' => $durations,
         ]);
+    }
+
+    /**
+     * Show durations page
+     */
+    public function durations()
+    {
+        $durations = Duration::ordered()->get();
+        
+        return Inertia::render('Admin/Durations', [
+            'auth' => [
+                'user' => Auth::user(),
+            ],
+            'durations' => $durations,
+        ]);
+    }
+
+    /**
+     * Store a new duration
+     */
+    public function storeDuration(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'hours' => 'required|integer|min:0',
+            'minutes' => 'required|integer|min:0|max:59',
+            'label' => 'required|string|max:255',
+            'is_active' => 'nullable|boolean',
+            'sort_order' => 'nullable|integer|min:0',
+        ]);
+
+        Duration::create([
+            'name' => $request->name,
+            'hours' => $request->hours,
+            'minutes' => $request->minutes,
+            'label' => $request->label,
+            'is_active' => $request->boolean('is_active', true),
+            'sort_order' => $request->sort_order ?? 0,
+        ]);
+
+        return redirect()->back()->with('success', 'Duration created successfully');
+    }
+
+    /**
+     * Update an existing duration
+     */
+    public function updateDuration(Request $request, $id)
+    {
+        $duration = Duration::findOrFail($id);
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'hours' => 'required|integer|min:0',
+            'minutes' => 'required|integer|min:0|max:59',
+            'label' => 'required|string|max:255',
+            'is_active' => 'nullable|boolean',
+            'sort_order' => 'nullable|integer|min:0',
+        ]);
+
+        $duration->update([
+            'name' => $request->name,
+            'hours' => $request->hours,
+            'minutes' => $request->minutes,
+            'label' => $request->label,
+            'is_active' => $request->boolean('is_active', true),
+            'sort_order' => $request->sort_order ?? 0,
+        ]);
+
+        return redirect()->back()->with('success', 'Duration updated successfully');
+    }
+
+    /**
+     * Delete a duration
+     */
+    public function deleteDuration($id)
+    {
+        try {
+            $duration = Duration::findOrFail($id);
+            
+            // Check if duration is being used by any services
+            $servicesUsingDuration = Service::where('duration', $duration->total_minutes)->count();
+            if ($servicesUsingDuration > 0) {
+                return redirect()->back()->with('error', 'Cannot delete duration as it is being used by ' . $servicesUsingDuration . ' service(s).');
+            }
+
+            $durationName = $duration->name;
+            $duration->delete();
+
+            return redirect()->back()->with('success', "Duration '{$durationName}' deleted successfully");
+            
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to delete duration. Please try again.');
+        }
     }
 
     /**
@@ -514,6 +781,54 @@ class AdminController extends Controller
             'scheduleSettings' => $scheduleSettings,
             'services' => $services,
         ]);
+    }
+
+    /**
+     * Show booking settings page
+     */
+    public function bookingSettings()
+    {
+        $settings = BookingSetting::getAllSettings();
+        
+        // Debug logging
+        \Log::info('BookingSettings - Loaded settings:', $settings);
+        
+        return Inertia::render('Admin/BookingSettings', [
+            'auth' => [
+                'user' => Auth::user(),
+            ],
+            'settings' => $settings,
+        ]);
+    }
+
+    /**
+     * Update booking settings
+     */
+    public function updateBookingSettings(Request $request)
+    {
+        $request->validate([
+            'max_extras_per_booking' => 'required|integer|min:1|max:50',
+            'enable_extra_quantities' => 'boolean',
+        ]);
+
+        // Debug logging
+        \Log::info('UpdateBookingSettings - Request data:', [
+            'max_extras_per_booking' => $request->max_extras_per_booking,
+            'enable_extra_quantities' => $request->boolean('enable_extra_quantities'),
+            'enable_extra_quantities_raw' => $request->input('enable_extra_quantities'),
+        ]);
+
+        // Update settings
+        BookingSetting::setValue('max_extras_per_booking', $request->max_extras_per_booking, 'integer');
+        BookingSetting::setValue('enable_extra_quantities', $request->boolean('enable_extra_quantities'), 'boolean');
+
+        // Debug logging after update
+        \Log::info('UpdateBookingSettings - After update:', [
+            'max_extras_per_booking' => BookingSetting::getValue('max_extras_per_booking'),
+            'enable_extra_quantities' => BookingSetting::getValue('enable_extra_quantities'),
+        ]);
+
+        return redirect()->back()->with('success', 'Booking settings updated successfully');
     }
 
     /**
@@ -1792,5 +2107,105 @@ class AdminController extends Controller
                 ] : null,
             ]
         ]);
+    }
+
+    /**
+     * Store pricing tier
+     */
+    public function storePricingTier(Request $request)
+    {
+        $request->validate([
+            'service_id' => 'required|exists:services,id',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'duration_minutes' => 'required|integer|min:1',
+            'price' => 'required|numeric|min:0',
+            'is_popular' => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
+            'sort_order' => 'nullable|integer|min:0',
+        ]);
+
+        $data = $request->only([
+            'service_id', 'name', 'description', 'duration_minutes', 
+            'price', 'is_popular', 'is_active', 'sort_order'
+        ]);
+
+        // Convert boolean fields
+        $booleanFields = ['is_popular', 'is_active'];
+        foreach ($booleanFields as $field) {
+            if (isset($data[$field])) {
+                $data[$field] = in_array($data[$field], ['1', 'true', true], true);
+            }
+        }
+
+        // Set default sort order if not provided
+        if (!isset($data['sort_order'])) {
+            $data['sort_order'] = ServicePricingTier::where('service_id', $data['service_id'])->max('sort_order') + 1;
+        }
+
+        ServicePricingTier::create($data);
+
+        return redirect()->back()->with('success', 'Pricing tier created successfully');
+    }
+
+    /**
+     * Update pricing tier
+     */
+    public function updatePricingTier(Request $request, $id)
+    {
+        $pricingTier = ServicePricingTier::findOrFail($id);
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'duration_minutes' => 'required|integer|min:1',
+            'price' => 'required|numeric|min:0',
+            'is_popular' => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
+            'sort_order' => 'nullable|integer|min:0',
+        ]);
+
+        $data = $request->only([
+            'name', 'description', 'duration_minutes', 
+            'price', 'is_popular', 'is_active', 'sort_order'
+        ]);
+
+        // Convert boolean fields
+        $booleanFields = ['is_popular', 'is_active'];
+        foreach ($booleanFields as $field) {
+            if (isset($data[$field])) {
+                $data[$field] = in_array($data[$field], ['1', 'true', true], true);
+            }
+        }
+
+        $pricingTier->update($data);
+
+        return redirect()->back()->with('success', 'Pricing tier updated successfully');
+    }
+
+    /**
+     * Delete pricing tier
+     */
+    public function deletePricingTier($id)
+    {
+        $pricingTier = ServicePricingTier::findOrFail($id);
+        $pricingTier->delete();
+
+        return redirect()->back()->with('success', 'Pricing tier deleted successfully');
+    }
+
+    /**
+     * Update pricing tier sort order
+     */
+    public function updatePricingTierSortOrder(Request $request, $id)
+    {
+        $pricingTier = ServicePricingTier::findOrFail($id);
+        $pricingTier->update(['sort_order' => $request->sort_order]);
+        
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
+        
+        return redirect()->back();
     }
 } 

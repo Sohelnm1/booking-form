@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use App\Models\Booking;
 use App\Models\BookingPolicySetting;
 use App\Models\ScheduleSetting;
+use App\Models\ServicePricingTier;
 use Carbon\Carbon;
 
 class CustomerController extends Controller
@@ -26,7 +27,7 @@ class CustomerController extends Controller
         $user = Auth::user();
         
         $bookings = Booking::where('user_id', $user->id)
-            ->with(['service', 'employee', 'extras', 'bookingPolicySetting'])
+            ->with(['service', 'pricingTier', 'employee', 'extras.durationRelation', 'bookingPolicySetting'])
             ->orderBy('appointment_time', 'desc')
             ->get();
 
@@ -46,7 +47,7 @@ class CustomerController extends Controller
         $user = Auth::user();
         
         $bookings = Booking::where('user_id', $user->id)
-            ->with(['service', 'employee', 'extras', 'bookingPolicySetting'])
+            ->with(['service', 'pricingTier', 'employee', 'extras.durationRelation', 'bookingPolicySetting'])
             ->orderBy('appointment_time', 'desc')
             ->get();
 
@@ -67,8 +68,13 @@ class CustomerController extends Controller
         
         $booking = Booking::where('user_id', $user->id)
             ->where('id', $id)
-            ->with(['service', 'employee', 'extras', 'bookingPolicySetting', 'formResponses.formField', 'invoice'])
+            ->with(['service', 'pricingTier', 'employee', 'extras.durationRelation', 'bookingPolicySetting', 'formResponses.formField', 'invoice'])
             ->firstOrFail();
+        
+        // Force load the pricing tier relationship if not already loaded
+        if (!$booking->relationLoaded('pricingTier')) {
+            $booking->load('pricingTier');
+        }
 
         // Get schedule settings for the booking
         $scheduleSettings = ScheduleSetting::active()->ordered()->get();
@@ -76,11 +82,22 @@ class CustomerController extends Controller
         // Add schedule settings to the booking object
         $booking->schedule_settings = $scheduleSettings;
 
+        // Ensure pricing tier data is explicitly included
+        $bookingData = $booking->toArray();
+        if ($booking->pricingTier) {
+            $bookingData['pricingTier'] = [
+                'id' => $booking->pricingTier->id,
+                'name' => $booking->pricingTier->name,
+                'price' => $booking->pricingTier->price,
+                'duration_minutes' => $booking->pricingTier->duration_minutes,
+            ];
+        }
+
         return Inertia::render('Customer/BookingDetail', [
             'auth' => [
                 'user' => $user,
             ],
-            'booking' => $booking,
+            'booking' => $bookingData,
         ]);
     }
 

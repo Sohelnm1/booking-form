@@ -31,13 +31,7 @@ import AdminLayout from "../../Layouts/AdminLayout";
 
 const { Title, Text, Paragraph } = Typography;
 
-export default function ServiceDetail({
-    auth,
-    service,
-    categories,
-    durations,
-    errors,
-}) {
+export default function ServiceDetail({ auth, service, durations, errors }) {
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
 
     // Handle case when service is not found
@@ -237,11 +231,7 @@ export default function ServiceDetail({
                                         <Descriptions.Item label="Name">
                                             <Text strong>{service.name}</Text>
                                         </Descriptions.Item>
-                                        <Descriptions.Item label="Category">
-                                            <Tag color="blue">
-                                                {service.category}
-                                            </Tag>
-                                        </Descriptions.Item>
+
                                         <Descriptions.Item label="Price">
                                             <Text
                                                 strong

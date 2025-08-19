@@ -52,10 +52,17 @@ export default function RescheduleModal({
     const totalDuration =
         booking.service.duration +
         (booking.extras
-            ? booking.extras.reduce(
-                  (sum, extra) => sum + (extra.duration || 0),
-                  0
-              )
+            ? booking.extras.reduce((sum, extra) => {
+                  // Check if durationRelation exists and calculate total minutes
+                  if (extra.durationRelation) {
+                      const totalMinutes =
+                          extra.durationRelation.hours * 60 +
+                          extra.durationRelation.minutes;
+                      return sum + totalMinutes;
+                  }
+                  // Fallback to total_duration if available
+                  return sum + (extra.total_duration || 0);
+              }, 0)
             : 0);
 
     useEffect(() => {

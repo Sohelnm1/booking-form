@@ -82,6 +82,16 @@ export default function AdminLayout({ children, auth }) {
             ) {
                 newSelectedKey = "extras";
             } else if (
+                currentPath === "/admin/durations" ||
+                currentPath.startsWith("/admin/durations/")
+            ) {
+                newSelectedKey = "durations";
+            } else if (
+                currentPath === "/admin/booking-settings" ||
+                currentPath.startsWith("/admin/booking-settings/")
+            ) {
+                newSelectedKey = "booking-settings";
+            } else if (
                 currentPath === "/admin/forms" ||
                 currentPath.startsWith("/admin/forms/")
             ) {
@@ -233,6 +243,26 @@ export default function AdminLayout({ children, auth }) {
             onClick: () => {
                 setSelectedKey("extras");
                 router.visit(route("admin.extras"), { replace: true });
+            },
+        },
+        {
+            key: "durations",
+            icon: <ClockCircleOutlined />,
+            label: "Durations",
+            onClick: () => {
+                setSelectedKey("durations");
+                router.visit(route("admin.durations"), { replace: true });
+            },
+        },
+        {
+            key: "booking-settings",
+            icon: <SettingOutlined />,
+            label: "Booking Settings",
+            onClick: () => {
+                setSelectedKey("booking-settings");
+                router.visit(route("admin.booking-settings"), {
+                    replace: true,
+                });
             },
         },
         {

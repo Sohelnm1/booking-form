@@ -26,6 +26,18 @@ import Logo from "../../Components/Logo";
 const { Title, Text, Paragraph } = Typography;
 
 export default function Success({ booking, payment_id, auth }) {
+    // Debug logging for booking data
+    console.log("Success component - Booking data:", {
+        bookingId: booking?.id,
+        serviceName: booking?.service?.name,
+        pricingTierId: booking?.pricing_tier_id,
+        pricingTier: booking?.pricingTier,
+        pricingTierName: booking?.pricingTier?.name,
+        servicePrice: booking?.service?.price,
+        pricingTierPrice: booking?.pricingTier?.price,
+        pricingTierPriceParsed: parseFloat(booking?.pricingTier?.price),
+        totalAmount: booking?.total_amount,
+    });
     const formatTime = (time) => {
         return dayjs(time).format("h:mm A");
     };
@@ -36,6 +48,16 @@ export default function Success({ booking, payment_id, auth }) {
 
     const formatDateTime = (datetime) => {
         return dayjs(datetime).format("MMM DD, YYYY h:mm A");
+    };
+
+    const formatDuration = (minutes) => {
+        if (minutes < 60) {
+            return `${minutes} min`;
+        } else {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+        }
     };
 
     const getStatusColor = (status) => {
@@ -139,7 +161,17 @@ export default function Success({ booking, payment_id, auth }) {
                         style={{ marginBottom: 24 }}
                     >
                         <Descriptions.Item label="Service">
-                            {booking?.service?.name}
+                            <div>
+                                <Text>{booking?.service?.name}</Text>
+                                {booking?.pricingTier && (
+                                    <Tag
+                                        color="blue"
+                                        style={{ marginLeft: 8, fontSize: 10 }}
+                                    >
+                                        {booking.pricingTier.name}
+                                    </Tag>
+                                )}
+                            </div>
                         </Descriptions.Item>
                         <Descriptions.Item label="Employee">
                             {booking?.employee?.name}
@@ -153,7 +185,7 @@ export default function Success({ booking, payment_id, auth }) {
                         <Descriptions.Item label="Duration">
                             <Space>
                                 <ClockCircleOutlined />
-                                {booking?.duration} minutes
+                                {formatDuration(booking?.duration)}
                             </Space>
                         </Descriptions.Item>
                         <Descriptions.Item label="Status">
@@ -171,14 +203,58 @@ export default function Success({ booking, payment_id, auth }) {
                             size="small"
                             style={{ marginBottom: 24 }}
                         >
-                            {booking.extras.map((extra) => (
-                                <Descriptions.Item
-                                    key={extra.id}
-                                    label={extra.name}
-                                >
-                                    ₹{extra.pivot.price}
-                                </Descriptions.Item>
-                            ))}
+                            {booking.extras.map((extra) => {
+                                const quantity = extra.pivot?.quantity || 1;
+                                const totalPrice =
+                                    parseFloat(extra.pivot.price) * quantity;
+                                return (
+                                    <Descriptions.Item
+                                        key={extra.id}
+                                        label={
+                                            <div>
+                                                {extra.name}
+                                                {quantity > 1 && (
+                                                    <Text
+                                                        type="secondary"
+                                                        style={{
+                                                            fontSize: 12,
+                                                            marginLeft: 8,
+                                                        }}
+                                                    >
+                                                        × {quantity}
+                                                    </Text>
+                                                )}
+                                            </div>
+                                        }
+                                    >
+                                        <div>
+                                            <div>₹{totalPrice.toFixed(2)}</div>
+                                            <div
+                                                style={{
+                                                    fontSize: "12px",
+                                                    color: "#666",
+                                                }}
+                                            >
+                                                {extra.duration_relation
+                                                    ? extra.duration_relation
+                                                          .label
+                                                    : "No additional time"}
+                                                {quantity > 1 && (
+                                                    <Text
+                                                        type="secondary"
+                                                        style={{
+                                                            fontSize: 12,
+                                                        }}
+                                                    >
+                                                        {" "}
+                                                        × {quantity}
+                                                    </Text>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </Descriptions.Item>
+                                );
+                            })}
                         </Descriptions>
                     )}
 

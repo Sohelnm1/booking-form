@@ -33,6 +33,9 @@ export default function SelectDateTime({
     service,
     selectedExtras,
     scheduleSettings,
+    selectedPricingTier,
+    selectedDuration,
+    selectedPrice,
     auth,
 }) {
     const [selectedDate, setSelectedDate] = useState(null);
@@ -49,16 +52,43 @@ export default function SelectDateTime({
     });
 
     // Calculate total duration for slot calculation
+    const serviceDuration = selectedPricingTier
+        ? selectedPricingTier.duration_minutes
+        : service.duration;
     const totalDuration =
-        service.duration +
-        selectedExtras.reduce((sum, extra) => sum + (extra.duration || 0), 0);
+        serviceDuration +
+        selectedExtras.reduce((sum, extra) => {
+            const quantity = extra.quantity || 1;
+            // Check if durationRelation exists and calculate total minutes
+            if (extra.durationRelation) {
+                const totalMinutes =
+                    extra.durationRelation.hours * 60 +
+                    extra.durationRelation.minutes;
+                return sum + totalMinutes * quantity;
+            }
+            // Fallback to total_duration if available
+            return sum + (extra.total_duration || 0) * quantity;
+        }, 0);
 
     const handleBack = () => {
         const extraIds = selectedExtras.map((extra) => extra.id);
+        const extraQuantitiesData = selectedExtras.map((extra) => ({
+            id: extra.id,
+            quantity: extra.quantity || 1,
+        }));
+        const extraQuantitiesJson = encodeURIComponent(
+            JSON.stringify(extraQuantitiesData)
+        );
+
         router.visit(route("booking.select-extras"), {
             data: {
                 service_id: service.id,
+                pricing_tier_id: selectedPricingTier?.id,
+                selected_duration:
+                    selectedPricingTier?.duration_minutes || service.duration,
+                selected_price: selectedPricingTier?.price || service.price,
                 extras: extraIds,
+                extra_quantities_json: extraQuantitiesJson,
             },
         });
     };
@@ -66,10 +96,24 @@ export default function SelectDateTime({
     const handleContinue = () => {
         if (selectedDate && selectedTime) {
             const extraIds = selectedExtras.map((extra) => extra.id);
+            const extraQuantitiesData = selectedExtras.map((extra) => ({
+                id: extra.id,
+                quantity: extra.quantity || 1,
+            }));
+            const extraQuantitiesJson = encodeURIComponent(
+                JSON.stringify(extraQuantitiesData)
+            );
+
             router.visit(route("booking.consent"), {
                 data: {
                     service_id: service.id,
+                    pricing_tier_id: selectedPricingTier?.id,
+                    selected_duration:
+                        selectedPricingTier?.duration_minutes ||
+                        service.duration,
+                    selected_price: selectedPricingTier?.price || service.price,
                     extras: extraIds,
+                    extra_quantities_json: extraQuantitiesJson,
                     date: selectedDate.format("YYYY-MM-DD"),
                     time: selectedTime.format("HH:mm"),
                 },
@@ -91,6 +135,16 @@ export default function SelectDateTime({
                 date: date.format("YYYY-MM-DD"),
                 service_id: service.id,
             });
+
+            // Add pricing tier information if selected
+            if (selectedPricingTier) {
+                params.append("pricing_tier_id", selectedPricingTier.id);
+                params.append(
+                    "selected_duration",
+                    selectedPricingTier.duration_minutes
+                );
+                params.append("selected_price", selectedPricingTier.price);
+            }
 
             // Add extras if any are selected
             if (selectedExtras.length > 0) {
@@ -845,11 +899,34 @@ export default function SelectDateTime({
                                         marginBottom: 8,
                                     }}
                                 >
-                                    <Text strong>{service.name}</Text>
-                                    <Text>{formatPrice(service.price)}</Text>
+                                    <Text strong>
+                                        {service.name}
+                                        {selectedPricingTier && (
+                                            <Tag
+                                                color="blue"
+                                                style={{
+                                                    marginLeft: 8,
+                                                    fontSize: 10,
+                                                }}
+                                            >
+                                                {selectedPricingTier.name}
+                                            </Tag>
+                                        )}
+                                    </Text>
+                                    <Text>
+                                        {selectedPricingTier
+                                            ? formatPrice(
+                                                  selectedPricingTier.price
+                                              )
+                                            : formatPrice(service.price)}
+                                    </Text>
                                 </div>
                                 <Text type="secondary" style={{ fontSize: 12 }}>
-                                    {formatDuration(service.duration)}
+                                    {selectedPricingTier
+                                        ? formatDuration(
+                                              selectedPricingTier.duration_minutes
+                                          )
+                                        : formatDuration(service.duration)}
                                 </Text>
                             </div>
 
@@ -857,25 +934,66 @@ export default function SelectDateTime({
                             {selectedExtras.length > 0 && (
                                 <>
                                     <Divider style={{ margin: "12px 0" }} />
-                                    {selectedExtras.map((extra) => (
-                                        <div
-                                            key={extra.id}
-                                            style={{ marginBottom: 8 }}
-                                        >
+                                    {selectedExtras.map((extra) => {
+                                        const quantity = extra.quantity || 1;
+                                        return (
                                             <div
-                                                style={{
-                                                    display: "flex",
-                                                    justifyContent:
-                                                        "space-between",
-                                                }}
+                                                key={extra.id}
+                                                style={{ marginBottom: 8 }}
                                             >
-                                                <Text>+ {extra.name}</Text>
-                                                <Text>
-                                                    {formatPrice(extra.price)}
+                                                <div
+                                                    style={{
+                                                        display: "flex",
+                                                        justifyContent:
+                                                            "space-between",
+                                                    }}
+                                                >
+                                                    <Text>
+                                                        + {extra.name}
+                                                        {quantity > 1 && (
+                                                            <Text
+                                                                type="secondary"
+                                                                style={{
+                                                                    fontSize: 12,
+                                                                }}
+                                                            >
+                                                                {" "}
+                                                                × {quantity}
+                                                            </Text>
+                                                        )}
+                                                    </Text>
+                                                    <Text>
+                                                        {formatPrice(
+                                                            parseFloat(
+                                                                extra.price
+                                                            ) * quantity
+                                                        )}
+                                                    </Text>
+                                                </div>
+                                                <Text
+                                                    type="secondary"
+                                                    style={{ fontSize: 12 }}
+                                                >
+                                                    {extra.duration_relation
+                                                        ? extra
+                                                              .duration_relation
+                                                              .label
+                                                        : "No additional time"}
+                                                    {quantity > 1 && (
+                                                        <Text
+                                                            type="secondary"
+                                                            style={{
+                                                                fontSize: 12,
+                                                            }}
+                                                        >
+                                                            {" "}
+                                                            × {quantity}
+                                                        </Text>
+                                                    )}
                                                 </Text>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </>
                             )}
 
@@ -891,11 +1009,23 @@ export default function SelectDateTime({
                                 <Text strong>Total Price</Text>
                                 <Text strong style={{ fontSize: 16 }}>
                                     {formatPrice(
-                                        parseFloat(service.price) +
+                                        (selectedPricingTier
+                                            ? parseFloat(
+                                                  selectedPricingTier.price
+                                              )
+                                            : parseFloat(service.price)) +
                                             selectedExtras.reduce(
-                                                (sum, extra) =>
-                                                    sum +
-                                                    parseFloat(extra.price),
+                                                (sum, extra) => {
+                                                    const quantity =
+                                                        extra.quantity || 1;
+                                                    return (
+                                                        sum +
+                                                        parseFloat(
+                                                            extra.price
+                                                        ) *
+                                                            quantity
+                                                    );
+                                                },
                                                 0
                                             )
                                     )}

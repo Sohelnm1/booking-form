@@ -44,6 +44,9 @@ export default function Consent({
     date,
     time,
     consentSettings,
+    selectedPricingTier,
+    selectedDuration,
+    selectedPrice,
     auth,
 }) {
     const [acceptedConsents, setAcceptedConsents] = useState([]);
@@ -74,10 +77,23 @@ export default function Consent({
 
     const handleBack = () => {
         const extraIds = selectedExtras.map((extra) => extra.id);
+        const extraQuantitiesData = selectedExtras.map((extra) => ({
+            id: extra.id,
+            quantity: extra.quantity || 1,
+        }));
+        const extraQuantitiesJson = encodeURIComponent(
+            JSON.stringify(extraQuantitiesData)
+        );
+
         router.visit(route("booking.select-datetime"), {
             data: {
                 service_id: service.id,
+                pricing_tier_id: selectedPricingTier?.id,
+                selected_duration:
+                    selectedPricingTier?.duration_minutes || service.duration,
+                selected_price: selectedPricingTier?.price || service.price,
                 extras: extraIds,
+                extra_quantities_json: extraQuantitiesJson,
             },
         });
     };
@@ -122,11 +138,23 @@ export default function Consent({
         console.log("Proceeding to confirmation page");
 
         const extraIds = selectedExtras.map((extra) => extra.id);
+        const extraQuantitiesData = selectedExtras.map((extra) => ({
+            id: extra.id,
+            quantity: extra.quantity || 1,
+        }));
+        const extraQuantitiesJson = encodeURIComponent(
+            JSON.stringify(extraQuantitiesData)
+        );
         const consentIds = acceptedConsents;
 
         const data = {
             service_id: service.id,
+            pricing_tier_id: selectedPricingTier?.id,
+            selected_duration:
+                selectedPricingTier?.duration_minutes || service.duration,
+            selected_price: selectedPricingTier?.price || service.price,
             extras: extraIds,
+            extra_quantities_json: extraQuantitiesJson,
             date: date,
             time: time,
             consents: consentIds,
@@ -681,16 +709,37 @@ export default function Consent({
                                             marginBottom: 8,
                                         }}
                                     >
-                                        <Text strong>{service.name}</Text>
+                                        <Text strong>
+                                            {service.name}
+                                            {selectedPricingTier && (
+                                                <Tag
+                                                    color="blue"
+                                                    style={{
+                                                        marginLeft: 8,
+                                                        fontSize: 10,
+                                                    }}
+                                                >
+                                                    {selectedPricingTier.name}
+                                                </Tag>
+                                            )}
+                                        </Text>
                                         <Text>
-                                            {formatPrice(service.price)}
+                                            {selectedPricingTier
+                                                ? formatPrice(
+                                                      selectedPricingTier.price
+                                                  )
+                                                : formatPrice(service.price)}
                                         </Text>
                                     </div>
                                     <Text
                                         type="secondary"
                                         style={{ fontSize: 12 }}
                                     >
-                                        {formatDuration(service.duration)}
+                                        {selectedPricingTier
+                                            ? formatDuration(
+                                                  selectedPricingTier.duration_minutes
+                                              )
+                                            : formatDuration(service.duration)}
                                     </Text>
                                 </div>
 
@@ -698,27 +747,67 @@ export default function Consent({
                                 {selectedExtras.length > 0 && (
                                     <>
                                         <Divider style={{ margin: "12px 0" }} />
-                                        {selectedExtras.map((extra) => (
-                                            <div
-                                                key={extra.id}
-                                                style={{ marginBottom: 8 }}
-                                            >
+                                        {selectedExtras.map((extra) => {
+                                            const quantity =
+                                                extra.quantity || 1;
+                                            return (
                                                 <div
-                                                    style={{
-                                                        display: "flex",
-                                                        justifyContent:
-                                                            "space-between",
-                                                    }}
+                                                    key={extra.id}
+                                                    style={{ marginBottom: 8 }}
                                                 >
-                                                    <Text>+ {extra.name}</Text>
-                                                    <Text>
-                                                        {formatPrice(
-                                                            extra.price
+                                                    <div
+                                                        style={{
+                                                            display: "flex",
+                                                            justifyContent:
+                                                                "space-between",
+                                                        }}
+                                                    >
+                                                        <Text>
+                                                            + {extra.name}
+                                                            {quantity > 1 && (
+                                                                <Text
+                                                                    type="secondary"
+                                                                    style={{
+                                                                        fontSize: 12,
+                                                                    }}
+                                                                >
+                                                                    {" "}
+                                                                    × {quantity}
+                                                                </Text>
+                                                            )}
+                                                        </Text>
+                                                        <Text>
+                                                            {formatPrice(
+                                                                parseFloat(
+                                                                    extra.price
+                                                                ) * quantity
+                                                            )}
+                                                        </Text>
+                                                    </div>
+                                                    <Text
+                                                        type="secondary"
+                                                        style={{ fontSize: 12 }}
+                                                    >
+                                                        {extra.duration_relation
+                                                            ? extra
+                                                                  .duration_relation
+                                                                  .label
+                                                            : "No additional time"}
+                                                        {quantity > 1 && (
+                                                            <Text
+                                                                type="secondary"
+                                                                style={{
+                                                                    fontSize: 12,
+                                                                }}
+                                                            >
+                                                                {" "}
+                                                                × {quantity}
+                                                            </Text>
                                                         )}
                                                     </Text>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </>
                                 )}
 
@@ -734,11 +823,23 @@ export default function Consent({
                                     <Text strong>Total Price</Text>
                                     <Text strong style={{ fontSize: 16 }}>
                                         {formatPrice(
-                                            parseFloat(service.price) +
+                                            (selectedPricingTier
+                                                ? parseFloat(
+                                                      selectedPricingTier.price
+                                                  )
+                                                : parseFloat(service.price)) +
                                                 selectedExtras.reduce(
-                                                    (sum, extra) =>
-                                                        sum +
-                                                        parseFloat(extra.price),
+                                                    (sum, extra) => {
+                                                        const quantity =
+                                                            extra.quantity || 1;
+                                                        return (
+                                                            sum +
+                                                            parseFloat(
+                                                                extra.price
+                                                            ) *
+                                                                quantity
+                                                        );
+                                                    },
                                                     0
                                                 )
                                         )}

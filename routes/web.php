@@ -22,6 +22,7 @@ Route::prefix('booking')->name('booking.')->group(function () {
     Route::get('/select-service', [BookingController::class, 'selectService'])->name('select-service');
     Route::get('/select-extras', [BookingController::class, 'selectExtras'])->name('select-extras');
     Route::get('/select-datetime', [BookingController::class, 'selectDateTime'])->name('select-datetime');
+    Route::post('/store-extra-quantities', [BookingController::class, 'storeExtraQuantities'])->name('store-extra-quantities');
     Route::get('/consent', [BookingController::class, 'consent'])->name('consent');
     Route::get('/confirm', [BookingController::class, 'confirm'])->name('confirm');
     Route::post('/process', [BookingController::class, 'processBooking'])->name('process');
@@ -94,6 +95,14 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::put('/admin/services/{id}', [AdminController::class, 'updateService'])->name('admin.services.update');
     Route::patch('/admin/services/{id}', [AdminController::class, 'updateService'])->name('admin.services.patch');
     Route::post('/admin/services/{id}/delete', [AdminController::class, 'deleteService'])->name('admin.services.delete');
+Route::put('/admin/services/{id}/update-sort-order', [AdminController::class, 'updateServiceSortOrder'])->name('admin.services.update-sort-order');
+    
+    // Pricing tiers routes
+    Route::post('/admin/pricing-tiers', [AdminController::class, 'storePricingTier'])->name('admin.pricing-tiers.store');
+    Route::put('/admin/pricing-tiers/{id}', [AdminController::class, 'updatePricingTier'])->name('admin.pricing-tiers.update');
+    Route::patch('/admin/pricing-tiers/{id}', [AdminController::class, 'updatePricingTier'])->name('admin.pricing-tiers.patch');
+    Route::post('/admin/pricing-tiers/{id}/delete', [AdminController::class, 'deletePricingTier'])->name('admin.pricing-tiers.delete');
+    Route::put('/admin/pricing-tiers/{id}/update-sort-order', [AdminController::class, 'updatePricingTierSortOrder'])->name('admin.pricing-tiers.update-sort-order');
     
     // Extras routes
     Route::get('/admin/extras', [AdminController::class, 'extras'])->name('admin.extras');
@@ -101,6 +110,18 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::put('/admin/extras/{id}', [AdminController::class, 'updateExtra'])->name('admin.extras.update');
     Route::patch('/admin/extras/{id}', [AdminController::class, 'updateExtra'])->name('admin.extras.patch');
     Route::post('/admin/extras/{id}/delete', [AdminController::class, 'deleteExtra'])->name('admin.extras.delete');
+Route::put('/admin/extras/{id}/update-sort-order', [AdminController::class, 'updateExtraSortOrder'])->name('admin.extras.update-sort-order');
+
+    // Durations routes
+    Route::get('/admin/durations', [AdminController::class, 'durations'])->name('admin.durations');
+    Route::post('/admin/durations', [AdminController::class, 'storeDuration'])->name('admin.durations.store');
+    Route::put('/admin/durations/{id}', [AdminController::class, 'updateDuration'])->name('admin.durations.update');
+    Route::patch('/admin/durations/{id}', [AdminController::class, 'updateDuration'])->name('admin.durations.patch');
+    Route::post('/admin/durations/{id}/delete', [AdminController::class, 'deleteDuration'])->name('admin.durations.delete');
+
+    // Booking settings routes
+    Route::get('/admin/booking-settings', [AdminController::class, 'bookingSettings'])->name('admin.booking-settings');
+    Route::post('/admin/booking-settings', [AdminController::class, 'updateBookingSettings'])->name('admin.booking-settings.update');
 
     // Forms routes
     Route::get('/admin/forms', [AdminController::class, 'forms'])->name('admin.forms');
@@ -158,3 +179,5 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/invoices/stats', [InvoiceController::class, 'getStats'])->name('admin.invoices.stats');
     Route::get('/admin/invoices/search', [InvoiceController::class, 'search'])->name('admin.invoices.search');
 });
+
+

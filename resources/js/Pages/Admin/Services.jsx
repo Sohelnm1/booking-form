@@ -36,7 +36,6 @@ const { Option } = Select;
 export default function Services({
     auth,
     services,
-    categories,
     durations,
     errors,
     editService,
@@ -47,9 +46,14 @@ export default function Services({
     const [loading, setLoading] = useState(false);
     const [deletingServiceId, setDeletingServiceId] = useState(null);
 
+    // Pricing tier states
+    const [pricingTierModalVisible, setPricingTierModalVisible] =
+        useState(false);
+    const [editingPricingTier, setEditingPricingTier] = useState(null);
+    const [pricingTierForm] = Form.useForm();
+
     // Use backend data
     const servicesData = services || [];
-    const categoriesData = categories || [];
     const durationsData = durations || [];
 
     // Handle validation errors
@@ -79,12 +83,18 @@ export default function Services({
                     description: editingService.description || "",
                     price: parseFloat(editingService.price) || 0,
                     duration: parseInt(editingService.duration) || 60,
-                    category: editingService.category || "Default",
                     color: editingService.color || "#1890ff",
+                    sort_order: editingService.sort_order || 0,
                     is_active:
                         editingService.is_active !== undefined
                             ? editingService.is_active
                             : true,
+                    is_upcoming: editingService.is_upcoming || false,
+                    has_flexible_duration:
+                        editingService.has_flexible_duration || false,
+                    has_tba_pricing: editingService.has_tba_pricing || false,
+                    coming_soon_description:
+                        editingService.coming_soon_description || "",
                 };
 
                 setTimeout(() => {
@@ -100,9 +110,13 @@ export default function Services({
                     form.setFieldsValue({
                         is_active: true,
                         color: "#1890ff",
-                        category: "Default",
                         duration: 60,
+                        sort_order: 0,
                         description: "",
+                        is_upcoming: false,
+                        has_flexible_duration: false,
+                        has_tba_pricing: false,
+                        coming_soon_description: "",
                     });
                     console.log(
                         "Default form values set via useEffect for adding"
@@ -146,34 +160,63 @@ export default function Services({
                     />
                     <div>
                         <div style={{ fontWeight: "bold" }}>{record.name}</div>
-                        <div style={{ fontSize: "12px", color: "#666" }}>
-                            {record.category}
-                        </div>
                     </div>
                 </div>
             ),
         },
-        {
-            title: "Category",
-            dataIndex: "category",
-            key: "category",
-            render: (category) => <Tag color="blue">{category}</Tag>,
-        },
+
         {
             title: "Price",
             dataIndex: "price",
             key: "price",
-            render: (price) => `₹${price}`,
+            render: (price, record) => {
+                if (record.has_tba_pricing) {
+                    return <Tag color="orange">To be announced</Tag>;
+                }
+                return `₹${price}`;
+            },
         },
         {
             title: "Duration",
             dataIndex: "duration",
             key: "duration",
-            render: (duration) => {
+            render: (duration, record) => {
+                if (record.has_flexible_duration) {
+                    return <Tag color="blue">Flexible</Tag>;
+                }
                 const durationObj = durationsData.find(
                     (d) => d.value === duration
                 );
                 return durationObj ? durationObj.label : `${duration} min`;
+            },
+        },
+        {
+            title: "Pricing Tiers",
+            dataIndex: "pricing_tiers",
+            key: "pricing_tiers",
+            render: (pricingTiers, record) => {
+                if (!pricingTiers || pricingTiers.length === 0) {
+                    return (
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                            Standard pricing
+                        </Text>
+                    );
+                }
+
+                return (
+                    <div>
+                        <Text strong style={{ fontSize: 12 }}>
+                            {pricingTiers.length} tier
+                            {pricingTiers.length > 1 ? "s" : ""}
+                        </Text>
+                        <br />
+                        <Text type="secondary" style={{ fontSize: 11 }}>
+                            From ₹
+                            {Math.min(...pricingTiers.map((t) => t.price))} - ₹
+                            {Math.max(...pricingTiers.map((t) => t.price))}
+                        </Text>
+                    </div>
+                );
             },
         },
         {
@@ -189,13 +232,35 @@ export default function Services({
             ),
         },
         {
+            title: "Sort Order",
+            dataIndex: "sort_order",
+            key: "sort_order",
+            render: (sortOrder, record) => (
+                <InputNumber
+                    min={0}
+                    max={999}
+                    value={sortOrder}
+                    onChange={(value) =>
+                        handleSortOrderChange(record.id, value)
+                    }
+                    style={{ width: 80 }}
+                    size="small"
+                />
+            ),
+        },
+        {
             title: "Status",
             dataIndex: "is_active",
             key: "is_active",
-            render: (isActive) => (
-                <Tag color={isActive ? "green" : "red"}>
-                    {isActive ? "Active" : "Inactive"}
-                </Tag>
+            render: (isActive, record) => (
+                <Space direction="vertical" size={4}>
+                    <Tag color={isActive ? "green" : "red"}>
+                        {isActive ? "Active" : "Inactive"}
+                    </Tag>
+                    {record.is_upcoming && (
+                        <Tag color="purple">Coming Soon</Tag>
+                    )}
+                </Space>
             ),
         },
         {
@@ -252,6 +317,30 @@ export default function Services({
     const handleView = (service) => {
         // Navigate to a detailed view page for the service
         router.visit(route("admin.services.show", service.id));
+    };
+
+    const handleSortOrderChange = (serviceId, newSortOrder) => {
+        if (newSortOrder === null || newSortOrder < 0) {
+            message.error("Sort order must be a positive number");
+            return;
+        }
+
+        router.put(
+            route("admin.services.update-sort-order", serviceId),
+            { sort_order: newSortOrder },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    message.success("Sort order updated successfully");
+                },
+                onError: (errors) => {
+                    message.error(
+                        errors.error || "Failed to update sort order"
+                    );
+                },
+            }
+        );
     };
 
     const handleDelete = (service) => {
@@ -393,6 +482,14 @@ export default function Services({
                             "is_active value:",
                             values[key] ? "1" : "0"
                         );
+                    } else if (
+                        key === "is_upcoming" ||
+                        key === "has_flexible_duration" ||
+                        key === "has_tba_pricing"
+                    ) {
+                        // Ensure boolean fields are sent as string representation
+                        formData.append(key, values[key] ? "1" : "0");
+                        console.log(`${key} value:`, values[key] ? "1" : "0");
                     } else if (key === "description") {
                         // Always include description, even if empty
                         formData.append(key, values[key] || "");
@@ -484,6 +581,146 @@ export default function Services({
         form.resetFields();
     };
 
+    // Pricing Tier Handlers
+    const handleEditPricingTier = (tier) => {
+        setEditingPricingTier(tier);
+        setPricingTierModalVisible(true);
+
+        // Set form values
+        setTimeout(() => {
+            pricingTierForm.setFieldsValue({
+                name: tier.name,
+                description: tier.description || "",
+                duration_minutes: tier.duration_minutes,
+                price: tier.price,
+                is_popular: tier.is_popular || false,
+                is_active: tier.is_active !== undefined ? tier.is_active : true,
+                sort_order: tier.sort_order || 0,
+            });
+        }, 100);
+    };
+
+    const handleDeletePricingTier = (tierId) => {
+        Modal.confirm({
+            title: "Delete Pricing Tier",
+            content: "Are you sure you want to delete this pricing tier?",
+            okText: "Yes",
+            okType: "danger",
+            cancelText: "No",
+            onOk() {
+                router.post(
+                    route("admin.pricing-tiers.delete", tierId),
+                    {},
+                    {
+                        onSuccess: () => {
+                            message.success(
+                                "Pricing tier deleted successfully"
+                            );
+                            // Refresh the page to update the service data
+                            router.reload();
+                        },
+                        onError: () => {
+                            message.error("Failed to delete pricing tier");
+                        },
+                    }
+                );
+            },
+        });
+    };
+
+    const handlePricingTierModalOk = () => {
+        pricingTierForm
+            .validateFields()
+            .then((values) => {
+                setLoading(true);
+
+                const formData = new FormData();
+
+                // Add service_id for new tiers
+                if (!editingPricingTier && editingService) {
+                    formData.append("service_id", editingService.id);
+                }
+
+                Object.keys(values).forEach((key) => {
+                    if (key === "is_popular" || key === "is_active") {
+                        formData.append(key, values[key] ? "1" : "0");
+                    } else {
+                        formData.append(key, values[key] || "");
+                    }
+                });
+
+                if (editingPricingTier) {
+                    // Update pricing tier
+                    formData.append("_method", "PUT");
+                    router.post(
+                        route(
+                            "admin.pricing-tiers.update",
+                            editingPricingTier.id
+                        ),
+                        formData,
+                        {
+                            onSuccess: () => {
+                                message.success(
+                                    "Pricing tier updated successfully"
+                                );
+                                setPricingTierModalVisible(false);
+                                pricingTierForm.resetFields();
+                                setEditingPricingTier(null);
+                                // Refresh the page to update the service data
+                                router.reload();
+                            },
+                            onError: (errors) => {
+                                console.error(
+                                    "Update pricing tier errors:",
+                                    errors
+                                );
+                                message.error("Failed to update pricing tier");
+                            },
+                            onFinish: () => {
+                                setLoading(false);
+                            },
+                        }
+                    );
+                } else {
+                    // Create pricing tier
+                    router.post(route("admin.pricing-tiers.store"), formData, {
+                        onSuccess: () => {
+                            message.success(
+                                "Pricing tier created successfully"
+                            );
+                            setPricingTierModalVisible(false);
+                            pricingTierForm.resetFields();
+                            // Refresh the page to update the service data
+                            router.reload();
+                        },
+                        onError: (errors) => {
+                            console.error(
+                                "Create pricing tier errors:",
+                                errors
+                            );
+                            message.error("Failed to create pricing tier");
+                        },
+                        onFinish: () => {
+                            setLoading(false);
+                        },
+                    });
+                }
+            })
+            .catch((errorInfo) => {
+                console.error(
+                    "Pricing tier form validation failed:",
+                    errorInfo
+                );
+                message.error("Please check the form and try again");
+            });
+    };
+
+    const handlePricingTierModalCancel = () => {
+        setPricingTierModalVisible(false);
+        pricingTierForm.resetFields();
+        setEditingPricingTier(null);
+    };
+
     return (
         <AdminLayout auth={auth}>
             <Head title="Services Management" />
@@ -572,31 +809,6 @@ export default function Services({
 
                         <Row gutter={16}>
                             <Col span={12}>
-                                <Form.Item
-                                    name="category"
-                                    label="Category*"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: "Please select category",
-                                        },
-                                    ]}
-                                >
-                                    <Select placeholder="Select category">
-                                        {categoriesData.map(
-                                            (category, index) => (
-                                                <Option
-                                                    key={index}
-                                                    value={category}
-                                                >
-                                                    {category}
-                                                </Option>
-                                            )
-                                        )}
-                                    </Select>
-                                </Form.Item>
-                            </Col>
-                            <Col span={12}>
                                 <Form.Item label="Employees">
                                     <div
                                         style={{
@@ -668,12 +880,14 @@ export default function Services({
                                         marginTop: 4,
                                     }}
                                 >
-                                    If you need a different duration that isn't
-                                    among the displayed ones, please visit our{" "}
-                                    <a href="#" style={{ color: "#1890ff" }}>
-                                        General Settings
+                                    Manage available durations in the{" "}
+                                    <a
+                                        href={route("admin.durations")}
+                                        style={{ color: "#1890ff" }}
+                                    >
+                                        Durations
                                     </a>{" "}
-                                    and change Default Time Slot Step.
+                                    section.
                                 </Text>
                             </Col>
                             <Col span={12}>
@@ -712,6 +926,30 @@ export default function Services({
                             </Col>
                         </Row>
 
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item
+                                    name="sort_order"
+                                    label="Sort Order"
+                                    rules={[
+                                        {
+                                            type: "number",
+                                            min: 0,
+                                            message:
+                                                "Sort order must be a positive number",
+                                        },
+                                    ]}
+                                >
+                                    <InputNumber
+                                        style={{ width: "100%" }}
+                                        placeholder="0"
+                                        min={0}
+                                        max={999}
+                                    />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+
                         <Form.Item name="image" label="Service image">
                             <Upload.Dragger
                                 name="file"
@@ -731,12 +969,343 @@ export default function Services({
                             </Upload.Dragger>
                         </Form.Item>
 
+                        <Row gutter={16}>
+                            <Col span={8}>
+                                <Form.Item
+                                    name="is_active"
+                                    label="Active"
+                                    valuePropName="checked"
+                                >
+                                    <Switch />
+                                </Form.Item>
+                            </Col>
+                            <Col span={8}>
+                                <Form.Item
+                                    name="is_upcoming"
+                                    label="Upcoming Service"
+                                    valuePropName="checked"
+                                >
+                                    <Switch />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+
+                        {/* Upcoming Service Options */}
                         <Form.Item
-                            name="is_active"
-                            label="Active"
-                            valuePropName="checked"
+                            noStyle
+                            shouldUpdate={(prevValues, currentValues) =>
+                                prevValues.is_upcoming !==
+                                currentValues.is_upcoming
+                            }
                         >
-                            <Switch />
+                            {({ getFieldValue }) => {
+                                const isUpcoming = getFieldValue("is_upcoming");
+                                return isUpcoming ? (
+                                    <>
+                                        <Row gutter={16}>
+                                            <Col span={12}>
+                                                <Form.Item
+                                                    name="has_flexible_duration"
+                                                    label="Flexible Duration"
+                                                    valuePropName="checked"
+                                                >
+                                                    <Switch />
+                                                </Form.Item>
+                                            </Col>
+                                            <Col span={12}>
+                                                <Form.Item
+                                                    name="has_tba_pricing"
+                                                    label="TBA Pricing"
+                                                    valuePropName="checked"
+                                                >
+                                                    <Switch />
+                                                </Form.Item>
+                                            </Col>
+                                        </Row>
+
+                                        <Form.Item
+                                            name="coming_soon_description"
+                                            label="Coming Soon Description"
+                                        >
+                                            <TextArea
+                                                rows={3}
+                                                placeholder="Describe what makes this upcoming service special..."
+                                                style={{ minHeight: 80 }}
+                                            />
+                                        </Form.Item>
+
+                                        <div
+                                            style={{
+                                                padding: "12px",
+                                                backgroundColor: "#f0f8ff",
+                                                border: "1px solid #bae7ff",
+                                                borderRadius: "6px",
+                                                marginBottom: 16,
+                                            }}
+                                        >
+                                            <Text
+                                                type="secondary"
+                                                style={{ fontSize: "12px" }}
+                                            >
+                                                <strong>Note:</strong> Upcoming
+                                                services will be displayed to
+                                                customers but cannot be booked.
+                                                They're perfect for announcing
+                                                new services that are "Coming
+                                                Soon".
+                                            </Text>
+                                        </div>
+                                    </>
+                                ) : null;
+                            }}
+                        </Form.Item>
+
+                        {/* Pricing Tiers Section */}
+                        <div style={{ marginTop: 24, marginBottom: 16 }}>
+                            <Title level={4} style={{ marginBottom: 16 }}>
+                                Pricing Tiers (Optional)
+                            </Title>
+                            <Text
+                                type="secondary"
+                                style={{
+                                    fontSize: 14,
+                                    marginBottom: 16,
+                                    display: "block",
+                                }}
+                            >
+                                Add multiple pricing options for this service.
+                                If no tiers are added, the service will use the
+                                standard price and duration above.
+                            </Text>
+
+                            {/* Pricing Tiers List */}
+                            <div style={{ marginBottom: 16 }}>
+                                {editingService?.pricing_tiers?.length > 0 ? (
+                                    <div>
+                                        <div style={{ marginBottom: 12 }}>
+                                            <Text strong>
+                                                Current Pricing Tiers:
+                                            </Text>
+                                        </div>
+                                        {editingService.pricing_tiers.map(
+                                            (tier, index) => (
+                                                <Card
+                                                    key={tier.id || index}
+                                                    size="small"
+                                                    style={{
+                                                        marginBottom: 8,
+                                                        border: "1px solid #f0f0f0",
+                                                    }}
+                                                >
+                                                    <div
+                                                        style={{
+                                                            display: "flex",
+                                                            justifyContent:
+                                                                "space-between",
+                                                            alignItems:
+                                                                "center",
+                                                        }}
+                                                    >
+                                                        <div>
+                                                            <Text strong>
+                                                                {tier.name}
+                                                            </Text>
+                                                            <br />
+                                                            <Text
+                                                                type="secondary"
+                                                                style={{
+                                                                    fontSize: 12,
+                                                                }}
+                                                            >
+                                                                {
+                                                                    tier.duration_minutes
+                                                                }{" "}
+                                                                min • ₹
+                                                                {tier.price}
+                                                                {tier.is_popular && (
+                                                                    <Tag
+                                                                        color="gold"
+                                                                        style={{
+                                                                            marginLeft: 8,
+                                                                        }}
+                                                                    >
+                                                                        Popular
+                                                                    </Tag>
+                                                                )}
+                                                            </Text>
+                                                        </div>
+                                                        <Space>
+                                                            <Button
+                                                                size="small"
+                                                                icon={
+                                                                    <EditOutlined />
+                                                                }
+                                                                onClick={() =>
+                                                                    handleEditPricingTier(
+                                                                        tier
+                                                                    )
+                                                                }
+                                                            >
+                                                                Edit
+                                                            </Button>
+                                                            <Button
+                                                                size="small"
+                                                                danger
+                                                                icon={
+                                                                    <DeleteOutlined />
+                                                                }
+                                                                onClick={() =>
+                                                                    handleDeletePricingTier(
+                                                                        tier.id
+                                                                    )
+                                                                }
+                                                            >
+                                                                Delete
+                                                            </Button>
+                                                        </Space>
+                                                    </div>
+                                                </Card>
+                                            )
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div
+                                        style={{
+                                            padding: 16,
+                                            border: "1px dashed #d9d9d9",
+                                            borderRadius: 8,
+                                            backgroundColor: "#fafafa",
+                                            textAlign: "center",
+                                        }}
+                                    >
+                                        <Text type="secondary">
+                                            No pricing tiers added yet.
+                                        </Text>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Add New Pricing Tier Button */}
+                            <Button
+                                type="dashed"
+                                icon={<PlusOutlined />}
+                                onClick={() => setPricingTierModalVisible(true)}
+                                style={{ width: "100%" }}
+                            >
+                                Add Pricing Tier
+                            </Button>
+                        </div>
+                    </Form>
+                </Modal>
+
+                {/* Pricing Tier Modal */}
+                <Modal
+                    title={
+                        editingPricingTier
+                            ? "Edit Pricing Tier"
+                            : "Add Pricing Tier"
+                    }
+                    open={pricingTierModalVisible}
+                    onOk={handlePricingTierModalOk}
+                    onCancel={handlePricingTierModalCancel}
+                    confirmLoading={loading}
+                    width={600}
+                >
+                    <Form
+                        form={pricingTierForm}
+                        layout="vertical"
+                        onFinish={handlePricingTierModalOk}
+                    >
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item
+                                    name="name"
+                                    label="Tier Name"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message: "Please enter tier name",
+                                        },
+                                    ]}
+                                >
+                                    <Input placeholder="e.g., Single Visit, Pack of 5" />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item
+                                    name="duration_minutes"
+                                    label="Duration (minutes)"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message: "Please enter duration",
+                                        },
+                                    ]}
+                                >
+                                    <InputNumber
+                                        min={1}
+                                        style={{ width: "100%" }}
+                                        placeholder="e.g., 120 for 2 hours"
+                                    />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+
+                        <Form.Item
+                            name="price"
+                            label="Price (₹)"
+                            rules={[
+                                {
+                                    required: true,
+                                    message: "Please enter price",
+                                },
+                            ]}
+                        >
+                            <InputNumber
+                                min={0}
+                                step={0.01}
+                                style={{ width: "100%" }}
+                                placeholder="e.g., 1000.00"
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            name="description"
+                            label="Description (Optional)"
+                        >
+                            <TextArea
+                                rows={3}
+                                placeholder="Describe what's included in this tier..."
+                            />
+                        </Form.Item>
+
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item
+                                    name="is_popular"
+                                    label="Mark as Popular"
+                                    valuePropName="checked"
+                                >
+                                    <Switch />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item
+                                    name="is_active"
+                                    label="Active"
+                                    valuePropName="checked"
+                                >
+                                    <Switch />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+
+                        <Form.Item name="sort_order" label="Sort Order">
+                            <InputNumber
+                                min={0}
+                                style={{ width: "100%" }}
+                                placeholder="Lower numbers appear first"
+                            />
                         </Form.Item>
                     </Form>
                 </Modal>

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Extra extends Model
@@ -15,6 +16,8 @@ class Extra extends Model
         'description',
         'price',
         'duration',
+        'duration_id',
+        'max_quantity',
         'image',
         'is_active',
         'sort_order',
@@ -23,6 +26,7 @@ class Extra extends Model
     protected $casts = [
         'price' => 'decimal:2',
         'duration' => 'integer',
+        'max_quantity' => 'integer',
         'is_active' => 'boolean',
         'sort_order' => 'integer',
     ];
@@ -45,6 +49,25 @@ class Extra extends Model
         return $this->belongsToMany(Booking::class, 'booking_extras')
                     ->withPivot('price')
                     ->withTimestamps();
+    }
+
+    /**
+     * Get the duration for this extra
+     */
+    public function durationRelation(): BelongsTo
+    {
+        return $this->belongsTo(Duration::class, 'duration_id');
+    }
+
+    /**
+     * Get total duration in minutes (for backward compatibility)
+     */
+    public function getTotalDurationAttribute()
+    {
+        if ($this->durationRelation) {
+            return $this->durationRelation->total_minutes;
+        }
+        return $this->duration ?? 0; // Fallback to old duration field
     }
 
     /**

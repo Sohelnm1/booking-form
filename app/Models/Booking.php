@@ -16,6 +16,7 @@ class Booking extends Model
     protected $fillable = [
         'user_id',
         'service_id',
+        'pricing_tier_id',
         'employee_id',
         'appointment_time',
         'appointment_date_time',
@@ -88,6 +89,14 @@ class Booking extends Model
     }
 
     /**
+     * Get the pricing tier for this booking (if any)
+     */
+    public function pricingTier(): BelongsTo
+    {
+        return $this->belongsTo(ServicePricingTier::class, 'pricing_tier_id');
+    }
+
+    /**
      * Get the employee assigned to this booking
      */
     public function employee(): BelongsTo
@@ -101,7 +110,7 @@ class Booking extends Model
     public function extras(): BelongsToMany
     {
         return $this->belongsToMany(Extra::class, 'booking_extras')
-                    ->withPivot('price')
+                    ->withPivot('price', 'quantity')
                     ->withTimestamps();
     }
 

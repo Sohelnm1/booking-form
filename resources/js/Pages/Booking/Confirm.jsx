@@ -54,6 +54,9 @@ export default function Confirm({
     paymentSettings,
     totalPrice,
     verifiedPhone,
+    selectedPricingTier,
+    selectedDuration,
+    selectedPrice,
     auth,
 }) {
     const [formInstance] = Form.useForm();
@@ -66,9 +69,23 @@ export default function Confirm({
     const [finalPrice, setFinalPrice] = useState(totalPrice);
 
     // Calculate total duration
+    const serviceDuration = selectedPricingTier
+        ? selectedPricingTier.duration_minutes
+        : service.duration;
     const totalDuration =
-        service.duration +
-        selectedExtras.reduce((sum, extra) => sum + (extra.duration || 0), 0);
+        serviceDuration +
+        selectedExtras.reduce((sum, extra) => {
+            const quantity = extra.quantity || 1;
+            // Check if durationRelation exists and calculate total minutes
+            if (extra.durationRelation) {
+                const totalMinutes =
+                    extra.durationRelation.hours * 60 +
+                    extra.durationRelation.minutes;
+                return sum + totalMinutes * quantity;
+            }
+            // Fallback to total_duration if available
+            return sum + (extra.total_duration || 0) * quantity;
+        }, 0);
 
     // Set initial form values when component mounts
     React.useEffect(() => {
@@ -191,12 +208,21 @@ export default function Confirm({
         setLoading(true);
         try {
             const extraIds = selectedExtras.map((extra) => extra.id);
+            const extraQuantitiesData = selectedExtras.map((extra) => ({
+                id: extra.id,
+                quantity: extra.quantity || 1,
+            }));
             const consentIds = consentSettings.map((consent) => consent.id);
 
             // Build form data dynamically based on form fields
             const formData = {
                 service_id: service.id,
+                pricing_tier_id: selectedPricingTier?.id,
+                selected_duration:
+                    selectedPricingTier?.duration_minutes || service.duration,
+                selected_price: selectedPricingTier?.price || service.price,
                 extras: extraIds,
+                extra_quantities: extraQuantitiesData,
                 date: date,
                 time: time,
                 consents: consentIds,
@@ -217,6 +243,14 @@ export default function Confirm({
 
             // Debug: Log what's being sent to backend
             console.log("Form data being sent to backend:", formData);
+            console.log("Pricing tier debug:", {
+                selectedPricingTier: selectedPricingTier,
+                pricing_tier_id: formData.pricing_tier_id,
+                selected_duration: formData.selected_duration,
+                selected_price: formData.selected_price,
+                service_price: service.price,
+                service_duration: service.duration,
+            });
             console.log("Form values from Ant Design:", values);
             console.log("Applied coupon:", appliedCoupon);
             console.log("Coupon code being sent:", formData.coupon_code);
@@ -565,28 +599,90 @@ export default function Confirm({
                             <Descriptions bordered column={1} size="small">
                                 <Descriptions.Item label="Service">
                                     <div>
-                                        <Text strong>{service.name}</Text>
+                                        <Text strong>
+                                            {service.name}
+                                            {selectedPricingTier && (
+                                                <Tag
+                                                    color="blue"
+                                                    style={{
+                                                        marginLeft: 8,
+                                                        fontSize: 10,
+                                                    }}
+                                                >
+                                                    {selectedPricingTier.name}
+                                                </Tag>
+                                            )}
+                                        </Text>
                                         <br />
                                         <Text type="secondary">
-                                            {formatDuration(service.duration)}
+                                            {selectedPricingTier
+                                                ? formatDuration(
+                                                      selectedPricingTier.duration_minutes
+                                                  )
+                                                : formatDuration(
+                                                      service.duration
+                                                  )}
                                         </Text>
                                     </div>
                                 </Descriptions.Item>
 
                                 {selectedExtras.length > 0 && (
                                     <Descriptions.Item label="Extras">
-                                        {selectedExtras.map((extra) => (
-                                            <div
-                                                key={extra.id}
-                                                style={{ marginBottom: 8 }}
-                                            >
-                                                <Text>+ {extra.name}</Text>
-                                                <br />
-                                                <Text type="secondary">
-                                                    {formatPrice(extra.price)}
-                                                </Text>
-                                            </div>
-                                        ))}
+                                        {selectedExtras.map((extra) => {
+                                            const quantity =
+                                                extra.quantity || 1;
+                                            return (
+                                                <div
+                                                    key={extra.id}
+                                                    style={{ marginBottom: 8 }}
+                                                >
+                                                    <Text>
+                                                        + {extra.name}
+                                                        {quantity > 1 && (
+                                                            <Text
+                                                                type="secondary"
+                                                                style={{
+                                                                    fontSize: 12,
+                                                                }}
+                                                            >
+                                                                {" "}
+                                                                × {quantity}
+                                                            </Text>
+                                                        )}
+                                                    </Text>
+                                                    <br />
+                                                    <Text type="secondary">
+                                                        {formatPrice(
+                                                            parseFloat(
+                                                                extra.price
+                                                            ) * quantity
+                                                        )}
+                                                    </Text>
+                                                    <br />
+                                                    <Text
+                                                        type="secondary"
+                                                        style={{ fontSize: 12 }}
+                                                    >
+                                                        {extra.duration_relation
+                                                            ? extra
+                                                                  .duration_relation
+                                                                  .label
+                                                            : "No additional time"}
+                                                        {quantity > 1 && (
+                                                            <Text
+                                                                type="secondary"
+                                                                style={{
+                                                                    fontSize: 12,
+                                                                }}
+                                                            >
+                                                                {" "}
+                                                                × {quantity}
+                                                            </Text>
+                                                        )}
+                                                    </Text>
+                                                </div>
+                                            );
+                                        })}
                                     </Descriptions.Item>
                                 )}
 
@@ -1068,11 +1164,34 @@ export default function Confirm({
                                         marginBottom: 8,
                                     }}
                                 >
-                                    <Text strong>{service.name}</Text>
-                                    <Text>{formatPrice(service.price)}</Text>
+                                    <Text strong>
+                                        {service.name}
+                                        {selectedPricingTier && (
+                                            <Tag
+                                                color="blue"
+                                                style={{
+                                                    marginLeft: 8,
+                                                    fontSize: 10,
+                                                }}
+                                            >
+                                                {selectedPricingTier.name}
+                                            </Tag>
+                                        )}
+                                    </Text>
+                                    <Text>
+                                        {selectedPricingTier
+                                            ? formatPrice(
+                                                  selectedPricingTier.price
+                                              )
+                                            : formatPrice(service.price)}
+                                    </Text>
                                 </div>
                                 <Text type="secondary" style={{ fontSize: 12 }}>
-                                    {formatDuration(service.duration)}
+                                    {selectedPricingTier
+                                        ? formatDuration(
+                                              selectedPricingTier.duration_minutes
+                                          )
+                                        : formatDuration(service.duration)}
                                 </Text>
                             </div>
 
@@ -1088,25 +1207,46 @@ export default function Confirm({
                             {selectedExtras.length > 0 && (
                                 <>
                                     <Divider style={{ margin: "12px 0" }} />
-                                    {selectedExtras.map((extra) => (
-                                        <div
-                                            key={extra.id}
-                                            style={{ marginBottom: 8 }}
-                                        >
+                                    {selectedExtras.map((extra) => {
+                                        const quantity = extra.quantity || 1;
+                                        const totalPrice =
+                                            parseFloat(extra.price) * quantity;
+
+                                        return (
                                             <div
-                                                style={{
-                                                    display: "flex",
-                                                    justifyContent:
-                                                        "space-between",
-                                                }}
+                                                key={extra.id}
+                                                style={{ marginBottom: 8 }}
                                             >
-                                                <Text>+ {extra.name}</Text>
-                                                <Text>
-                                                    {formatPrice(extra.price)}
-                                                </Text>
+                                                <div
+                                                    style={{
+                                                        display: "flex",
+                                                        justifyContent:
+                                                            "space-between",
+                                                    }}
+                                                >
+                                                    <Text>
+                                                        + {extra.name}
+                                                        {quantity > 1 && (
+                                                            <Text
+                                                                type="secondary"
+                                                                style={{
+                                                                    fontSize: 12,
+                                                                    marginLeft: 4,
+                                                                }}
+                                                            >
+                                                                × {quantity}
+                                                            </Text>
+                                                        )}
+                                                    </Text>
+                                                    <Text>
+                                                        {formatPrice(
+                                                            totalPrice
+                                                        )}
+                                                    </Text>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </>
                             )}
 

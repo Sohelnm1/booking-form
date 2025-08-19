@@ -17,7 +17,7 @@ class InvoiceController extends Controller
      */
     public function adminIndex()
     {
-        $invoices = Invoice::with(['booking.service', 'booking.extras', 'customer'])
+        $invoices = Invoice::with(['booking.service', 'booking.extras.durationRelation', 'customer'])
             ->orderBy('issued_date', 'desc')
             ->paginate(15);
 
@@ -46,7 +46,7 @@ class InvoiceController extends Controller
         $user = Auth::user();
         
         $invoices = Invoice::where('user_id', $user->id)
-            ->with(['booking.service', 'booking.extras'])
+            ->with(['booking.service', 'booking.extras.durationRelation'])
             ->orderBy('issued_date', 'desc')
             ->paginate(10);
 
@@ -75,7 +75,7 @@ class InvoiceController extends Controller
         
         $invoice = Invoice::with([
             'booking.service', 
-            'booking.extras', 
+            'booking.extras.durationRelation', 
             'booking.employee',
             'customer'
         ])->findOrFail($id);
@@ -102,7 +102,7 @@ class InvoiceController extends Controller
         
         $invoice = Invoice::with([
             'booking.service', 
-            'booking.extras', 
+            'booking.extras.durationRelation', 
             'booking.employee',
             'customer'
         ])->findOrFail($id);
@@ -138,7 +138,7 @@ class InvoiceController extends Controller
     {
         $invoice = Invoice::with([
             'booking.service', 
-            'booking.extras', 
+            'booking.extras.durationRelation', 
             'booking.employee',
             'customer'
         ])->findOrFail($id);

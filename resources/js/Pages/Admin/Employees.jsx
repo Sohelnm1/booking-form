@@ -39,6 +39,15 @@ export default function Employees({
     services,
     scheduleSettings,
 }) {
+    const formatDuration = (minutes) => {
+        if (minutes < 60) {
+            return `${minutes} min`;
+        } else {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+        }
+    };
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState(null);
     const [form] = Form.useForm();
@@ -381,7 +390,8 @@ export default function Employees({
                             >
                                 {services.map((service) => (
                                     <Option key={service.id} value={service.id}>
-                                        {service.name} ({service.duration} min)
+                                        {service.name} (
+                                        {formatDuration(service.duration)})
                                     </Option>
                                 ))}
                             </Select>

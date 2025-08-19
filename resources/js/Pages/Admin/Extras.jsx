@@ -36,8 +36,23 @@ const { Title, Text } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
 
-export default function Extras({ auth, extras, services, errors }) {
+export default function Extras({ auth, extras, services, durations, errors }) {
     const [isModalVisible, setIsModalVisible] = useState(false);
+
+    // Debug logging
+    console.log("Admin Extras component - Extras data:", extras);
+
+    // Debug individual extras
+    extras.forEach((extra, index) => {
+        console.log(`Admin Extra ${index + 1}:`, {
+            id: extra.id,
+            name: extra.name,
+            duration_id: extra.duration_id,
+            durationRelation: extra.durationRelation,
+            hasDurationRelation: !!extra.durationRelation,
+            durationLabel: extra.durationRelation?.label,
+        });
+    });
     const [editingExtra, setEditingExtra] = useState(null);
     const [isViewMode, setIsViewMode] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -51,7 +66,9 @@ export default function Extras({ auth, extras, services, errors }) {
                     name: editingExtra.name || "",
                     description: editingExtra.description || "",
                     price: parseFloat(editingExtra.price) || 0,
-                    duration: parseInt(editingExtra.duration) || 0,
+                    duration_id: editingExtra.duration_id || null,
+                    max_quantity: editingExtra.max_quantity || 5,
+                    sort_order: editingExtra.sort_order || 0,
                     is_active:
                         editingExtra.is_active !== undefined
                             ? editingExtra.is_active
@@ -69,7 +86,9 @@ export default function Extras({ auth, extras, services, errors }) {
                 setTimeout(() => {
                     form.setFieldsValue({
                         is_active: true,
-                        duration: 0,
+                        duration_id: null,
+                        max_quantity: 5,
+                        sort_order: 0,
                         description: "",
                         services: [],
                     });
@@ -94,6 +113,30 @@ export default function Extras({ auth, extras, services, errors }) {
         setEditingExtra(extra);
         setIsViewMode(true);
         setIsModalVisible(true);
+    };
+
+    const handleSortOrderChange = (extraId, newSortOrder) => {
+        if (newSortOrder === null || newSortOrder < 0) {
+            message.error("Sort order must be a positive number");
+            return;
+        }
+
+        router.put(
+            route("admin.extras.update-sort-order", extraId),
+            { sort_order: newSortOrder },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    message.success("Sort order updated successfully");
+                },
+                onError: (errors) => {
+                    message.error(
+                        errors.error || "Failed to update sort order"
+                    );
+                },
+            }
+        );
     };
 
     const handleDelete = (extra) => {
@@ -148,9 +191,9 @@ export default function Extras({ auth, extras, services, errors }) {
                     } else if (key === "price") {
                         const priceValue = parseFloat(values[key]) || 0;
                         formData.append(key, priceValue);
-                    } else if (key === "duration") {
-                        const durationValue = parseInt(values[key]) || 0;
-                        formData.append(key, durationValue);
+                    } else if (key === "duration_id") {
+                        const durationId = values[key] || null;
+                        formData.append(key, durationId);
                     } else if (key === "is_active") {
                         formData.append(key, values[key] ? "1" : "0");
                     } else if (key === "services") {
@@ -285,12 +328,12 @@ export default function Extras({ auth, extras, services, errors }) {
             title: "Duration",
             dataIndex: "duration",
             key: "duration",
-            render: (duration) => (
+            render: (duration, record) => (
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                     <ClockCircleOutlined style={{ color: "#1890ff" }} />
                     <Text>
-                        {duration > 0
-                            ? `${duration} min`
+                        {record.durationRelation
+                            ? record.durationRelation.label
                             : "No additional time"}
                     </Text>
                 </div>
@@ -321,6 +364,23 @@ export default function Extras({ auth, extras, services, errors }) {
                         </Text>
                     )}
                 </div>
+            ),
+        },
+        {
+            title: "Sort Order",
+            dataIndex: "sort_order",
+            key: "sort_order",
+            render: (sortOrder, record) => (
+                <InputNumber
+                    min={0}
+                    max={999}
+                    value={sortOrder}
+                    onChange={(value) =>
+                        handleSortOrderChange(record.id, value)
+                    }
+                    style={{ width: 80 }}
+                    size="small"
+                />
             ),
         },
         {
@@ -512,26 +572,74 @@ export default function Extras({ auth, extras, services, errors }) {
                         <Row gutter={16}>
                             <Col span={12}>
                                 <Form.Item
-                                    name="duration"
-                                    label="Additional Duration (minutes)"
-                                    rules={
-                                        isViewMode
-                                            ? []
-                                            : [
-                                                  {
-                                                      type: "number",
-                                                      min: 0,
-                                                      message:
-                                                          "Duration must be a positive number",
-                                                  },
-                                              ]
-                                    }
+                                    name="duration_id"
+                                    label="Additional Duration"
+                                >
+                                    <Select
+                                        placeholder="Select duration (optional)"
+                                        allowClear
+                                        style={{ width: "100%" }}
+                                        disabled={isViewMode}
+                                    >
+                                        {durations?.map((duration) => (
+                                            <Option
+                                                key={duration.id}
+                                                value={duration.id}
+                                            >
+                                                {duration.label}
+                                            </Option>
+                                        ))}
+                                    </Select>
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item
+                                    name="max_quantity"
+                                    label="Max Quantity"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message:
+                                                "Please enter maximum quantity",
+                                        },
+                                        {
+                                            type: "number",
+                                            min: 1,
+                                            max: 20,
+                                            message:
+                                                "Value must be between 1 and 20",
+                                        },
+                                    ]}
                                 >
                                     <InputNumber
+                                        min={1}
+                                        max={20}
+                                        style={{ width: "100%" }}
+                                        placeholder="Enter max quantity"
+                                        disabled={isViewMode}
+                                    />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item
+                                    name="sort_order"
+                                    label="Sort Order"
+                                    rules={[
+                                        {
+                                            type: "number",
+                                            min: 0,
+                                            message:
+                                                "Sort order must be a positive number",
+                                        },
+                                    ]}
+                                >
+                                    <InputNumber
+                                        min={0}
+                                        max={999}
                                         style={{ width: "100%" }}
                                         placeholder="0"
-                                        min={0}
-                                        step={5}
                                         disabled={isViewMode}
                                     />
                                 </Form.Item>

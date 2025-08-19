@@ -14,6 +14,8 @@ use App\Models\Booking;
 use App\Models\User;
 use App\Models\Coupon;
 use App\Models\CouponUsage;
+use App\Models\BookingSetting;
+use App\Models\ServicePricingTier;
 use App\Services\RazorpayService;
 use Illuminate\Support\Str;
 use Twilio\Rest\Client;
@@ -26,10 +28,15 @@ class BookingController extends Controller
      */
     public function selectService()
     {
-        $services = Service::active()->ordered()->get();
+        // Only show services that are active and not upcoming (bookable services)
+        $services = Service::availableForBooking()->with('pricingTiers')->ordered()->get();
+        
+        // Also get upcoming services to display separately
+        $upcomingServices = Service::upcoming()->active()->with('pricingTiers')->ordered()->get();
         
         return Inertia::render('Booking/SelectService', [
             'services' => $services,
+            'upcomingServices' => $upcomingServices,
             'auth' => [
                 'user' => Auth::user(),
             ],
@@ -42,20 +49,110 @@ class BookingController extends Controller
     public function selectExtras(Request $request)
     {
         $serviceId = $request->query('service_id');
+        $pricingTierId = $request->query('pricing_tier_id');
+        $selectedDuration = $request->query('selected_duration');
+        $selectedPrice = $request->query('selected_price');
+        
         $service = Service::findOrFail($serviceId);
-        $extras = $service->extras()
-                         ->where('extras.is_active', true)
-                         ->orderBy('service_extras.sort_order')
-                         ->orderBy('extras.name')
-                         ->get();
+        
+        // If pricing tier is selected, get the tier details
+        $selectedPricingTier = null;
+        if ($pricingTierId) {
+            $selectedPricingTier = ServicePricingTier::find($pricingTierId);
+        }
+        
+        // Load extras with durationRelation using a different approach
+        $extras = Extra::whereHas('services', function($query) use ($serviceId) {
+            $query->where('services.id', $serviceId);
+        })
+        ->with(['durationRelation', 'services'])
+        ->where('extras.is_active', true)
+        ->ordered()
+        ->get();
+
+        // Manually load duration data to ensure it's available
+        $extrasWithDuration = $extras->map(function($extra) {
+            $extraData = $extra->toArray();
+            if ($extra->durationRelation) {
+                $extraData['durationRelation'] = [
+                    'id' => $extra->durationRelation->id,
+                    'label' => $extra->durationRelation->label,
+                    'hours' => $extra->durationRelation->hours,
+                    'minutes' => $extra->durationRelation->minutes,
+                    'calculated_total_minutes' => ($extra->durationRelation->hours * 60) + $extra->durationRelation->minutes,
+                ];
+            } else {
+                $extraData['durationRelation'] = null;
+            }
+            // Ensure max_quantity is included
+            $extraData['max_quantity'] = $extra->max_quantity ?? 5;
+            return $extraData;
+        });
+        
+        // Debug logging
+        \Log::info('SelectExtras - Extras data:', [
+            'service_id' => $serviceId,
+            'extras_count' => $extras->count(),
+            'extras_data' => $extras->map(function($extra) {
+                return [
+                    'id' => $extra->id,
+                    'name' => $extra->name,
+                    'duration_id' => $extra->duration_id,
+                    'durationRelation' => $extra->durationRelation ? [
+                        'id' => $extra->durationRelation->id,
+                        'label' => $extra->durationRelation->label,
+                        'hours' => $extra->durationRelation->hours,
+                        'minutes' => $extra->durationRelation->minutes,
+                        'calculated_total_minutes' => ($extra->durationRelation->hours * 60) + $extra->durationRelation->minutes,
+                    ] : null,
+                    'total_duration' => $extra->total_duration,
+                ];
+            })->toArray()
+        ]);
+
+        // Additional debugging for each extra
+        foreach ($extras as $extra) {
+            \Log::info("Extra {$extra->id} ({$extra->name}) - duration_id: {$extra->duration_id}, durationRelation: " . ($extra->durationRelation ? 'loaded' : 'null'));
+            if ($extra->durationRelation) {
+                \Log::info("  Duration details: {$extra->durationRelation->label} ({$extra->durationRelation->hours}h {$extra->durationRelation->minutes}m)");
+            }
+        }
+
+        // Get booking settings
+        $bookingSettings = BookingSetting::getAllSettings();
         
         return Inertia::render('Booking/SelectExtras', [
             'service' => $service,
-            'extras' => $extras,
+            'extras' => $extrasWithDuration,
+            'bookingSettings' => $bookingSettings,
+            'selectedPricingTier' => $selectedPricingTier,
+            'selectedDuration' => $selectedDuration,
+            'selectedPrice' => $selectedPrice,
             'auth' => [
                 'user' => Auth::user(),
             ],
         ]);
+    }
+
+    /**
+     * Store extra quantities in session
+     */
+    public function storeExtraQuantities(Request $request)
+    {
+        $request->validate([
+            'extra_quantities' => 'required|array',
+            'extra_quantities.*.id' => 'required|integer|exists:extras,id',
+            'extra_quantities.*.quantity' => 'required|integer|min:1|max:20',
+        ]);
+
+        // Store in session
+        session(['booking_extra_quantities' => $request->extra_quantities]);
+
+        \Log::info('Extra quantities stored in session:', [
+            'extra_quantities' => $request->extra_quantities
+        ]);
+
+        return response()->json(['success' => true]);
     }
 
     /**
@@ -64,16 +161,86 @@ class BookingController extends Controller
     public function selectDateTime(Request $request)
     {
         $serviceId = $request->query('service_id');
+        $pricingTierId = $request->query('pricing_tier_id');
+        $selectedDuration = $request->query('selected_duration');
+        $selectedPrice = $request->query('selected_price');
         $extras = $request->query('extras', []);
         
+        // Try to get extra quantities from JSON parameter first, then session
+        $extraQuantities = [];
+        $extraQuantitiesJson = $request->query('extra_quantities_json');
+        if ($extraQuantitiesJson) {
+            try {
+                $extraQuantities = json_decode(urldecode($extraQuantitiesJson), true) ?: [];
+            } catch (\Exception $e) {
+                \Log::error('Failed to decode extra quantities JSON:', ['error' => $e->getMessage()]);
+                $extraQuantities = session('booking_extra_quantities', []);
+            }
+        } else {
+            $extraQuantities = session('booking_extra_quantities', []);
+        }
+        
+        // Debug logging
+        \Log::info('SelectDateTime - Request data:', [
+            'service_id' => $serviceId,
+            'extras' => $extras,
+            'extra_quantities_json' => $extraQuantitiesJson,
+            'extra_quantities_decoded' => $extraQuantities,
+            'all_query_params' => $request->query()
+        ]);
+        
         $service = Service::findOrFail($serviceId);
-        $selectedExtras = Extra::whereIn('id', $extras)->get();
+        $selectedExtras = Extra::with('durationRelation')->whereIn('id', $extras)->get();
+        
+        // Process extra quantities with proper durationRelation handling
+        $extrasWithQuantities = $selectedExtras->map(function($extra) use ($extraQuantities) {
+            $extraData = $extra->toArray();
+            
+            // Manually include durationRelation to ensure it's properly serialized
+            if ($extra->durationRelation) {
+                $extraData['durationRelation'] = [
+                    'id' => $extra->durationRelation->id,
+                    'label' => $extra->durationRelation->label,
+                    'hours' => $extra->durationRelation->hours,
+                    'minutes' => $extra->durationRelation->minutes,
+                    'calculated_total_minutes' => ($extra->durationRelation->hours * 60) + $extra->durationRelation->minutes,
+                ];
+            } else {
+                $extraData['durationRelation'] = null;
+            }
+            
+            // Find the quantity for this extra
+            $quantity = 1; // default
+            foreach ($extraQuantities as $eq) {
+                if (is_array($eq) && isset($eq['id']) && $eq['id'] == $extra->id) {
+                    $quantity = $eq['quantity'] ?? 1;
+                    break;
+                }
+            }
+            $extraData['quantity'] = $quantity;
+            return $extraData;
+        });
+        
+        // Debug logging
+        \Log::info('SelectDateTime - Processed extras:', [
+            'extras_with_quantities' => $extrasWithQuantities->toArray()
+        ]);
+        
         $scheduleSettings = ScheduleSetting::active()->ordered()->get();
         
+        // Get pricing tier if selected
+        $selectedPricingTier = null;
+        if ($pricingTierId) {
+            $selectedPricingTier = ServicePricingTier::find($pricingTierId);
+        }
+
         return Inertia::render('Booking/SelectDateTime', [
             'service' => $service,
-            'selectedExtras' => $selectedExtras,
+            'selectedExtras' => $extrasWithQuantities,
             'scheduleSettings' => $scheduleSettings,
+            'selectedPricingTier' => $selectedPricingTier,
+            'selectedDuration' => $selectedDuration,
+            'selectedPrice' => $selectedPrice,
             'auth' => [
                 'user' => Auth::user(),
             ],
@@ -86,20 +253,77 @@ class BookingController extends Controller
     public function consent(Request $request)
     {
         $serviceId = $request->query('service_id');
+        $pricingTierId = $request->query('pricing_tier_id');
+        $selectedDuration = $request->query('selected_duration');
+        $selectedPrice = $request->query('selected_price');
         $extras = $request->query('extras', []);
+        
+        // Try to get extra quantities from JSON parameter first, then session
+        $extraQuantities = [];
+        $extraQuantitiesJson = $request->query('extra_quantities_json');
+        if ($extraQuantitiesJson) {
+            try {
+                $extraQuantities = json_decode(urldecode($extraQuantitiesJson), true) ?: [];
+            } catch (\Exception $e) {
+                \Log::error('Failed to decode extra quantities JSON in consent:', ['error' => $e->getMessage()]);
+                $extraQuantities = session('booking_extra_quantities', []);
+            }
+        } else {
+            $extraQuantities = session('booking_extra_quantities', []);
+        }
+        
         $date = $request->query('date');
         $time = $request->query('time');
         
         $service = Service::findOrFail($serviceId);
-        $selectedExtras = Extra::whereIn('id', $extras)->get();
+        $selectedExtras = Extra::with('durationRelation')->whereIn('id', $extras)->get();
+        
+        // Process extra quantities with proper durationRelation handling for consent page
+        $extrasWithQuantities = $selectedExtras->map(function($extra) use ($extraQuantities) {
+            $extraData = $extra->toArray();
+            
+            // Manually include durationRelation to ensure it's properly serialized
+            if ($extra->durationRelation) {
+                $extraData['durationRelation'] = [
+                    'id' => $extra->durationRelation->id,
+                    'label' => $extra->durationRelation->label,
+                    'hours' => $extra->durationRelation->hours,
+                    'minutes' => $extra->durationRelation->minutes,
+                    'calculated_total_minutes' => ($extra->durationRelation->hours * 60) + $extra->durationRelation->minutes,
+                ];
+            } else {
+                $extraData['durationRelation'] = null;
+            }
+            
+            // Find the quantity for this extra
+            $quantity = 1; // default
+            foreach ($extraQuantities as $eq) {
+                if (is_array($eq) && isset($eq['id']) && $eq['id'] == $extra->id) {
+                    $quantity = $eq['quantity'] ?? 1;
+                    break;
+                }
+            }
+            $extraData['quantity'] = $quantity;
+            return $extraData;
+        });
+        
         $consentSettings = ConsentSetting::active()->ordered()->get();
         
+        // Get pricing tier if selected
+        $selectedPricingTier = null;
+        if ($pricingTierId) {
+            $selectedPricingTier = ServicePricingTier::find($pricingTierId);
+        }
+
         return Inertia::render('Booking/Consent', [
             'service' => $service,
-            'selectedExtras' => $selectedExtras,
+            'selectedExtras' => $extrasWithQuantities,
             'date' => $date,
             'time' => $time,
             'consentSettings' => $consentSettings,
+            'selectedPricingTier' => $selectedPricingTier,
+            'selectedDuration' => $selectedDuration,
+            'selectedPrice' => $selectedPrice,
             'auth' => [
                 'user' => Auth::user(),
             ],
@@ -112,7 +336,25 @@ class BookingController extends Controller
     public function confirm(Request $request)
     {
         $serviceId = $request->query('service_id');
+        $pricingTierId = $request->query('pricing_tier_id');
+        $selectedDuration = $request->query('selected_duration');
+        $selectedPrice = $request->query('selected_price');
         $extras = $request->query('extras', []);
+        
+        // Try to get extra quantities from JSON parameter first, then session
+        $extraQuantities = [];
+        $extraQuantitiesJson = $request->query('extra_quantities_json');
+        if ($extraQuantitiesJson) {
+            try {
+                $extraQuantities = json_decode(urldecode($extraQuantitiesJson), true) ?: [];
+            } catch (\Exception $e) {
+                \Log::error('Failed to decode extra quantities JSON in confirm:', ['error' => $e->getMessage()]);
+                $extraQuantities = session('booking_extra_quantities', []);
+            }
+        } else {
+            $extraQuantities = session('booking_extra_quantities', []);
+        }
+        
         $date = $request->query('date');
         $time = $request->query('time');
         $consents = $request->query('consents', []);
@@ -130,7 +372,37 @@ class BookingController extends Controller
         ]);
         
         $service = Service::findOrFail($serviceId);
-        $selectedExtras = Extra::whereIn('id', $extras)->get();
+        $selectedExtras = Extra::with('durationRelation')->whereIn('id', $extras)->get();
+        
+        // Process extra quantities with proper durationRelation handling for confirm page
+        $extrasWithQuantities = $selectedExtras->map(function($extra) use ($extraQuantities) {
+            $extraData = $extra->toArray();
+            
+            // Manually include durationRelation to ensure it's properly serialized
+            if ($extra->durationRelation) {
+                $extraData['durationRelation'] = [
+                    'id' => $extra->durationRelation->id,
+                    'label' => $extra->durationRelation->label,
+                    'hours' => $extra->durationRelation->hours,
+                    'minutes' => $extra->durationRelation->minutes,
+                    'calculated_total_minutes' => ($extra->durationRelation->hours * 60) + $extra->durationRelation->minutes,
+                ];
+            } else {
+                $extraData['durationRelation'] = null;
+            }
+            
+            // Find the quantity for this extra
+            $quantity = 1; // default
+            foreach ($extraQuantities as $eq) {
+                if (is_array($eq) && isset($eq['id']) && $eq['id'] == $extra->id) {
+                    $quantity = $eq['quantity'] ?? 1;
+                    break;
+                }
+            }
+            $extraData['quantity'] = $quantity;
+            return $extraData;
+        });
+        
         $consentSettings = ConsentSetting::whereIn('id', $consents)->get();
         
         // Get any active booking form (prefer the first one)
@@ -226,15 +498,23 @@ class BookingController extends Controller
             'currency' => $this->getSetting('currency', 'INR'),
         ];
         
+        // Get pricing tier if selected
+        $selectedPricingTier = null;
+        if ($pricingTierId) {
+            $selectedPricingTier = ServicePricingTier::find($pricingTierId);
+        }
+
         // Calculate total price
-        $totalPrice = floatval($service->price);
-        foreach ($selectedExtras as $extra) {
-            $totalPrice += floatval($extra->price);
+        $servicePrice = $selectedPricingTier ? floatval($selectedPricingTier->price) : floatval($service->price);
+        $totalPrice = $servicePrice;
+        foreach ($extrasWithQuantities as $extra) {
+            $quantity = $extra['quantity'] ?? 1;
+            $totalPrice += floatval($extra['price']) * $quantity;
         }
         
         return Inertia::render('Booking/Confirm', [
             'service' => $service,
-            'selectedExtras' => $selectedExtras,
+            'selectedExtras' => $extrasWithQuantities,
             'date' => $date,
             'time' => $time,
             'consentSettings' => $consentSettings,
@@ -243,6 +523,9 @@ class BookingController extends Controller
             'paymentSettings' => $paymentSettings,
             'totalPrice' => $totalPrice,
             'verifiedPhone' => $request->get('verified_phone'),
+            'selectedPricingTier' => $selectedPricingTier,
+            'selectedDuration' => $selectedDuration,
+            'selectedPrice' => $selectedPrice,
             'auth' => [
                 'user' => Auth::user(),
             ],
@@ -280,6 +563,9 @@ class BookingController extends Controller
             // Build validation rules dynamically
             $validationRules = [
                 'service_id' => 'required|exists:services,id',
+                'pricing_tier_id' => 'nullable|exists:service_pricing_tiers,id',
+                'selected_duration' => 'nullable|integer',
+                'selected_price' => 'nullable|numeric',
                 'extras' => 'array',
                 'extras.*' => 'exists:extras,id',
                 'date' => 'required|date|after_or_equal:today',
@@ -336,16 +622,77 @@ class BookingController extends Controller
             ]);
 
             $service = Service::findOrFail($request->service_id);
-            $selectedExtras = Extra::whereIn('id', $request->extras ?? [])->get();
             
-            // Calculate total duration and price
-            $totalDuration = $service->duration;
-            $totalPrice = floatval($service->price);
+            // Get pricing tier if selected
+            $selectedPricingTier = null;
+            if ($request->pricing_tier_id) {
+                $selectedPricingTier = ServicePricingTier::find($request->pricing_tier_id);
+            }
+            
+            $selectedExtras = Extra::with('durationRelation')->whereIn('id', $request->extras ?? [])->get();
+            
+            // Process extra quantities from form data or session
+            $extraQuantities = $request->extra_quantities ?? session('booking_extra_quantities', []);
+            
+            \Log::info('Processing booking with extra quantities', [
+                'request_extra_quantities' => $request->extra_quantities,
+                'session_extra_quantities' => session('booking_extra_quantities', []),
+                'final_extra_quantities' => $extraQuantities
+            ]);
+            
+            $extrasWithQuantities = [];
             
             foreach ($selectedExtras as $extra) {
-                $totalDuration += $extra->duration ?? 0;
-                $totalPrice += floatval($extra->price);
+                $quantity = 1; // default
+                foreach ($extraQuantities as $eq) {
+                    if (is_array($eq) && isset($eq['id']) && $eq['id'] == $extra->id) {
+                        $quantity = $eq['quantity'] ?? 1;
+                        break;
+                    }
+                }
+                $extrasWithQuantities[] = [
+                    'id' => $extra->id,
+                    'name' => $extra->name,
+                    'price' => $extra->price,
+                    'quantity' => $quantity,
+                    'durationRelation' => $extra->durationRelation,
+                    'total_duration' => $extra->total_duration,
+                ];
             }
+            
+            // Calculate total duration and price
+            $serviceDuration = $selectedPricingTier ? $selectedPricingTier->duration_minutes : $service->duration;
+            $servicePrice = $selectedPricingTier ? floatval($selectedPricingTier->price) : floatval($service->price);
+            
+            $totalDuration = $serviceDuration;
+            $totalPrice = $servicePrice;
+            
+            foreach ($extrasWithQuantities as $extra) {
+                $quantity = $extra['quantity'];
+                if ($extra['durationRelation']) {
+                    $totalDuration += (($extra['durationRelation']->hours * 60) + $extra['durationRelation']->minutes) * $quantity;
+                } else {
+                    $totalDuration += ($extra['total_duration'] ?? 0) * $quantity;
+                }
+                $totalPrice += floatval($extra['price']) * $quantity;
+            }
+            
+            \Log::info('Final booking calculation', [
+                'service_price' => $service->price,
+                'service_duration' => $service->duration,
+                'pricing_tier_id' => $request->pricing_tier_id,
+                'selected_pricing_tier' => $selectedPricingTier ? [
+                    'id' => $selectedPricingTier->id,
+                    'name' => $selectedPricingTier->name,
+                    'price' => $selectedPricingTier->price,
+                    'duration' => $selectedPricingTier->duration_minutes
+                ] : null,
+                'service_price_used' => $servicePrice,
+                'service_duration_used' => $serviceDuration,
+                'extras_with_quantities' => $extrasWithQuantities,
+                'total_duration' => $totalDuration,
+                'total_price' => $totalPrice
+            ]);
             
             // Create or find customer user first (needed for coupon validation)
             // Check by phone number first (primary identifier) - this is the primary way to identify users
@@ -602,6 +949,7 @@ class BookingController extends Controller
             $bookingData = [
                 'user_id' => $customer->id,
                 'service_id' => $service->id,
+                'pricing_tier_id' => $selectedPricingTier?->id,
                 'employee_id' => $assignedEmployee->id,
                 'appointment_time' => $appointmentTime,
                 'duration' => $totalDuration,
@@ -613,9 +961,10 @@ class BookingController extends Controller
                 'coupon_id' => $couponId,
                 'discount_amount' => $discountAmount,
                 'coupon_code' => $couponCode,
-                'extras' => $selectedExtras->toArray(),
+                'extras' => $extrasWithQuantities,
                 'custom_fields' => $request->except([
-                    'service_id', 'extras', 'date', 'time', 'consents', 
+                    'service_id', 'pricing_tier_id', 'selected_duration', 'selected_price', 
+                    'extras', 'date', 'time', 'consents', 
                     'customer_name', 'customer_email', 'customer_phone', 
                     'payment_method', 'special_requests', 'coupon_code',
                     'verified_phone',
@@ -786,6 +1135,7 @@ class BookingController extends Controller
         $booking = Booking::create([
             'user_id' => $bookingData['user_id'],
             'service_id' => $bookingData['service_id'],
+            'pricing_tier_id' => $bookingData['pricing_tier_id'] ?? null,
             'employee_id' => $bookingData['employee_id'],
             'appointment_time' => $bookingData['appointment_time'],
             'appointment_date_time' => $bookingData['appointment_time']->setTimezone('Asia/Kolkata'),
@@ -822,7 +1172,8 @@ class BookingController extends Controller
         // Attach extras to booking
         foreach ($bookingData['extras'] as $extra) {
             $booking->extras()->attach($extra['id'], [
-                'price' => $extra['price']
+                'price' => $extra['price'],
+                'quantity' => $extra['quantity'] ?? 1
             ]);
         }
 
@@ -857,8 +1208,19 @@ class BookingController extends Controller
         // TODO: Send confirmation email
         // TODO: Send SMS notification
 
+        // Ensure pricing tier data is explicitly included
+        $bookingData = $booking->load(['customer', 'service', 'pricingTier', 'employee', 'extras.durationRelation', 'formResponses.formField'])->toArray();
+        if ($booking->pricingTier) {
+            $bookingData['pricingTier'] = [
+                'id' => $booking->pricingTier->id,
+                'name' => $booking->pricingTier->name,
+                'price' => $booking->pricingTier->price,
+                'duration_minutes' => $booking->pricingTier->duration_minutes,
+            ];
+        }
+
         return Inertia::render('Booking/Success', [
-            'booking' => $booking->load(['customer', 'service', 'employee', 'extras', 'formResponses.formField']),
+            'booking' => $bookingData,
             'payment_id' => $request->razorpay_payment_id,
             'auth' => [
                 'user' => Auth::user(),
@@ -913,20 +1275,34 @@ class BookingController extends Controller
                 'extras.*' => 'exists:extras,id',
                 'exclude_booking_id' => 'nullable|exists:bookings,id',
                 'duration' => 'nullable|integer', // Add duration parameter for reschedule
+                'pricing_tier_id' => 'nullable|exists:service_pricing_tiers,id',
+                'selected_duration' => 'nullable|integer',
+                'selected_price' => 'nullable|numeric',
             ]);
 
             $service = Service::findOrFail($request->service_id);
             $date = \Carbon\Carbon::parse($request->date);
             
+            // Get pricing tier if selected
+            $selectedPricingTier = null;
+            if ($request->pricing_tier_id) {
+                $selectedPricingTier = ServicePricingTier::find($request->pricing_tier_id);
+            }
+            
             // Calculate total duration including extras
-            $totalDuration = $service->duration;
+            $serviceDuration = $selectedPricingTier ? $selectedPricingTier->duration_minutes : $service->duration;
+            $totalDuration = $serviceDuration;
             $selectedExtras = [];
             
             // Always calculate from extras if provided (for both new bookings and reschedule)
             if ($request->extras && is_array($request->extras)) {
-                $selectedExtras = Extra::whereIn('id', $request->extras)->get();
+                $selectedExtras = Extra::with('durationRelation')->whereIn('id', $request->extras)->get();
                 foreach ($selectedExtras as $extra) {
-                    $totalDuration += $extra->duration ?? 0;
+                    if ($extra->durationRelation) {
+                        $totalDuration += ($extra->durationRelation->hours * 60) + $extra->durationRelation->minutes;
+                    } else {
+                        $totalDuration += $extra->total_duration;
+                    }
                 }
             }
             
@@ -940,6 +1316,10 @@ class BookingController extends Controller
                 'service_id' => $service->id,
                 'service_name' => $service->name,
                 'service_duration' => $service->duration,
+                'pricing_tier_id' => $request->pricing_tier_id,
+                'selected_duration' => $request->selected_duration,
+                'selected_price' => $request->selected_price,
+                'service_duration_used' => $serviceDuration,
                 'request_duration' => $request->duration,
                 'request_extras' => $request->extras,
                 'calculated_total_duration' => $totalDuration,
@@ -1055,7 +1435,7 @@ class BookingController extends Controller
 
         $code = strtoupper($request->code);
         $service = Service::findOrFail($request->service_id);
-        $selectedExtras = Extra::whereIn('id', $request->extras ?? [])->get();
+        $selectedExtras = Extra::with('durationRelation')->whereIn('id', $request->extras ?? [])->get();
         
         // Calculate total amount for validation
         $totalAmount = floatval($service->price);

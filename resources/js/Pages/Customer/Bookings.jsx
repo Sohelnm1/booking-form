@@ -94,6 +94,16 @@ export default function CustomerBookings({ auth, bookings }) {
         return dayjs(datetime).format("MMM DD, YYYY h:mm A");
     };
 
+    const formatDuration = (minutes) => {
+        if (minutes < 60) {
+            return `${minutes} min`;
+        } else {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+        }
+    };
+
     const getInitials = (name) => {
         if (!name) return "CU"; // Default initials if no name
         return name
@@ -174,7 +184,7 @@ export default function CustomerBookings({ auth, bookings }) {
             title: "Duration",
             dataIndex: "duration",
             key: "duration",
-            render: (duration) => `${duration} minutes`,
+            render: (duration) => formatDuration(duration),
             responsive: ["md"],
         },
         {
@@ -452,8 +462,9 @@ export default function CustomerBookings({ auth, bookings }) {
                                                         Duration:{" "}
                                                     </Text>
                                                     <Text>
-                                                        {booking.duration}{" "}
-                                                        minutes
+                                                        {formatDuration(
+                                                            booking.duration
+                                                        )}
                                                     </Text>
                                                 </div>
                                                 <div>
