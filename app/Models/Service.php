@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Duration;
 
 class Service extends Model
 {
@@ -94,6 +95,29 @@ class Service extends Model
         } else {
             return $minutes . 'm';
         }
+    }
+
+    /**
+     * Get the duration label from the durations table
+     */
+    public function getDurationLabel(): string
+    {
+        if ($this->has_flexible_duration) {
+            return 'Flexible';
+        }
+        
+        // Find the duration record that matches this service's duration
+        $duration = Duration::where('hours', floor($this->duration / 60))
+                           ->where('minutes', $this->duration % 60)
+                           ->where('is_active', true)
+                           ->first();
+        
+        if ($duration) {
+            return $duration->label;
+        }
+        
+        // Fallback to the formatted duration if no matching duration record found
+        return $this->getDisplayDuration();
     }
 
     /**

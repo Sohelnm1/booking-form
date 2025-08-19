@@ -427,6 +427,11 @@ class AdminController extends Controller
             'name', 'description', 'price', 'duration_id', 'max_quantity', 'sort_order', 'is_active'
         ]);
 
+        // Ensure sort_order has a default value if null
+        if (!isset($data['sort_order']) || $data['sort_order'] === null) {
+            $data['sort_order'] = 0;
+        }
+
         // Handle image upload
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('extras', 'public');
@@ -465,6 +470,11 @@ class AdminController extends Controller
         $data = $request->only([
             'name', 'description', 'price', 'duration_id', 'max_quantity', 'sort_order', 'is_active'
         ]);
+
+        // Ensure sort_order has a default value if null
+        if (!isset($data['sort_order']) || $data['sort_order'] === null) {
+            $data['sort_order'] = 0;
+        }
 
         // Debug logging
         \Log::info('UpdateExtra - Request data:', [

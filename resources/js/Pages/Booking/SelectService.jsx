@@ -111,8 +111,16 @@ export default function SelectService({ services, upcomingServices, auth }) {
 
     const handleViewDetails = (service, e) => {
         e.stopPropagation();
+        console.log("Opening modal for service:", service);
+        console.log(
+            "Current modal state - visible:",
+            detailModalVisible,
+            "service:",
+            serviceForDetail
+        );
         setServiceForDetail(service);
         setDetailModalVisible(true);
+        console.log("Modal state set to true");
     };
 
     const handleCloseDetailModal = () => {
@@ -520,9 +528,10 @@ export default function SelectService({ services, upcomingServices, auth }) {
                                                                     color: "#1f1f1f",
                                                                 }}
                                                             >
-                                                                {formatDuration(
-                                                                    service.duration
-                                                                )}
+                                                                {service.duration_label ||
+                                                                    formatDuration(
+                                                                        service.duration
+                                                                    )}
                                                             </Text>
                                                         </div>
                                                     </div>
@@ -866,7 +875,8 @@ export default function SelectService({ services, upcomingServices, auth }) {
                                                         />
                                                         {(
                                                             service.coming_soon_description ||
-                                                            service.description
+                                                            service.description ||
+                                                            ""
                                                         ).length > 80 && (
                                                             <Button
                                                                 type="link"
@@ -874,12 +884,22 @@ export default function SelectService({ services, upcomingServices, auth }) {
                                                                 icon={
                                                                     <InfoCircleOutlined />
                                                                 }
-                                                                onClick={(e) =>
+                                                                onClick={(
+                                                                    e
+                                                                ) => {
+                                                                    console.log(
+                                                                        "Read More clicked for service:",
+                                                                        service
+                                                                    );
+                                                                    console.log(
+                                                                        "Event:",
+                                                                        e
+                                                                    );
                                                                     handleViewDetails(
                                                                         service,
                                                                         e
-                                                                    )
-                                                                }
+                                                                    );
+                                                                }}
                                                                 style={{
                                                                     padding: 0,
                                                                     height: "auto",
@@ -970,6 +990,7 @@ export default function SelectService({ services, upcomingServices, auth }) {
                                                                             Flexible
                                                                         </Tag>
                                                                     ) : (
+                                                                        service.duration_label ||
                                                                         formatDuration(
                                                                             service.duration
                                                                         )
@@ -1108,6 +1129,12 @@ export default function SelectService({ services, upcomingServices, auth }) {
             </Content>
 
             {/* Service Detail Modal */}
+            {console.log(
+                "Rendering modal - visible:",
+                detailModalVisible,
+                "service:",
+                serviceForDetail
+            )}
             <Modal
                 title={
                     <div
@@ -1174,9 +1201,14 @@ export default function SelectService({ services, upcomingServices, auth }) {
                             handleServiceSelect(serviceForDetail);
                             handleCloseDetailModal();
                         }}
-                        disabled={!serviceForDetail?.is_active}
+                        disabled={
+                            !serviceForDetail?.is_active ||
+                            serviceForDetail?.is_upcoming
+                        }
                     >
-                        Select This Service
+                        {serviceForDetail?.is_upcoming
+                            ? "Coming Soon"
+                            : "Select This Service"}
                     </Button>,
                 ]}
                 width={600}
@@ -1185,7 +1217,8 @@ export default function SelectService({ services, upcomingServices, auth }) {
                 {serviceForDetail && (
                     <div style={{ padding: "16px 0" }}>
                         {/* Full Description */}
-                        {serviceForDetail.description && (
+                        {(serviceForDetail.coming_soon_description ||
+                            serviceForDetail.description) && (
                             <div style={{ marginBottom: 24 }}>
                                 <div
                                     style={{
@@ -1195,7 +1228,9 @@ export default function SelectService({ services, upcomingServices, auth }) {
                                         marginBottom: 8,
                                     }}
                                 >
-                                    Description
+                                    {serviceForDetail.is_upcoming
+                                        ? "Coming Soon Description"
+                                        : "Description"}
                                 </div>
                                 <div
                                     style={{
@@ -1204,7 +1239,9 @@ export default function SelectService({ services, upcomingServices, auth }) {
                                         color: "#666",
                                     }}
                                     dangerouslySetInnerHTML={{
-                                        __html: serviceForDetail.description,
+                                        __html:
+                                            serviceForDetail.coming_soon_description ||
+                                            serviceForDetail.description,
                                     }}
                                 />
                             </div>
@@ -1262,9 +1299,10 @@ export default function SelectService({ services, upcomingServices, auth }) {
                                                 color: "#1f1f1f",
                                             }}
                                         >
-                                            {formatDuration(
-                                                serviceForDetail.duration
-                                            )}
+                                            {serviceForDetail.duration_label ||
+                                                formatDuration(
+                                                    serviceForDetail.duration
+                                                )}
                                         </div>
                                     </div>
                                 </Col>

@@ -22,6 +22,7 @@ import {
     ArrowLeftOutlined,
     ArrowRightOutlined,
     InfoCircleOutlined,
+    ClockCircleOutlined,
 } from "@ant-design/icons";
 import BookingHeader from "../../Components/BookingHeader";
 import Logo from "../../Components/Logo";
@@ -708,7 +709,7 @@ export default function SelectExtras({
                                     {formatPrice(calculateTotalPrice())}
                                 </Text>
                             </div>
-                            <div
+                            {/* <div
                                 style={{
                                     display: "flex",
                                     justifyContent: "space-between",
@@ -718,7 +719,7 @@ export default function SelectExtras({
                                 <Text type="secondary">
                                     {formatDuration(calculateTotalDuration())}
                                 </Text>
-                            </div>
+                            </div> */}
 
                             {/* Action Buttons */}
                             <div style={{ marginTop: 24 }}>

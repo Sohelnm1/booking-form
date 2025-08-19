@@ -203,6 +203,13 @@ export default function Extras({ auth, extras, services, durations, errors }) {
                                 formData.append("services[]", serviceId);
                             });
                         }
+                    } else if (key === "sort_order") {
+                        // Handle sort_order specifically to prevent null values
+                        const sortOrder =
+                            values[key] !== null && values[key] !== undefined
+                                ? values[key]
+                                : 0;
+                        formData.append(key, sortOrder);
                     } else {
                         formData.append(key, values[key] || "");
                     }
@@ -641,6 +648,17 @@ export default function Extras({ auth, extras, services, durations, errors }) {
                                         style={{ width: "100%" }}
                                         placeholder="0"
                                         disabled={isViewMode}
+                                        onChange={(value) => {
+                                            // Ensure the value is always a number, default to 0 if null/undefined
+                                            const numValue =
+                                                value !== null &&
+                                                value !== undefined
+                                                    ? value
+                                                    : 0;
+                                            form.setFieldsValue({
+                                                sort_order: numValue,
+                                            });
+                                        }}
                                     />
                                 </Form.Item>
                             </Col>

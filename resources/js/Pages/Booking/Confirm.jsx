@@ -700,9 +700,9 @@ export default function Confirm({
                                     {formatTime(time)}
                                 </Descriptions.Item>
 
-                                <Descriptions.Item label="Total Duration">
+                                {/* <Descriptions.Item label="Total Duration">
                                     {formatDuration(totalDuration)}
-                                </Descriptions.Item>
+                                </Descriptions.Item> */}
 
                                 {appliedCoupon && (
                                     <Descriptions.Item label="Original Price">
@@ -1320,7 +1320,7 @@ export default function Confirm({
                                     {formatPrice(finalPrice)}
                                 </Text>
                             </div>
-                            <div
+                            {/* <div
                                 style={{
                                     display: "flex",
                                     justifyContent: "space-between",
@@ -1330,7 +1330,7 @@ export default function Confirm({
                                 <Text type="secondary">
                                     {formatDuration(totalDuration)}
                                 </Text>
-                            </div>
+                            </div> */}
 
                             {/* Accepted Agreements */}
                             <Divider style={{ margin: "16px 0" }} />

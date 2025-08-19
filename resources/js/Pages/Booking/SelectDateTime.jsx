@@ -1031,7 +1031,7 @@ export default function SelectDateTime({
                                     )}
                                 </Text>
                             </div>
-                            <div
+                            {/* <div
                                 style={{
                                     display: "flex",
                                     justifyContent: "space-between",
@@ -1041,7 +1041,7 @@ export default function SelectDateTime({
                                 <Text type="secondary">
                                     {formatDuration(totalDuration)}
                                 </Text>
-                            </div>
+                            </div> */}
 
                             {/* Selected Date & Time */}
                             {(selectedDate || selectedTime) && (

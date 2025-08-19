@@ -34,9 +34,22 @@ class BookingController extends Controller
         // Also get upcoming services to display separately
         $upcomingServices = Service::upcoming()->active()->with('pricingTiers')->ordered()->get();
         
+        // Add duration labels to services only (not pricing tiers)
+        $servicesWithDurationLabels = $services->map(function($service) {
+            $serviceData = $service->toArray();
+            $serviceData['duration_label'] = $service->getDurationLabel();
+            return $serviceData;
+        });
+        
+        $upcomingServicesWithDurationLabels = $upcomingServices->map(function($service) {
+            $serviceData = $service->toArray();
+            $serviceData['duration_label'] = $service->getDurationLabel();
+            return $serviceData;
+        });
+        
         return Inertia::render('Booking/SelectService', [
-            'services' => $services,
-            'upcomingServices' => $upcomingServices,
+            'services' => $servicesWithDurationLabels,
+            'upcomingServices' => $upcomingServicesWithDurationLabels,
             'auth' => [
                 'user' => Auth::user(),
             ],
