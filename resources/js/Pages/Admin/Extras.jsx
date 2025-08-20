@@ -65,6 +65,8 @@ export default function Extras({ auth, extras, services, durations, errors }) {
                 const formValues = {
                     name: editingExtra.name || "",
                     description: editingExtra.description || "",
+                    disclaimer_title: editingExtra.disclaimer_title || "",
+                    disclaimer_content: editingExtra.disclaimer_content || "",
                     price: parseFloat(editingExtra.price) || 0,
                     duration_id: editingExtra.duration_id || null,
                     max_quantity: editingExtra.max_quantity || 5,
@@ -90,6 +92,8 @@ export default function Extras({ auth, extras, services, durations, errors }) {
                         max_quantity: 5,
                         sort_order: 0,
                         description: "",
+                        disclaimer_title: "",
+                        disclaimer_content: "",
                         services: [],
                     });
                 }, 100);
@@ -310,16 +314,6 @@ export default function Extras({ auth, extras, services, durations, errors }) {
             dataIndex: "name",
             key: "name",
             render: (name) => <Text strong>{name}</Text>,
-        },
-        {
-            title: "Description",
-            dataIndex: "description",
-            key: "description",
-            render: (description) => (
-                <Text type="secondary" style={{ fontSize: "12px" }}>
-                    {description || "No description"}
-                </Text>
-            ),
         },
         {
             title: "Price",
@@ -575,6 +569,70 @@ export default function Extras({ auth, extras, services, durations, errors }) {
                                 disabled={isViewMode}
                             />
                         </Form.Item>
+
+                        {/* Disclaimer Section */}
+                        <div style={{ marginTop: 24, marginBottom: 16 }}>
+                            <Title level={4} style={{ marginBottom: 16 }}>
+                                Extra Details Modal
+                            </Title>
+                            <Text
+                                type="secondary"
+                                style={{
+                                    fontSize: 14,
+                                    marginBottom: 16,
+                                    display: "block",
+                                }}
+                            >
+                                Customize the disclaimer section that appears in
+                                the extra details modal.
+                            </Text>
+                        </div>
+
+                        <Form.Item
+                            name="disclaimer_title"
+                            label="Disclaimer Title"
+                        >
+                            <Input
+                                placeholder="e.g., What's Included, Important Notice, etc."
+                                maxLength={255}
+                                disabled={isViewMode}
+                            />
+                        </Form.Item>
+                        <Text
+                            type="secondary"
+                            style={{
+                                fontSize: "12px",
+                                marginTop: 4,
+                                marginBottom: 16,
+                            }}
+                        >
+                            This title will appear in the extra details modal.
+                            Leave empty to use default "What's Included".
+                        </Text>
+
+                        <Form.Item
+                            name="disclaimer_content"
+                            label="Disclaimer Content"
+                        >
+                            <TextArea
+                                rows={4}
+                                placeholder="Enter disclaimer content that will appear in the extra details modal..."
+                                style={{ minHeight: 100 }}
+                                disabled={isViewMode}
+                            />
+                        </Form.Item>
+                        <Text
+                            type="secondary"
+                            style={{
+                                fontSize: "12px",
+                                marginTop: 4,
+                                marginBottom: 16,
+                            }}
+                        >
+                            This content will appear in the extra details modal.
+                            Supports HTML formatting. Leave empty to use default
+                            content.
+                        </Text>
 
                         <Row gutter={16}>
                             <Col span={12}>

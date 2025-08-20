@@ -619,7 +619,8 @@ export default function Confirm({
                                                 ? formatDuration(
                                                       selectedPricingTier.duration_minutes
                                                   )
-                                                : formatDuration(
+                                                : service.duration_label ||
+                                                  formatDuration(
                                                       service.duration
                                                   )}
                                         </Text>
@@ -875,52 +876,182 @@ export default function Confirm({
                                         {/* Payment Method */}
                                         <Form.Item
                                             name="payment_method"
-                                            label="Payment Method"
+                                            label="Payment"
                                             rules={[
                                                 {
                                                     required: true,
                                                     message:
-                                                        "Please select a payment method",
+                                                        "Payment method is required",
                                                 },
                                             ]}
                                         >
-                                            <Select
-                                                size="large"
-                                                placeholder="Select payment method"
-                                            >
-                                                <Option value="card">
-                                                    <CreditCardOutlined
+                                            <div>
+                                                <Text
+                                                    type="secondary"
+                                                    style={{
+                                                        fontSize: "14px",
+                                                        marginBottom: 12,
+                                                        display: "block",
+                                                    }}
+                                                >
+                                                    All transactions are secure
+                                                    and encrypted.
+                                                </Text>
+                                                <div
+                                                    style={{
+                                                        border: "1px solid #1890ff",
+                                                        borderRadius: "8px",
+                                                        padding: "16px",
+                                                        backgroundColor: "#fff",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent:
+                                                            "space-between",
+                                                    }}
+                                                >
+                                                    <div
                                                         style={{
-                                                            marginRight: 8,
+                                                            display: "flex",
+                                                            alignItems:
+                                                                "center",
+                                                            gap: 12,
                                                         }}
-                                                    />
-                                                    Credit/Debit Card
-                                                </Option>
-                                                <Option value="upi">
-                                                    <CreditCardOutlined
+                                                    >
+                                                        <div
+                                                            style={{
+                                                                width: 24,
+                                                                height: 24,
+                                                                backgroundColor:
+                                                                    "#1890ff",
+                                                                borderRadius:
+                                                                    "4px",
+                                                                display: "flex",
+                                                                alignItems:
+                                                                    "center",
+                                                                justifyContent:
+                                                                    "center",
+                                                            }}
+                                                        >
+                                                            <CreditCardOutlined
+                                                                style={{
+                                                                    color: "white",
+                                                                    fontSize: 14,
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <Text
+                                                                strong
+                                                                style={{
+                                                                    fontSize: 16,
+                                                                    color: "#1f1f1f",
+                                                                }}
+                                                            >
+                                                                Razorpay Secure
+                                                            </Text>
+                                                            <div
+                                                                style={{
+                                                                    fontSize: 12,
+                                                                    color: "#666",
+                                                                    marginTop: 2,
+                                                                }}
+                                                            >
+                                                                (UPI, Cards,
+                                                                Wallets,
+                                                                NetBanking)
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div
                                                         style={{
-                                                            marginRight: 8,
+                                                            display: "flex",
+                                                            alignItems:
+                                                                "center",
+                                                            gap: 8,
                                                         }}
-                                                    />
-                                                    UPI Payment
-                                                </Option>
-                                                <Option value="netbanking">
-                                                    <CreditCardOutlined
+                                                    >
+                                                        <div
+                                                            style={{
+                                                                fontSize: 12,
+                                                                color: "#666",
+                                                            }}
+                                                        >
+                                                            UPI
+                                                        </div>
+                                                        <div
+                                                            style={{
+                                                                fontSize: 12,
+                                                                color: "#666",
+                                                            }}
+                                                        >
+                                                            VISA
+                                                        </div>
+                                                        <div
+                                                            style={{
+                                                                fontSize: 12,
+                                                                color: "#666",
+                                                            }}
+                                                        >
+                                                            MC
+                                                        </div>
+                                                        <div
+                                                            style={{
+                                                                fontSize: 12,
+                                                                color: "#666",
+                                                            }}
+                                                        >
+                                                            +18
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div
+                                                    style={{
+                                                        marginTop: 12,
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 8,
+                                                    }}
+                                                >
+                                                    <div
                                                         style={{
-                                                            marginRight: 8,
+                                                            width: 20,
+                                                            height: 20,
+                                                            backgroundColor:
+                                                                "#f0f0f0",
+                                                            borderRadius: "4px",
+                                                            display: "flex",
+                                                            alignItems:
+                                                                "center",
+                                                            justifyContent:
+                                                                "center",
                                                         }}
-                                                    />
-                                                    Net Banking
-                                                </Option>
-                                                <Option value="wallet">
-                                                    <CreditCardOutlined
+                                                    >
+                                                        <div
+                                                            style={{
+                                                                fontSize: 10,
+                                                                color: "#666",
+                                                            }}
+                                                        >
+                                                            🌐
+                                                        </div>
+                                                    </div>
+                                                    <Text
+                                                        type="secondary"
                                                         style={{
-                                                            marginRight: 8,
+                                                            fontSize: "12px",
+                                                            lineHeight: 1.4,
                                                         }}
-                                                    />
-                                                    Digital Wallet
-                                                </Option>
-                                            </Select>
+                                                    >
+                                                        After clicking 'Confirm
+                                                        & Pay', you will be
+                                                        redirected to Razorpay
+                                                        Secure (UPI, Cards,
+                                                        Wallets, NetBanking) to
+                                                        complete your purchase
+                                                        securely.
+                                                    </Text>
+                                                </div>
+                                            </div>
                                         </Form.Item>
                                     </>
                                 ) : (
@@ -1043,52 +1174,182 @@ export default function Confirm({
 
                                         <Form.Item
                                             name="payment_method"
-                                            label="Payment Method"
+                                            label="Payment"
                                             rules={[
                                                 {
                                                     required: true,
                                                     message:
-                                                        "Please select a payment method",
+                                                        "Payment method is required",
                                                 },
                                             ]}
                                         >
-                                            <Select
-                                                size="large"
-                                                placeholder="Select payment method"
-                                            >
-                                                <Option value="card">
-                                                    <CreditCardOutlined
+                                            <div>
+                                                <Text
+                                                    type="secondary"
+                                                    style={{
+                                                        fontSize: "14px",
+                                                        marginBottom: 12,
+                                                        display: "block",
+                                                    }}
+                                                >
+                                                    All transactions are secure
+                                                    and encrypted.
+                                                </Text>
+                                                <div
+                                                    style={{
+                                                        border: "1px solid #1890ff",
+                                                        borderRadius: "8px",
+                                                        padding: "16px",
+                                                        backgroundColor: "#fff",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent:
+                                                            "space-between",
+                                                    }}
+                                                >
+                                                    <div
                                                         style={{
-                                                            marginRight: 8,
+                                                            display: "flex",
+                                                            alignItems:
+                                                                "center",
+                                                            gap: 12,
                                                         }}
-                                                    />
-                                                    Credit/Debit Card
-                                                </Option>
-                                                <Option value="upi">
-                                                    <CreditCardOutlined
+                                                    >
+                                                        <div
+                                                            style={{
+                                                                width: 24,
+                                                                height: 24,
+                                                                backgroundColor:
+                                                                    "#1890ff",
+                                                                borderRadius:
+                                                                    "4px",
+                                                                display: "flex",
+                                                                alignItems:
+                                                                    "center",
+                                                                justifyContent:
+                                                                    "center",
+                                                            }}
+                                                        >
+                                                            <CreditCardOutlined
+                                                                style={{
+                                                                    color: "white",
+                                                                    fontSize: 14,
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <Text
+                                                                strong
+                                                                style={{
+                                                                    fontSize: 16,
+                                                                    color: "#1f1f1f",
+                                                                }}
+                                                            >
+                                                                Razorpay Secure
+                                                            </Text>
+                                                            <div
+                                                                style={{
+                                                                    fontSize: 12,
+                                                                    color: "#666",
+                                                                    marginTop: 2,
+                                                                }}
+                                                            >
+                                                                (UPI, Cards,
+                                                                Wallets,
+                                                                NetBanking)
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div
                                                         style={{
-                                                            marginRight: 8,
+                                                            display: "flex",
+                                                            alignItems:
+                                                                "center",
+                                                            gap: 8,
                                                         }}
-                                                    />
-                                                    UPI Payment
-                                                </Option>
-                                                <Option value="netbanking">
-                                                    <CreditCardOutlined
+                                                    >
+                                                        <div
+                                                            style={{
+                                                                fontSize: 12,
+                                                                color: "#666",
+                                                            }}
+                                                        >
+                                                            UPI
+                                                        </div>
+                                                        <div
+                                                            style={{
+                                                                fontSize: 12,
+                                                                color: "#666",
+                                                            }}
+                                                        >
+                                                            VISA
+                                                        </div>
+                                                        <div
+                                                            style={{
+                                                                fontSize: 12,
+                                                                color: "#666",
+                                                            }}
+                                                        >
+                                                            MC
+                                                        </div>
+                                                        <div
+                                                            style={{
+                                                                fontSize: 12,
+                                                                color: "#666",
+                                                            }}
+                                                        >
+                                                            +18
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div
+                                                    style={{
+                                                        marginTop: 12,
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 8,
+                                                    }}
+                                                >
+                                                    <div
                                                         style={{
-                                                            marginRight: 8,
+                                                            width: 20,
+                                                            height: 20,
+                                                            backgroundColor:
+                                                                "#f0f0f0",
+                                                            borderRadius: "4px",
+                                                            display: "flex",
+                                                            alignItems:
+                                                                "center",
+                                                            justifyContent:
+                                                                "center",
                                                         }}
-                                                    />
-                                                    Net Banking
-                                                </Option>
-                                                <Option value="wallet">
-                                                    <CreditCardOutlined
+                                                    >
+                                                        <div
+                                                            style={{
+                                                                fontSize: 10,
+                                                                color: "#666",
+                                                            }}
+                                                        >
+                                                            🌐
+                                                        </div>
+                                                    </div>
+                                                    <Text
+                                                        type="secondary"
                                                         style={{
-                                                            marginRight: 8,
+                                                            fontSize: "12px",
+                                                            lineHeight: 1.4,
                                                         }}
-                                                    />
-                                                    Digital Wallet
-                                                </Option>
-                                            </Select>
+                                                    >
+                                                        After clicking 'Confirm
+                                                        & Pay', you will be
+                                                        redirected to Razorpay
+                                                        Secure (UPI, Cards,
+                                                        Wallets, NetBanking) to
+                                                        complete your purchase
+                                                        securely.
+                                                    </Text>
+                                                </div>
+                                            </div>
                                         </Form.Item>
 
                                         <Form.Item
@@ -1191,7 +1452,8 @@ export default function Confirm({
                                         ? formatDuration(
                                               selectedPricingTier.duration_minutes
                                           )
-                                        : formatDuration(service.duration)}
+                                        : service.duration_label ||
+                                          formatDuration(service.duration)}
                                 </Text>
                             </div>
 

@@ -146,6 +146,14 @@ class AdminController extends Controller
     public function services()
     {
         $services = Service::with('pricingTiers')->ordered()->get();
+        
+        // Add duration labels to services
+        $servicesWithDurationLabels = $services->map(function($service) {
+            $serviceData = $service->toArray();
+            $serviceData['duration_label'] = $service->getDurationLabel();
+            return $serviceData;
+        });
+        
         $durations = Duration::active()->ordered()->get()->map(function($duration) {
             return [
                 'value' => $duration->total_minutes,
@@ -157,7 +165,7 @@ class AdminController extends Controller
             'auth' => [
                 'user' => Auth::user(),
             ],
-            'services' => $services,
+            'services' => $servicesWithDurationLabels,
             'durations' => $durations,
             'editService' => request()->get('editService'),
         ]);
@@ -179,11 +187,15 @@ class AdminController extends Controller
                 ];
             });
 
+            // Add duration label to service
+            $serviceData = $serviceModel->toArray();
+            $serviceData['duration_label'] = $serviceModel->getDurationLabel();
+            
             return Inertia::render('Admin/ServiceDetail', [
                 'auth' => [
                     'user' => Auth::user(),
                 ],
-                'service' => $serviceModel,
+                'service' => $serviceData,
                 'durations' => $durations,
             ]);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -218,12 +230,17 @@ class AdminController extends Controller
             'has_flexible_duration' => 'nullable|boolean',
             'has_tba_pricing' => 'nullable|boolean',
             'coming_soon_description' => 'nullable|string',
+            'disclaimer_title' => 'nullable|string|max:255',
+            'disclaimer_content' => 'nullable|string',
+            'icon' => 'nullable|string|max:255',
+            'icon' => 'nullable|string|max:255',
         ]);
 
         $data = $request->only([
             'name', 'description', 'price', 'duration', 
             'color', 'sort_order', 'is_active',
-            'is_upcoming', 'has_flexible_duration', 'has_tba_pricing', 'coming_soon_description'
+            'is_upcoming', 'has_flexible_duration', 'has_tba_pricing', 'coming_soon_description',
+            'disclaimer_title', 'disclaimer_content', 'icon', 'icon'
         ]);
         
         // Convert boolean fields
@@ -280,12 +297,17 @@ class AdminController extends Controller
             'has_flexible_duration' => 'nullable|boolean',
             'has_tba_pricing' => 'nullable|boolean',
             'coming_soon_description' => 'nullable|string',
+            'disclaimer_title' => 'nullable|string|max:255',
+            'disclaimer_content' => 'nullable|string',
+            'icon' => 'nullable|string|max:255',
+            'icon' => 'nullable|string|max:255',
         ]);
 
         $data = $request->only([
             'name', 'description', 'price', 'duration', 
             'color', 'sort_order', 'is_active',
-            'is_upcoming', 'has_flexible_duration', 'has_tba_pricing', 'coming_soon_description'
+            'is_upcoming', 'has_flexible_duration', 'has_tba_pricing', 'coming_soon_description',
+            'disclaimer_title', 'disclaimer_content', 'icon', 'icon'
         ]);
         
         // Convert boolean fields
@@ -421,10 +443,15 @@ class AdminController extends Controller
             'is_active' => 'nullable|boolean',
             'services' => 'nullable|array',
             'services.*' => 'exists:services,id',
+            'disclaimer_title' => 'nullable|string|max:255',
+            'disclaimer_content' => 'nullable|string',
+            'icon' => 'nullable|string|max:255',
+            'icon' => 'nullable|string|max:255',
         ]);
 
         $data = $request->only([
-            'name', 'description', 'price', 'duration_id', 'max_quantity', 'sort_order', 'is_active'
+            'name', 'description', 'price', 'duration_id', 'max_quantity', 'sort_order', 'is_active',
+            'disclaimer_title', 'disclaimer_content', 'icon', 'icon'
         ]);
 
         // Ensure sort_order has a default value if null
@@ -465,10 +492,15 @@ class AdminController extends Controller
             'is_active' => 'nullable|boolean',
             'services' => 'nullable|array',
             'services.*' => 'exists:services,id',
+            'disclaimer_title' => 'nullable|string|max:255',
+            'disclaimer_content' => 'nullable|string',
+            'icon' => 'nullable|string|max:255',
+            'icon' => 'nullable|string|max:255',
         ]);
 
         $data = $request->only([
-            'name', 'description', 'price', 'duration_id', 'max_quantity', 'sort_order', 'is_active'
+            'name', 'description', 'price', 'duration_id', 'max_quantity', 'sort_order', 'is_active',
+            'disclaimer_title', 'disclaimer_content', 'icon', 'icon'
         ]);
 
         // Ensure sort_order has a default value if null
@@ -1425,6 +1457,7 @@ class AdminController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone_number' => 'required|string|max:20',
+            'gender' => 'nullable|in:male,female,other',
             'services' => 'array',
             'services.*' => 'exists:services,id',
             'schedule_settings' => 'array',
@@ -1436,6 +1469,7 @@ class AdminController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'phone_number' => $request->phone_number,
+            'gender' => $request->gender,
             'role' => 'employee',
             'password' => bcrypt(Str::random(12)), // Temporary password
             'is_active' => $request->is_active ?? true,
@@ -1465,6 +1499,7 @@ class AdminController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
             'phone_number' => 'required|string|max:20',
+            'gender' => 'nullable|in:male,female,other',
             'services' => 'array',
             'services.*' => 'exists:services,id',
             'schedule_settings' => 'array',
@@ -1476,6 +1511,7 @@ class AdminController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'phone_number' => $request->phone_number,
+            'gender' => $request->gender,
             'is_active' => $request->is_active ?? true,
         ]);
 

@@ -20,6 +20,7 @@ import {
 } from "@ant-design/icons";
 import BookingHeader from "../../Components/BookingHeader";
 import Logo from "../../Components/Logo";
+import ServiceIcon from "../../Components/ServiceIcon";
 
 const { Title, Text } = Typography;
 const { Content } = Layout;
@@ -274,22 +275,12 @@ export default function SelectService({ services, upcomingServices, auth }) {
                                                 left: "50%",
                                                 transform:
                                                     "translate(-50%, -50%)",
-                                                width: 80,
-                                                height: 80,
-                                                borderRadius: "50%",
-                                                background:
-                                                    "rgba(255, 255, 255, 0.2)",
-                                                backdropFilter: "blur(10px)",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                color: "white",
-                                                fontSize: 36,
-                                                fontWeight: "bold",
-                                                border: "2px solid rgba(255, 255, 255, 0.3)",
                                             }}
                                         >
-                                            {service.name.charAt(0)}
+                                            <ServiceIcon
+                                                service={service}
+                                                size={80}
+                                            />
                                         </div>
                                     </div>
 
@@ -333,31 +324,28 @@ export default function SelectService({ services, upcomingServices, auth }) {
                                                         ),
                                                     }}
                                                 />
-                                                {service.description.length >
-                                                    80 && (
-                                                    <Button
-                                                        type="link"
-                                                        size="small"
-                                                        icon={
-                                                            <InfoCircleOutlined />
-                                                        }
-                                                        onClick={(e) =>
-                                                            handleViewDetails(
-                                                                service,
-                                                                e
-                                                            )
-                                                        }
-                                                        style={{
-                                                            padding: 0,
-                                                            height: "auto",
-                                                            fontSize: "12px",
-                                                            color: "#1890ff",
-                                                            marginTop: 4,
-                                                        }}
-                                                    >
-                                                        Read More
-                                                    </Button>
-                                                )}
+                                                <Button
+                                                    type="link"
+                                                    size="small"
+                                                    icon={
+                                                        <InfoCircleOutlined />
+                                                    }
+                                                    onClick={(e) =>
+                                                        handleViewDetails(
+                                                            service,
+                                                            e
+                                                        )
+                                                    }
+                                                    style={{
+                                                        padding: 0,
+                                                        height: "auto",
+                                                        fontSize: "12px",
+                                                        color: "#1890ff",
+                                                        marginTop: 4,
+                                                    }}
+                                                >
+                                                    View Details
+                                                </Button>
                                             </div>
                                         )}
 
@@ -367,105 +355,61 @@ export default function SelectService({ services, upcomingServices, auth }) {
                                         service.pricing_tiers.length > 0 ? (
                                             <div style={{ marginBottom: 20 }}>
                                                 <div
-                                                    style={{ marginBottom: 12 }}
+                                                    style={{
+                                                        padding: "8px 12px",
+                                                        backgroundColor:
+                                                            "#f0f8ff",
+                                                        borderRadius: "8px",
+                                                        border: "1px solid #bae7ff",
+                                                        display: "flex",
+                                                        justifyContent:
+                                                            "space-between",
+                                                        alignItems: "center",
+                                                    }}
                                                 >
+                                                    <div>
+                                                        <Text
+                                                            strong
+                                                            style={{
+                                                                fontSize: 13,
+                                                                color: "#1890ff",
+                                                            }}
+                                                        >
+                                                            Starting from
+                                                        </Text>
+                                                        <br />
+                                                        <Text
+                                                            type="secondary"
+                                                            style={{
+                                                                fontSize: 11,
+                                                            }}
+                                                        >
+                                                            {
+                                                                service
+                                                                    .pricing_tiers
+                                                                    .length
+                                                            }{" "}
+                                                            pricing options
+                                                            available
+                                                        </Text>
+                                                    </div>
                                                     <Text
                                                         strong
                                                         style={{
-                                                            fontSize: 14,
-                                                            color: "#1f1f1f",
+                                                            fontSize: 16,
+                                                            color: "#1890ff",
                                                         }}
                                                     >
-                                                        Pricing Options:
+                                                        {formatPrice(
+                                                            Math.min(
+                                                                ...service.pricing_tiers.map(
+                                                                    (tier) =>
+                                                                        tier.price
+                                                                )
+                                                            )
+                                                        )}
                                                     </Text>
                                                 </div>
-                                                {service.pricing_tiers
-                                                    .slice(0, 3)
-                                                    .map((tier, index) => (
-                                                        <div
-                                                            key={tier.id}
-                                                            style={{
-                                                                display: "flex",
-                                                                justifyContent:
-                                                                    "space-between",
-                                                                alignItems:
-                                                                    "center",
-                                                                padding:
-                                                                    "8px 12px",
-                                                                backgroundColor:
-                                                                    index === 0
-                                                                        ? "#f0f8ff"
-                                                                        : "#fafafa",
-                                                                borderRadius:
-                                                                    "8px",
-                                                                marginBottom: 8,
-                                                                border:
-                                                                    index === 0
-                                                                        ? "1px solid #bae7ff"
-                                                                        : "1px solid #f0f0f0",
-                                                            }}
-                                                        >
-                                                            <div>
-                                                                <Text
-                                                                    strong
-                                                                    style={{
-                                                                        fontSize: 13,
-                                                                    }}
-                                                                >
-                                                                    {tier.name}
-                                                                    {tier.is_popular && (
-                                                                        <Tag
-                                                                            color="gold"
-                                                                            size="small"
-                                                                            style={{
-                                                                                marginLeft: 8,
-                                                                            }}
-                                                                        >
-                                                                            Popular
-                                                                        </Tag>
-                                                                    )}
-                                                                </Text>
-                                                                <br />
-                                                                <Text
-                                                                    type="secondary"
-                                                                    style={{
-                                                                        fontSize: 11,
-                                                                    }}
-                                                                >
-                                                                    {formatDuration(
-                                                                        tier.duration_minutes
-                                                                    )}
-                                                                </Text>
-                                                            </div>
-                                                            <Text
-                                                                strong
-                                                                style={{
-                                                                    fontSize: 14,
-                                                                    color: "#1890ff",
-                                                                }}
-                                                            >
-                                                                {formatPrice(
-                                                                    tier.price
-                                                                )}
-                                                            </Text>
-                                                        </div>
-                                                    ))}
-                                                {service.pricing_tiers.length >
-                                                    3 && (
-                                                    <Text
-                                                        type="secondary"
-                                                        style={{
-                                                            fontSize: 11,
-                                                            textAlign: "center",
-                                                            display: "block",
-                                                        }}
-                                                    >
-                                                        +
-                                                        {service.pricing_tiers
-                                                            .length - 3}{" "}
-                                                        more options
-                                                    </Text>
-                                                )}
                                             </div>
                                         ) : (
                                             <div style={{ marginBottom: 20 }}>
@@ -804,24 +748,12 @@ export default function SelectService({ services, upcomingServices, auth }) {
                                                         left: "50%",
                                                         transform:
                                                             "translate(-50%, -50%)",
-                                                        width: 80,
-                                                        height: 80,
-                                                        borderRadius: "50%",
-                                                        background:
-                                                            "rgba(255, 255, 255, 0.2)",
-                                                        backdropFilter:
-                                                            "blur(10px)",
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        justifyContent:
-                                                            "center",
-                                                        color: "white",
-                                                        fontSize: 36,
-                                                        fontWeight: "bold",
-                                                        border: "2px solid rgba(255, 255, 255, 0.3)",
                                                     }}
                                                 >
-                                                    {service.name.charAt(0)}
+                                                    <ServiceIcon
+                                                        service={service}
+                                                        size={80}
+                                                    />
                                                 </div>
                                             </div>
 
@@ -873,45 +805,37 @@ export default function SelectService({ services, upcomingServices, auth }) {
                                                                 ),
                                                             }}
                                                         />
-                                                        {(
-                                                            service.coming_soon_description ||
-                                                            service.description ||
-                                                            ""
-                                                        ).length > 80 && (
-                                                            <Button
-                                                                type="link"
-                                                                size="small"
-                                                                icon={
-                                                                    <InfoCircleOutlined />
-                                                                }
-                                                                onClick={(
+                                                        <Button
+                                                            type="link"
+                                                            size="small"
+                                                            icon={
+                                                                <InfoCircleOutlined />
+                                                            }
+                                                            onClick={(e) => {
+                                                                console.log(
+                                                                    "View Details clicked for service:",
+                                                                    service
+                                                                );
+                                                                console.log(
+                                                                    "Event:",
                                                                     e
-                                                                ) => {
-                                                                    console.log(
-                                                                        "Read More clicked for service:",
-                                                                        service
-                                                                    );
-                                                                    console.log(
-                                                                        "Event:",
-                                                                        e
-                                                                    );
-                                                                    handleViewDetails(
-                                                                        service,
-                                                                        e
-                                                                    );
-                                                                }}
-                                                                style={{
-                                                                    padding: 0,
-                                                                    height: "auto",
-                                                                    fontSize:
-                                                                        "12px",
-                                                                    color: "#1890ff",
-                                                                    marginTop: 4,
-                                                                }}
-                                                            >
-                                                                Read More
-                                                            </Button>
-                                                        )}
+                                                                );
+                                                                handleViewDetails(
+                                                                    service,
+                                                                    e
+                                                                );
+                                                            }}
+                                                            style={{
+                                                                padding: 0,
+                                                                height: "auto",
+                                                                fontSize:
+                                                                    "12px",
+                                                                color: "#1890ff",
+                                                                marginTop: 4,
+                                                            }}
+                                                        >
+                                                            View Details
+                                                        </Button>
                                                     </div>
                                                 )}
 
@@ -1369,7 +1293,22 @@ export default function SelectService({ services, upcomingServices, auth }) {
                             >
                                 Availability
                             </div>
-                            {serviceForDetail.is_active ? (
+                            {serviceForDetail.is_upcoming ? (
+                                <Tag
+                                    style={{
+                                        background:
+                                            "linear-gradient(135deg, #fff7e6 0%, #ffd591 100%)",
+                                        border: "1px solid #ffc53d",
+                                        color: "#fa8c16",
+                                        borderRadius: "8px",
+                                        padding: "6px 16px",
+                                        fontSize: "14px",
+                                        fontWeight: 500,
+                                    }}
+                                >
+                                    Coming Soon
+                                </Tag>
+                            ) : serviceForDetail.is_active ? (
                                 <Tag
                                     style={{
                                         background:
@@ -1402,38 +1341,135 @@ export default function SelectService({ services, upcomingServices, auth }) {
                             )}
                         </div>
 
+                        {/* Pricing Tiers */}
+                        {serviceForDetail.pricing_tiers &&
+                            serviceForDetail.pricing_tiers.length > 0 && (
+                                <div style={{ marginBottom: 24 }}>
+                                    <div
+                                        style={{
+                                            fontSize: "14px",
+                                            fontWeight: 600,
+                                            color: "#1f1f1f",
+                                            marginBottom: 12,
+                                        }}
+                                    >
+                                        Pricing Options
+                                    </div>
+                                    {serviceForDetail.pricing_tiers.map(
+                                        (tier, index) => (
+                                            <div
+                                                key={tier.id}
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent:
+                                                        "space-between",
+                                                    alignItems: "center",
+                                                    padding: "12px 16px",
+                                                    backgroundColor:
+                                                        index === 0
+                                                            ? "#f0f8ff"
+                                                            : "#fafafa",
+                                                    borderRadius: "8px",
+                                                    marginBottom: 8,
+                                                    border:
+                                                        index === 0
+                                                            ? "1px solid #bae7ff"
+                                                            : "1px solid #f0f0f0",
+                                                }}
+                                            >
+                                                <div>
+                                                    <div
+                                                        style={{
+                                                            display: "flex",
+                                                            alignItems:
+                                                                "center",
+                                                            gap: 8,
+                                                        }}
+                                                    >
+                                                        <Text
+                                                            strong
+                                                            style={{
+                                                                fontSize: 14,
+                                                                color: "#1f1f1f",
+                                                            }}
+                                                        >
+                                                            {tier.name}
+                                                        </Text>
+                                                        {tier.is_popular && (
+                                                            <Tag
+                                                                color="gold"
+                                                                size="small"
+                                                                style={{
+                                                                    marginLeft: 4,
+                                                                }}
+                                                            >
+                                                                Popular
+                                                            </Tag>
+                                                        )}
+                                                    </div>
+                                                    <Text
+                                                        type="secondary"
+                                                        style={{
+                                                            fontSize: 12,
+                                                            marginTop: 2,
+                                                        }}
+                                                    >
+                                                        {formatDuration(
+                                                            tier.duration_minutes
+                                                        )}
+                                                    </Text>
+                                                </div>
+                                                <Text
+                                                    strong
+                                                    style={{
+                                                        fontSize: 16,
+                                                        color: "#1890ff",
+                                                    }}
+                                                >
+                                                    {formatPrice(tier.price)}
+                                                </Text>
+                                            </div>
+                                        )
+                                    )}
+                                </div>
+                            )}
+
                         {/* Additional Information */}
-                        <div
-                            style={{
-                                padding: "16px",
-                                background: "#f0f8ff",
-                                borderRadius: "8px",
-                                border: "1px solid #bae7ff",
-                            }}
-                        >
+                        {(serviceForDetail?.disclaimer_title ||
+                            serviceForDetail?.disclaimer_content) && (
                             <div
                                 style={{
-                                    fontSize: "14px",
-                                    fontWeight: 600,
-                                    color: "#1890ff",
-                                    marginBottom: 8,
+                                    padding: "16px",
+                                    background: "#f0f8ff",
+                                    borderRadius: "8px",
+                                    border: "1px solid #bae7ff",
                                 }}
                             >
-                                What's Included
+                                <div
+                                    style={{
+                                        fontSize: "14px",
+                                        fontWeight: 600,
+                                        color: "#1890ff",
+                                        marginBottom: 8,
+                                    }}
+                                >
+                                    {serviceForDetail?.disclaimer_title ||
+                                        "What's Included"}
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: "14px",
+                                        lineHeight: 1.5,
+                                        color: "#666",
+                                    }}
+                                    dangerouslySetInnerHTML={{
+                                        __html:
+                                            serviceForDetail?.disclaimer_content ||
+                                            "This service includes professional care, quality products, and expert consultation. Our trained professionals ensure you receive the best experience possible.",
+                                    }}
+                                />
                             </div>
-                            <div
-                                style={{
-                                    fontSize: "14px",
-                                    lineHeight: 1.5,
-                                    color: "#666",
-                                }}
-                            >
-                                This service includes professional care, quality
-                                products, and expert consultation. Our trained
-                                professionals ensure you receive the best
-                                experience possible.
-                            </div>
-                        </div>
+                        )}
                     </div>
                 )}
             </Modal>

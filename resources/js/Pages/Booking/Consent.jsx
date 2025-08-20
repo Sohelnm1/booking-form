@@ -739,7 +739,8 @@ export default function Consent({
                                             ? formatDuration(
                                                   selectedPricingTier.duration_minutes
                                               )
-                                            : formatDuration(service.duration)}
+                                            : service.duration_label ||
+                                              formatDuration(service.duration)}
                                     </Text>
                                 </div>
 

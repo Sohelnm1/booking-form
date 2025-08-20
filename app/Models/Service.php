@@ -19,12 +19,15 @@ class Service extends Model
         'duration',
         'color',
         'image',
+        'icon',
         'is_active',
         'sort_order',
         'is_upcoming',
         'has_flexible_duration',
         'has_tba_pricing',
         'coming_soon_description',
+        'disclaimer_title',
+        'disclaimer_content',
     ];
 
     protected $casts = [

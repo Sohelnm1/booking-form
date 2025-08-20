@@ -318,7 +318,8 @@ export default function SelectExtras({
                                                 ? formatDuration(
                                                       selectedPricingTier.duration_minutes
                                                   )
-                                                : formatDuration(
+                                                : service.duration_label ||
+                                                  formatDuration(
                                                       service.duration
                                                   )}
                                         </Text>
@@ -429,52 +430,43 @@ export default function SelectExtras({
                                                                 {extra.name}
                                                             </Title>
                                                             {extra.description && (
-                                                                <div>
-                                                                    <div
-                                                                        style={{
-                                                                            fontSize: 12,
-                                                                            color: "#666",
-                                                                        }}
-                                                                        dangerouslySetInnerHTML={{
-                                                                            __html: truncateText(
-                                                                                extra.description,
-                                                                                60
-                                                                            ),
-                                                                        }}
-                                                                    />
-                                                                    {extra
-                                                                        .description
-                                                                        .length >
-                                                                        60 && (
-                                                                        <Button
-                                                                            type="link"
-                                                                            size="small"
-                                                                            icon={
-                                                                                <InfoCircleOutlined />
-                                                                            }
-                                                                            onClick={(
-                                                                                e
-                                                                            ) =>
-                                                                                handleViewDetails(
-                                                                                    extra,
-                                                                                    e
-                                                                                )
-                                                                            }
-                                                                            style={{
-                                                                                padding: 0,
-                                                                                height: "auto",
-                                                                                fontSize:
-                                                                                    "10px",
-                                                                                color: "#1890ff",
-                                                                                marginTop: 2,
-                                                                            }}
-                                                                        >
-                                                                            Read
-                                                                            More
-                                                                        </Button>
-                                                                    )}
-                                                                </div>
+                                                                <div
+                                                                    style={{
+                                                                        fontSize: 12,
+                                                                        color: "#666",
+                                                                        marginBottom: 4,
+                                                                    }}
+                                                                    dangerouslySetInnerHTML={{
+                                                                        __html: truncateText(
+                                                                            extra.description,
+                                                                            60
+                                                                        ),
+                                                                    }}
+                                                                />
                                                             )}
+                                                            <Button
+                                                                type="link"
+                                                                size="small"
+                                                                icon={
+                                                                    <InfoCircleOutlined />
+                                                                }
+                                                                onClick={(e) =>
+                                                                    handleViewDetails(
+                                                                        extra,
+                                                                        e
+                                                                    )
+                                                                }
+                                                                style={{
+                                                                    padding: 0,
+                                                                    height: "auto",
+                                                                    fontSize:
+                                                                        "10px",
+                                                                    color: "#1890ff",
+                                                                    marginTop: 2,
+                                                                }}
+                                                            >
+                                                                View Details
+                                                            </Button>
                                                             <div
                                                                 style={{
                                                                     marginTop: 8,
@@ -623,7 +615,8 @@ export default function SelectExtras({
                                         ? formatDuration(
                                               selectedPricingTier.duration_minutes
                                           )
-                                        : formatDuration(service.duration)}
+                                        : service.duration_label ||
+                                          formatDuration(service.duration)}
                                 </Text>
                             </div>
 
@@ -982,6 +975,44 @@ export default function SelectExtras({
                                 service to your booking.
                             </div>
                         </div>
+
+                        {/* Additional Information */}
+                        {(extraForDetail?.disclaimer_title ||
+                            extraForDetail?.disclaimer_content) && (
+                            <div
+                                style={{
+                                    padding: "16px",
+                                    background: "#f0f8ff",
+                                    borderRadius: "8px",
+                                    border: "1px solid #bae7ff",
+                                    marginTop: 16,
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        fontSize: "14px",
+                                        fontWeight: 600,
+                                        color: "#1890ff",
+                                        marginBottom: 8,
+                                    }}
+                                >
+                                    {extraForDetail?.disclaimer_title ||
+                                        "What's Included"}
+                                </div>
+                                <div
+                                    style={{
+                                        fontSize: "14px",
+                                        lineHeight: 1.5,
+                                        color: "#666",
+                                    }}
+                                    dangerouslySetInnerHTML={{
+                                        __html:
+                                            extraForDetail?.disclaimer_content ||
+                                            "This extra service includes professional care and quality products to enhance your experience.",
+                                    }}
+                                />
+                            </div>
+                        )}
                     </div>
                 )}
             </Modal>

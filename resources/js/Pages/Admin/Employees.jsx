@@ -67,6 +67,7 @@ export default function Employees({
             name: employee.name,
             email: employee.email,
             phone_number: employee.phone_number,
+            gender: employee.gender,
             is_active: employee.is_active,
             services: employee.services?.map((s) => s.id) || [],
             schedule_settings:
@@ -96,6 +97,7 @@ export default function Employees({
                 name: values.name,
                 email: values.email,
                 phone_number: values.phone_number,
+                gender: values.gender,
                 is_active: values.is_active,
                 services: values.services || [],
                 schedule_settings: values.schedule_settings || [],
@@ -167,6 +169,24 @@ export default function Employees({
                     </Space>
                 </Space>
             ),
+        },
+        {
+            title: "Gender",
+            dataIndex: "gender",
+            key: "gender",
+            render: (gender) => {
+                if (!gender) return <Text type="secondary">Not specified</Text>;
+                const genderConfig = {
+                    male: { color: "blue", text: "Male" },
+                    female: { color: "pink", text: "Female" },
+                    other: { color: "purple", text: "Other" },
+                };
+                const config = genderConfig[gender] || {
+                    color: "default",
+                    text: gender,
+                };
+                return <Tag color={config.color}>{config.text}</Tag>;
+            },
         },
         {
             title: "Services",
@@ -372,6 +392,14 @@ export default function Employees({
                             <Input placeholder="Enter phone number" />
                         </Form.Item>
 
+                        <Form.Item name="gender" label="Gender">
+                            <Select placeholder="Select gender (optional)">
+                                <Option value="male">Male</Option>
+                                <Option value="female">Female</Option>
+                                <Option value="other">Other</Option>
+                            </Select>
+                        </Form.Item>
+
                         <Form.Item
                             name="services"
                             label="Assigned Services"
@@ -391,7 +419,9 @@ export default function Employees({
                                 {services.map((service) => (
                                     <Option key={service.id} value={service.id}>
                                         {service.name} (
-                                        {formatDuration(service.duration)})
+                                        {service.duration_label ||
+                                            formatDuration(service.duration)}
+                                        )
                                     </Option>
                                 ))}
                             </Select>

@@ -14,6 +14,8 @@ class Extra extends Model
     protected $fillable = [
         'name',
         'description',
+        'disclaimer_title',
+        'disclaimer_content',
         'price',
         'duration',
         'duration_id',

@@ -134,8 +134,12 @@ class BookingController extends Controller
         // Get booking settings
         $bookingSettings = BookingSetting::getAllSettings();
         
+        // Add duration label to service
+        $serviceData = $service->toArray();
+        $serviceData['duration_label'] = $service->getDurationLabel();
+        
         return Inertia::render('Booking/SelectExtras', [
-            'service' => $service,
+            'service' => $serviceData,
             'extras' => $extrasWithDuration,
             'bookingSettings' => $bookingSettings,
             'selectedPricingTier' => $selectedPricingTier,
@@ -247,8 +251,12 @@ class BookingController extends Controller
             $selectedPricingTier = ServicePricingTier::find($pricingTierId);
         }
 
+        // Add duration label to service
+        $serviceData = $service->toArray();
+        $serviceData['duration_label'] = $service->getDurationLabel();
+        
         return Inertia::render('Booking/SelectDateTime', [
-            'service' => $service,
+            'service' => $serviceData,
             'selectedExtras' => $extrasWithQuantities,
             'scheduleSettings' => $scheduleSettings,
             'selectedPricingTier' => $selectedPricingTier,
@@ -328,8 +336,12 @@ class BookingController extends Controller
             $selectedPricingTier = ServicePricingTier::find($pricingTierId);
         }
 
+        // Add duration label to service
+        $serviceData = $service->toArray();
+        $serviceData['duration_label'] = $service->getDurationLabel();
+        
         return Inertia::render('Booking/Consent', [
-            'service' => $service,
+            'service' => $serviceData,
             'selectedExtras' => $extrasWithQuantities,
             'date' => $date,
             'time' => $time,
@@ -525,8 +537,12 @@ class BookingController extends Controller
             $totalPrice += floatval($extra['price']) * $quantity;
         }
         
+        // Add duration label to service
+        $serviceData = $service->toArray();
+        $serviceData['duration_label'] = $service->getDurationLabel();
+        
         return Inertia::render('Booking/Confirm', [
-            'service' => $service,
+            'service' => $serviceData,
             'selectedExtras' => $extrasWithQuantities,
             'date' => $date,
             'time' => $time,

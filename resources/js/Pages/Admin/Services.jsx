@@ -26,6 +26,15 @@ import {
     EyeOutlined,
     UploadOutlined,
     InboxOutlined,
+    MedicineBoxOutlined,
+    UserOutlined,
+    ExclamationCircleOutlined,
+    HomeOutlined,
+    HeartOutlined,
+    CarOutlined,
+    PhoneOutlined,
+    CalendarOutlined,
+    StarOutlined,
 } from "@ant-design/icons";
 import AdminLayout from "../../Layouts/AdminLayout";
 
@@ -95,6 +104,9 @@ export default function Services({
                     has_tba_pricing: editingService.has_tba_pricing || false,
                     coming_soon_description:
                         editingService.coming_soon_description || "",
+                    disclaimer_title: editingService.disclaimer_title || "",
+                    disclaimer_content: editingService.disclaimer_content || "",
+                    icon: editingService.icon || "",
                 };
 
                 setTimeout(() => {
@@ -117,6 +129,9 @@ export default function Services({
                         has_flexible_duration: false,
                         has_tba_pricing: false,
                         coming_soon_description: "",
+                        disclaimer_title: "",
+                        disclaimer_content: "",
+                        icon: "",
                     });
                     console.log(
                         "Default form values set via useEffect for adding"
@@ -850,6 +865,182 @@ export default function Services({
                             Descriptions appear on your booking page.
                         </Text>
 
+                        {/* Service Icon Selection */}
+                        <Form.Item name="icon" label="Service Icon">
+                            <Select
+                                placeholder="Select an icon (optional - will auto-detect based on service name)"
+                                allowClear
+                                showSearch
+                                optionFilterProp="children"
+                            >
+                                <Option value="medical">
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 8,
+                                        }}
+                                    >
+                                        <MedicineBoxOutlined
+                                            style={{
+                                                fontSize: 16,
+                                                color: "#1890ff",
+                                            }}
+                                        />
+                                        Medical/Health Services
+                                    </div>
+                                </Option>
+                                <Option value="elderly">
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 8,
+                                        }}
+                                    >
+                                        <UserOutlined
+                                            style={{
+                                                fontSize: 16,
+                                                color: "#1890ff",
+                                            }}
+                                        />
+                                        Elderly Care/Companion
+                                    </div>
+                                </Option>
+                                <Option value="emergency">
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 8,
+                                        }}
+                                    >
+                                        <ExclamationCircleOutlined
+                                            style={{
+                                                fontSize: 16,
+                                                color: "#ff4d4f",
+                                            }}
+                                        />
+                                        Emergency/Urgent Care
+                                    </div>
+                                </Option>
+                                <Option value="discharge">
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 8,
+                                        }}
+                                    >
+                                        <HomeOutlined
+                                            style={{
+                                                fontSize: 16,
+                                                color: "#52c41a",
+                                            }}
+                                        />
+                                        Discharge Support/Home Care
+                                    </div>
+                                </Option>
+                                <Option value="heart">
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 8,
+                                        }}
+                                    >
+                                        <HeartOutlined
+                                            style={{
+                                                fontSize: 16,
+                                                color: "#eb2f96",
+                                            }}
+                                        />
+                                        Cardiac/Heart Care
+                                    </div>
+                                </Option>
+                                <Option value="transport">
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 8,
+                                        }}
+                                    >
+                                        <CarOutlined
+                                            style={{
+                                                fontSize: 16,
+                                                color: "#fa8c16",
+                                            }}
+                                        />
+                                        Transport/Ambulance
+                                    </div>
+                                </Option>
+                                <Option value="consultation">
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 8,
+                                        }}
+                                    >
+                                        <PhoneOutlined
+                                            style={{
+                                                fontSize: 16,
+                                                color: "#1890ff",
+                                            }}
+                                        />
+                                        Phone Consultation
+                                    </div>
+                                </Option>
+                                <Option value="appointment">
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 8,
+                                        }}
+                                    >
+                                        <CalendarOutlined
+                                            style={{
+                                                fontSize: 16,
+                                                color: "#722ed1",
+                                            }}
+                                        />
+                                        Appointment/Booking
+                                    </div>
+                                </Option>
+                                <Option value="premium">
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 8,
+                                        }}
+                                    >
+                                        <StarOutlined
+                                            style={{
+                                                fontSize: 16,
+                                                color: "#faad14",
+                                            }}
+                                        />
+                                        Premium/VIP Services
+                                    </div>
+                                </Option>
+                            </Select>
+                        </Form.Item>
+                        <Text
+                            type="secondary"
+                            style={{
+                                fontSize: "12px",
+                                marginTop: 4,
+                                marginBottom: 16,
+                            }}
+                        >
+                            Choose an icon for this service. If left empty, the
+                            system will automatically detect an appropriate icon
+                            based on the service name.
+                        </Text>
+
                         <Row gutter={16}>
                             <Col span={12}>
                                 <Form.Item
@@ -1059,6 +1250,68 @@ export default function Services({
                                 ) : null;
                             }}
                         </Form.Item>
+
+                        {/* Disclaimer Section */}
+                        <div style={{ marginTop: 24, marginBottom: 16 }}>
+                            <Title level={4} style={{ marginBottom: 16 }}>
+                                Service Details Modal
+                            </Title>
+                            <Text
+                                type="secondary"
+                                style={{
+                                    fontSize: 14,
+                                    marginBottom: 16,
+                                    display: "block",
+                                }}
+                            >
+                                Customize the disclaimer section that appears in
+                                the service details modal.
+                            </Text>
+                        </div>
+
+                        <Form.Item
+                            name="disclaimer_title"
+                            label="Disclaimer Title"
+                        >
+                            <Input
+                                placeholder="e.g., What's Included, Important Notice, etc."
+                                maxLength={255}
+                            />
+                        </Form.Item>
+                        <Text
+                            type="secondary"
+                            style={{
+                                fontSize: "12px",
+                                marginTop: 4,
+                                marginBottom: 16,
+                            }}
+                        >
+                            This title will appear in the service details modal.
+                            Leave empty to use default "What's Included".
+                        </Text>
+
+                        <Form.Item
+                            name="disclaimer_content"
+                            label="Disclaimer Content"
+                        >
+                            <TextArea
+                                rows={4}
+                                placeholder="Enter disclaimer content that will appear in the service details modal..."
+                                style={{ minHeight: 100 }}
+                            />
+                        </Form.Item>
+                        <Text
+                            type="secondary"
+                            style={{
+                                fontSize: "12px",
+                                marginTop: 4,
+                                marginBottom: 16,
+                            }}
+                        >
+                            This content will appear in the service details
+                            modal. Supports HTML formatting. Leave empty to use
+                            default content.
+                        </Text>
 
                         {/* Pricing Tiers Section */}
                         <div style={{ marginTop: 24, marginBottom: 16 }}>
