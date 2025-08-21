@@ -260,11 +260,21 @@ class CustomerController extends Controller
             ], 400);
         }
 
-        // Check if new time slot is available
-        if (!$booking->service->isSlotAvailable($newAppointmentTime->format('Y-m-d'), $newAppointmentTime->format('H:i'), $booking->duration, $booking->id)) {
+        // Check if new time slot is available with proper employee availability
+        $availableEmployees = \App\Models\User::getAvailableEmployeesForSlot(
+            $booking->service_id,
+            $newAppointmentTime->format('Y-m-d'),
+            $newAppointmentTime->format('H:i'),
+            $booking->duration,
+            $booking->id, // Exclude current booking
+            $booking->gender_preference // Use original booking's gender preference
+        );
+        
+        if ($availableEmployees->count() === 0) {
             return response()->json([
                 'success' => false,
                 'message' => 'Selected time slot is not available.',
+                'reason' => 'No employees are available for this time slot.',
             ], 400);
         }
 
@@ -356,19 +366,49 @@ class CustomerController extends Controller
      */
     private function performReschedule($booking, $newAppointmentTime, $policy)
     {
-        // Perform the reschedule
+        // Get available employees for the new time slot
+        $availableEmployees = \App\Models\User::getAvailableEmployeesForSlot(
+            $booking->service_id,
+            $newAppointmentTime->format('Y-m-d'),
+            $newAppointmentTime->format('H:i'),
+            $booking->duration,
+            $booking->id, // Exclude current booking
+            $booking->gender_preference // Use original booking's gender preference
+        );
+        
+        if ($availableEmployees->count() === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No employees are available for the selected time slot.',
+            ], 400);
+        }
+        
+        // Assign the first available employee
+        $newEmployee = $availableEmployees->first();
+        
+        // Perform the reschedule with new employee
         $success = $booking->reschedule($newAppointmentTime);
-
+        
         if (!$success) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to reschedule booking.',
             ], 500);
         }
-
-        // Update reschedule payment status to not required
+        
+        // Update the employee assignment
         $booking->update([
+            'employee_id' => $newEmployee->id,
             'reschedule_payment_status' => 'not_required',
+        ]);
+        
+        \Log::info('Booking rescheduled with new employee', [
+            'booking_id' => $booking->id,
+            'old_employee_id' => $booking->employee_id,
+            'new_employee_id' => $newEmployee->id,
+            'new_employee_name' => $newEmployee->name,
+            'new_appointment_time' => $newAppointmentTime->format('Y-m-d H:i:s'),
+            'gender_preference' => $booking->gender_preference
         ]);
 
         // Send notifications if enabled
@@ -382,6 +422,8 @@ class CustomerController extends Controller
             'data' => [
                 'booking_id' => $booking->id,
                 'new_appointment_time' => $newAppointmentTime->format('Y-m-d H:i:s'),
+                'new_employee_id' => $newEmployee->id,
+                'new_employee_name' => $newEmployee->name,
                 'reschedule_fee' => 0,
                 'reschedule_attempts' => $booking->reschedule_attempts,
                 'policy_applied' => $policy ? $policy->name : 'Default Policy',

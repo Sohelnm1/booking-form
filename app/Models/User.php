@@ -180,7 +180,7 @@ class User extends Authenticatable
     /**
      * Get available employees for a specific service and time slot
      */
-    public static function getAvailableEmployeesForSlot($serviceId, $date, $startTime, $duration, $excludeBookingId = null)
+    public static function getAvailableEmployeesForSlot($serviceId, $date, $startTime, $duration, $excludeBookingId = null, $genderPreference = null)
     {
         // Debug: Check total employees
         $totalEmployees = self::where('role', 'employee')->count();
@@ -193,8 +193,10 @@ class User extends Authenticatable
         // Debug: Check employees with this service
         $employeesWithService = self::where('role', 'employee')
             ->where('is_active', true)
-            ->whereHas('services', function($query) use ($serviceId) {
-                $query->where('services.id', $serviceId);
+            ->when($serviceId, function($query) use ($serviceId) {
+                $query->whereHas('services', function($subQuery) use ($serviceId) {
+                    $subQuery->where('services.id', $serviceId);
+                });
             })->count();
         \Log::info('Employees with service', ['service_id' => $serviceId, 'count' => $employeesWithService]);
         
@@ -204,8 +206,10 @@ class User extends Authenticatable
         
         $employeesWithConflicts = self::where('role', 'employee')
             ->where('is_active', true)
-            ->whereHas('services', function($query) use ($serviceId) {
-                $query->where('services.id', $serviceId);
+            ->when($serviceId, function($query) use ($serviceId) {
+                $query->whereHas('services', function($subQuery) use ($serviceId) {
+                    $subQuery->where('services.id', $serviceId);
+                });
             })
             ->whereHas('bookings', function($query) use ($date, $startTime, $duration) {
                 $newStartTime = \Carbon\Carbon::parse($date . ' ' . $startTime);
@@ -220,10 +224,12 @@ class User extends Authenticatable
             })->count();
         \Log::info('Employees with conflicts', ['count' => $employeesWithConflicts]);
         
-        $availableEmployees = self::where('role', 'employee')
+        $query = self::where('role', 'employee')
             ->where('is_active', true)
-            ->whereHas('services', function($query) use ($serviceId) {
-                $query->where('services.id', $serviceId);
+            ->when($serviceId, function($query) use ($serviceId) {
+                $query->whereHas('services', function($subQuery) use ($serviceId) {
+                    $subQuery->where('services.id', $serviceId);
+                });
             })
             ->whereDoesntHave('bookings', function($query) use ($date, $startTime, $duration, $excludeBookingId) {
                 $newStartTime = \Carbon\Carbon::parse($date . ' ' . $startTime);
@@ -240,15 +246,22 @@ class User extends Authenticatable
                 if ($excludeBookingId) {
                     $query->where('bookings.id', '!=', $excludeBookingId);
                 }
-            })
-            ->get();
+            });
+        
+        // Filter by gender preference if specified
+        if ($genderPreference && $genderPreference !== 'no_preference') {
+            $query->where('gender', $genderPreference);
+        }
+        
+        $availableEmployees = $query->get();
             
         \Log::info('Final available employees', [
             'count' => $availableEmployees->count(),
             'exclude_booking_id' => $excludeBookingId,
             'date' => $date,
             'start_time' => $startTime,
-            'service_id' => $serviceId
+            'service_id' => $serviceId,
+            'gender_preference' => $genderPreference
         ]);
         
         return $availableEmployees;

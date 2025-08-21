@@ -47,6 +47,7 @@ export default function Consent({
     selectedPricingTier,
     selectedDuration,
     selectedPrice,
+    bookingSettings,
     auth,
 }) {
     const [acceptedConsents, setAcceptedConsents] = useState([]);
@@ -158,6 +159,13 @@ export default function Consent({
             date: date,
             time: time,
             consents: consentIds,
+            gender_preference: window.location.search.includes(
+                "gender_preference="
+            )
+                ? new URLSearchParams(window.location.search).get(
+                      "gender_preference"
+                  )
+                : "no_preference",
         };
 
         // Include verified phone number if available
@@ -812,6 +820,54 @@ export default function Consent({
                                     </>
                                 )}
 
+                                {/* Gender Preference Fee */}
+                                {window.location.search.includes(
+                                    "gender_preference="
+                                ) &&
+                                    new URLSearchParams(
+                                        window.location.search
+                                    ).get("gender_preference") !==
+                                        "no_preference" && (
+                                        <>
+                                            <Divider
+                                                style={{ margin: "12px 0" }}
+                                            />
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent:
+                                                        "space-between",
+                                                    marginBottom: 8,
+                                                }}
+                                            >
+                                                <Text>
+                                                    +{" "}
+                                                    {new URLSearchParams(
+                                                        window.location.search
+                                                    ).get(
+                                                        "gender_preference"
+                                                    ) === "male"
+                                                        ? "Male"
+                                                        : "Female"}{" "}
+                                                    Preference
+                                                </Text>
+                                                <Text>
+                                                    {formatPrice(
+                                                        new URLSearchParams(
+                                                            window.location.search
+                                                        ).get(
+                                                            "gender_preference"
+                                                        ) === "male"
+                                                            ? bookingSettings?.male_preference_fee ||
+                                                                  0
+                                                            : bookingSettings?.female_preference_fee ||
+                                                                  0
+                                                    )}
+                                                </Text>
+                                            </div>
+                                        </>
+                                    )}
+
                                 {/* Total */}
                                 <Divider style={{ margin: "16px 0" }} />
                                 <div
@@ -842,7 +898,24 @@ export default function Consent({
                                                         );
                                                     },
                                                     0
-                                                )
+                                                ) +
+                                                (window.location.search.includes(
+                                                    "gender_preference="
+                                                ) &&
+                                                new URLSearchParams(
+                                                    window.location.search
+                                                ).get("gender_preference") !==
+                                                    "no_preference"
+                                                    ? new URLSearchParams(
+                                                          window.location.search
+                                                      ).get(
+                                                          "gender_preference"
+                                                      ) === "male"
+                                                        ? bookingSettings?.male_preference_fee ||
+                                                          0
+                                                        : bookingSettings?.female_preference_fee ||
+                                                          0
+                                                    : 0)
                                         )}
                                     </Text>
                                 </div>

@@ -36,6 +36,7 @@ export default function SelectDateTime({
     selectedPricingTier,
     selectedDuration,
     selectedPrice,
+    bookingSettings,
     auth,
 }) {
     const [selectedDate, setSelectedDate] = useState(null);
@@ -43,6 +44,8 @@ export default function SelectDateTime({
     const [availableSlots, setAvailableSlots] = useState([]);
     const [loading, setLoading] = useState(false);
     const [currentMonth, setCurrentMonth] = useState(dayjs());
+    const [genderPreference, setGenderPreference] = useState("no_preference");
+    const [showTimeResetAlert, setShowTimeResetAlert] = useState(false);
 
     // Debug logging for schedule settings
     console.log("SelectDateTime component - Schedule settings:", {
@@ -116,6 +119,7 @@ export default function SelectDateTime({
                     extra_quantities_json: extraQuantitiesJson,
                     date: selectedDate.format("YYYY-MM-DD"),
                     time: selectedTime.format("HH:mm"),
+                    gender_preference: genderPreference,
                 },
             });
         }
@@ -129,6 +133,7 @@ export default function SelectDateTime({
             console.log("Service duration:", service.duration);
             console.log("Selected extras:", selectedExtras);
             console.log("Total duration:", totalDuration);
+            console.log("Gender preference:", genderPreference);
 
             // Build query parameters
             const params = new URLSearchParams({
@@ -151,6 +156,11 @@ export default function SelectDateTime({
                 selectedExtras.forEach((extra) => {
                     params.append("extras[]", extra.id);
                 });
+            }
+
+            // Add gender preference
+            if (bookingSettings?.enable_gender_preference) {
+                params.append("gender_preference", genderPreference);
             }
 
             console.log("Normal booking - Request params:", params.toString());
@@ -181,6 +191,21 @@ export default function SelectDateTime({
         setSelectedTime(null);
         fetchAvailableSlots(date);
     };
+
+    // Refetch slots when gender preference changes
+    useEffect(() => {
+        if (selectedDate && bookingSettings?.enable_gender_preference) {
+            // Clear the selected time when gender preference changes
+            // because the available slots will be different
+            if (selectedTime) {
+                setSelectedTime(null);
+                setShowTimeResetAlert(true);
+                // Hide the alert after 5 seconds
+                setTimeout(() => setShowTimeResetAlert(false), 5000);
+            }
+            fetchAvailableSlots(selectedDate);
+        }
+    }, [genderPreference]);
 
     const handleTimeSelect = (time) => {
         setSelectedTime(time);
@@ -391,9 +416,9 @@ export default function SelectDateTime({
                     </div>
                 </div>
 
-                <Row gutter={[32, 32]}>
+                <Row gutter={[24, 24]}>
                     {/* Main Content */}
-                    <Col xs={24} lg={16}>
+                    <Col xs={24} xl={16} lg={14}>
                         {/* Calendar Section */}
                         <Card style={{ marginBottom: 24 }}>
                             <Title level={4} style={{ marginBottom: 16 }}>
@@ -673,6 +698,199 @@ export default function SelectDateTime({
                             </div>
                         </Card>
 
+                        {/* Gender Preference Section */}
+                        {bookingSettings?.enable_gender_preference && (
+                            <Card style={{ marginBottom: 24 }}>
+                                <Title level={4} style={{ marginBottom: 16 }}>
+                                    <span style={{ marginRight: 8 }}>👥</span>
+                                    {bookingSettings?.gender_preference_label ||
+                                        "Preferred HospiPal"}
+                                </Title>
+                                <div style={{ marginBottom: 16 }}>
+                                    <Text type="secondary">
+                                        {bookingSettings?.gender_preference_description ||
+                                            "Select your preferred HospiPal gender. Choosing a specific gender may incur an additional fee."}
+                                    </Text>
+                                </div>
+
+                                <Row gutter={[12, 12]}>
+                                    <Col xs={24} sm={8}>
+                                        <Button
+                                            type={
+                                                genderPreference ===
+                                                "no_preference"
+                                                    ? "primary"
+                                                    : "default"
+                                            }
+                                            style={{
+                                                width: "100%",
+                                                height: "100px",
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                position: "relative",
+                                                padding: "16px 12px",
+                                            }}
+                                            onClick={() =>
+                                                setGenderPreference(
+                                                    "no_preference"
+                                                )
+                                            }
+                                        >
+                                            <div
+                                                style={{
+                                                    fontSize: "22px",
+                                                    marginBottom: "8px",
+                                                    lineHeight: 1,
+                                                }}
+                                            >
+                                                🤝
+                                            </div>
+                                            <div
+                                                style={{
+                                                    fontSize: "14px",
+                                                    fontWeight: "600",
+                                                    marginBottom: "4px",
+                                                    textAlign: "center",
+                                                }}
+                                            >
+                                                No Preference
+                                            </div>
+                                            <div
+                                                style={{
+                                                    fontSize: "12px",
+                                                    color: "#666",
+                                                    textAlign: "center",
+                                                }}
+                                            >
+                                                Auto-assign
+                                            </div>
+                                        </Button>
+                                    </Col>
+                                    <Col xs={24} sm={8}>
+                                        <Button
+                                            type={
+                                                genderPreference === "male"
+                                                    ? "primary"
+                                                    : "default"
+                                            }
+                                            style={{
+                                                width: "100%",
+                                                height: "100px",
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                position: "relative",
+                                                padding: "16px 12px",
+                                            }}
+                                            onClick={() =>
+                                                setGenderPreference("male")
+                                            }
+                                        >
+                                            <div
+                                                style={{
+                                                    fontSize: "22px",
+                                                    marginBottom: "8px",
+                                                    lineHeight: 1,
+                                                }}
+                                            >
+                                                👨
+                                            </div>
+                                            <div
+                                                style={{
+                                                    fontSize: "14px",
+                                                    fontWeight: "600",
+                                                    marginBottom: "4px",
+                                                    textAlign: "center",
+                                                }}
+                                            >
+                                                Male
+                                            </div>
+                                            <div
+                                                style={{
+                                                    fontSize: "12px",
+                                                    color: "#666",
+                                                    textAlign: "center",
+                                                }}
+                                            >
+                                                +₹
+                                                {bookingSettings?.male_preference_fee ||
+                                                    0}
+                                            </div>
+                                        </Button>
+                                    </Col>
+                                    <Col xs={24} sm={8}>
+                                        <Button
+                                            type={
+                                                genderPreference === "female"
+                                                    ? "primary"
+                                                    : "default"
+                                            }
+                                            style={{
+                                                width: "100%",
+                                                height: "100px",
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                position: "relative",
+                                                padding: "16px 12px",
+                                            }}
+                                            onClick={() =>
+                                                setGenderPreference("female")
+                                            }
+                                        >
+                                            <div
+                                                style={{
+                                                    fontSize: "22px",
+                                                    marginBottom: "8px",
+                                                    lineHeight: 1,
+                                                }}
+                                            >
+                                                👩
+                                            </div>
+                                            <div
+                                                style={{
+                                                    fontSize: "14px",
+                                                    fontWeight: "600",
+                                                    marginBottom: "4px",
+                                                    textAlign: "center",
+                                                }}
+                                            >
+                                                Female
+                                            </div>
+                                            <div
+                                                style={{
+                                                    fontSize: "12px",
+                                                    color: "#666",
+                                                    textAlign: "center",
+                                                }}
+                                            >
+                                                +₹
+                                                {bookingSettings?.female_preference_fee ||
+                                                    0}
+                                            </div>
+                                        </Button>
+                                    </Col>
+                                </Row>
+                            </Card>
+                        )}
+
+                        {/* Alert when time is reset due to gender preference change */}
+                        {showTimeResetAlert && (
+                            <Alert
+                                message="Time slot reset"
+                                description="Your selected time has been cleared because the available slots changed with your gender preference. Please select a new time slot."
+                                type="info"
+                                showIcon
+                                closable
+                                onClose={() => setShowTimeResetAlert(false)}
+                                style={{ marginBottom: 16 }}
+                            />
+                        )}
+
                         {/* Time Slots Section */}
                         {selectedDate && (
                             <Card>
@@ -681,6 +899,23 @@ export default function SelectDateTime({
                                         style={{ marginRight: 8 }}
                                     />
                                     Available Time Slots
+                                    {bookingSettings?.enable_gender_preference &&
+                                        genderPreference !==
+                                            "no_preference" && (
+                                            <Text
+                                                type="secondary"
+                                                style={{
+                                                    fontSize: 14,
+                                                    marginLeft: 8,
+                                                }}
+                                            >
+                                                (Filtered for{" "}
+                                                {genderPreference === "male"
+                                                    ? "Male"
+                                                    : "Female"}{" "}
+                                                HospiPal)
+                                            </Text>
+                                        )}
                                 </Title>
 
                                 {loading ? (
@@ -884,7 +1119,7 @@ export default function SelectDateTime({
                     </Col>
 
                     {/* Sidebar - Summary */}
-                    <Col xs={24} lg={8}>
+                    <Col xs={24} xl={8} lg={10}>
                         <Card style={{ position: "sticky", top: 24 }}>
                             <Title level={4} style={{ marginBottom: 16 }}>
                                 Booking Summary
@@ -998,6 +1233,38 @@ export default function SelectDateTime({
                                 </>
                             )}
 
+                            {/* Gender Preference Fee */}
+                            {bookingSettings?.enable_gender_preference &&
+                                genderPreference !== "no_preference" && (
+                                    <>
+                                        <Divider style={{ margin: "12px 0" }} />
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                marginBottom: 8,
+                                            }}
+                                        >
+                                            <Text>
+                                                +{" "}
+                                                {genderPreference === "male"
+                                                    ? "Male"
+                                                    : "Female"}{" "}
+                                                Preference
+                                            </Text>
+                                            <Text>
+                                                {formatPrice(
+                                                    genderPreference === "male"
+                                                        ? bookingSettings?.male_preference_fee ||
+                                                              0
+                                                        : bookingSettings?.female_preference_fee ||
+                                                              0
+                                                )}
+                                            </Text>
+                                        </div>
+                                    </>
+                                )}
+
                             {/* Total */}
                             <Divider style={{ margin: "16px 0" }} />
                             <div
@@ -1028,7 +1295,15 @@ export default function SelectDateTime({
                                                     );
                                                 },
                                                 0
-                                            )
+                                            ) +
+                                            (bookingSettings?.enable_gender_preference &&
+                                            genderPreference !== "no_preference"
+                                                ? genderPreference === "male"
+                                                    ? bookingSettings?.male_preference_fee ||
+                                                      0
+                                                    : bookingSettings?.female_preference_fee ||
+                                                      0
+                                                : 0)
                                     )}
                                 </Text>
                             </div>
@@ -1082,21 +1357,35 @@ export default function SelectDateTime({
                             <div style={{ marginTop: 24 }}>
                                 <Button
                                     block
-                                    style={{ marginBottom: 12 }}
+                                    style={{
+                                        marginBottom: 12,
+                                        height: "40px",
+                                        fontSize: "13px",
+                                        whiteSpace: "nowrap",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                    }}
                                     icon={<ArrowLeftOutlined />}
                                     onClick={handleBack}
                                 >
-                                    Back to Extras
+                                    ← Back
                                 </Button>
                                 <Button
                                     type="primary"
                                     block
                                     size="large"
+                                    style={{
+                                        height: "44px",
+                                        fontSize: "13px",
+                                        whiteSpace: "nowrap",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                    }}
                                     icon={<ArrowRightOutlined />}
                                     onClick={handleContinue}
                                     disabled={!selectedDate || !selectedTime}
                                 >
-                                    Continue to Consent
+                                    Continue →
                                 </Button>
                             </div>
                         </Card>

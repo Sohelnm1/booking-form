@@ -59,7 +59,7 @@ class ScheduleSetting extends Model
     /**
      * Get available time slots for a given date and service duration
      */
-    public function getAvailableSlots($date = null, $serviceDuration = 30, $excludeBookingId = null)
+    public function getAvailableSlots($date = null, $serviceDuration = 30, $excludeBookingId = null, $genderPreference = null, $serviceId = null)
     {
         $date = $date ?? now();
         $slots = [];
@@ -76,7 +76,8 @@ class ScheduleSetting extends Model
             'service_duration' => $duration,
             'buffer_time' => $buffer,
             'date' => $date->format('Y-m-d'),
-            'exclude_booking_id' => $excludeBookingId
+            'exclude_booking_id' => $excludeBookingId,
+            'gender_preference' => $genderPreference
         ]);
         
         // Start from the actual start time
@@ -90,28 +91,60 @@ class ScheduleSetting extends Model
             $isBreakTime = $this->isBreakTime($slotStart, $slotEnd);
             
             if (!$isBreakTime) {
-                // Check if slot conflicts with existing bookings (excluding the specified booking)
-                $isConflicting = $this->hasConflictingBookings($date, $slotStart, $slotEnd, $excludeBookingId);
-                
-
-                
-                if (!$isConflicting) {
-                    $slots[] = [
-                        'start' => $slotStart->format('H:i'),
-                        'end' => $slotEnd->format('H:i'),
-                        'available' => true
-                    ];
+                // For "no_preference", we need to check if ANY employee is available
+                // For specific gender preference, we check conflicts with that gender only
+                if ($genderPreference === 'no_preference') {
+                    // Check if there are any employees available for this slot
+                    $availableEmployees = \App\Models\User::getAvailableEmployeesForSlot(
+                        $serviceId,
+                        $date->format('Y-m-d'),
+                        $slotStart->format('H:i'),
+                        $duration,
+                        $excludeBookingId,
+                        'no_preference'
+                    );
                     
-                    \Log::info('Slot created', [
-                        'start' => $slotStart->format('H:i'),
-                        'end' => $slotEnd->format('H:i'),
-                        'next_slot_start' => $current->copy()->addMinutes($duration + $buffer)->format('H:i')
-                    ]);
+                    if ($availableEmployees->count() > 0) {
+                        $slots[] = [
+                            'start' => $slotStart->format('H:i'),
+                            'end' => $slotEnd->format('H:i'),
+                            'available' => true
+                        ];
+                        
+                        \Log::info('Slot created for no preference', [
+                            'start' => $slotStart->format('H:i'),
+                            'end' => $slotEnd->format('H:i'),
+                            'available_employees' => $availableEmployees->count()
+                        ]);
+                    } else {
+                        \Log::info('Slot excluded for no preference - no employees available', [
+                            'start' => $slotStart->format('H:i'),
+                            'end' => $slotEnd->format('H:i')
+                        ]);
+                    }
                 } else {
-                    \Log::info('Slot excluded - conflicts with existing booking', [
-                        'start' => $slotStart->format('H:i'),
-                        'end' => $slotEnd->format('H:i')
-                    ]);
+                    // For specific gender preference, check conflicts with that gender
+                    $isConflicting = $this->hasConflictingBookings($date, $slotStart, $slotEnd, $excludeBookingId, $genderPreference);
+                    
+                    if (!$isConflicting) {
+                        $slots[] = [
+                            'start' => $slotStart->format('H:i'),
+                            'end' => $slotEnd->format('H:i'),
+                            'available' => true
+                        ];
+                        
+                        \Log::info('Slot created for specific gender', [
+                            'start' => $slotStart->format('H:i'),
+                            'end' => $slotEnd->format('H:i'),
+                            'gender_preference' => $genderPreference
+                        ]);
+                    } else {
+                        \Log::info('Slot excluded - conflicts with existing booking', [
+                            'start' => $slotStart->format('H:i'),
+                            'end' => $slotEnd->format('H:i'),
+                            'gender_preference' => $genderPreference
+                        ]);
+                    }
                 }
             }
             
@@ -176,7 +209,7 @@ class ScheduleSetting extends Model
     /**
      * Check if a time slot conflicts with existing bookings
      */
-    private function hasConflictingBookings($date, $slotStart, $slotEnd, $excludeBookingId = null)
+    private function hasConflictingBookings($date, $slotStart, $slotEnd, $excludeBookingId = null, $genderPreference = null)
     {
         // Convert slot times to full datetime for proper comparison
         $slotStartDateTime = $date->copy()->setTimeFromTimeString($slotStart->format('H:i:s'));
@@ -190,6 +223,25 @@ class ScheduleSetting extends Model
                 $query->where('appointment_time', '<=', $slotEndDateTime)
                       ->whereRaw('DATE_ADD(appointment_time, INTERVAL duration MINUTE) >= ?', [$slotStartDateTime]);
             });
+        
+        // For "no_preference", we don't filter by gender - we check all conflicts
+        // For specific gender preference, we only check conflicts with that gender
+        if ($genderPreference && $genderPreference !== 'no_preference') {
+            $query->whereHas('employee', function($empQuery) use ($genderPreference) {
+                $empQuery->where('gender', $genderPreference);
+            });
+            \Log::info('Filtering conflicts by gender preference', [
+                'gender_preference' => $genderPreference,
+                'slot_start' => $slotStart->format('H:i'),
+                'slot_end' => $slotEnd->format('H:i')
+            ]);
+        } else {
+            \Log::info('No gender preference filter - checking all conflicts', [
+                'gender_preference' => $genderPreference,
+                'slot_start' => $slotStart->format('H:i'),
+                'slot_end' => $slotEnd->format('H:i')
+            ]);
+        }
         
         // Exclude the specified booking if provided (for rescheduling)
         if ($excludeBookingId) {

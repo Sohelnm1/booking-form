@@ -306,6 +306,28 @@ export default function Appointments({ auth, bookings }) {
                                 style={{ marginLeft: 4, fontSize: "10px" }}
                             />
                         </Text>
+                        {record.gender_preference &&
+                            record.gender_preference !== "no_preference" && (
+                                <div>
+                                    <Text
+                                        type="secondary"
+                                        style={{ fontSize: "11px" }}
+                                    >
+                                        Preference:{" "}
+                                        {record.gender_preference === "male"
+                                            ? "Male"
+                                            : "Female"}{" "}
+                                        HospiPal
+                                        {record.gender_preference_fee > 0 && (
+                                            <span style={{ color: "#1890ff" }}>
+                                                {" "}
+                                                (+₹
+                                                {record.gender_preference_fee})
+                                            </span>
+                                        )}
+                                    </Text>
+                                </div>
+                            )}
                     </div>
                 </Space>
             ),
@@ -661,6 +683,30 @@ export default function Appointments({ auth, bookings }) {
                                 <Descriptions.Item label="Duration">
                                     {formatDuration(selectedBooking.duration)}
                                 </Descriptions.Item>
+                                {selectedBooking.gender_preference &&
+                                    selectedBooking.gender_preference !==
+                                        "no_preference" && (
+                                        <Descriptions.Item label="HospiPal Preference">
+                                            <Space>
+                                                <Text>
+                                                    {selectedBooking.gender_preference ===
+                                                    "male"
+                                                        ? "Male"
+                                                        : "Female"}{" "}
+                                                    HospiPal
+                                                </Text>
+                                                {selectedBooking.gender_preference_fee >
+                                                    0 && (
+                                                    <Tag color="blue">
+                                                        +₹
+                                                        {
+                                                            selectedBooking.gender_preference_fee
+                                                        }
+                                                    </Tag>
+                                                )}
+                                            </Space>
+                                        </Descriptions.Item>
+                                    )}
                                 <Descriptions.Item label="Status">
                                     <Badge
                                         status={getStatusColor(

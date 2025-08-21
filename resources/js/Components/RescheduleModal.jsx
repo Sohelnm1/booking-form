@@ -127,9 +127,23 @@ export default function RescheduleModal({
                 });
             }
 
+            // Add gender preference from original booking
+            // Always pass the gender preference, including "no_preference"
+            if (booking.gender_preference) {
+                params.append("gender_preference", booking.gender_preference);
+            }
+
             console.log(
                 "Reschedule modal - Request params:",
                 params.toString()
+            );
+            console.log(
+                "Reschedule modal - Gender preference:",
+                booking.gender_preference
+            );
+            console.log(
+                "Reschedule modal - Gender preference being sent:",
+                booking.gender_preference || "not set"
             );
             console.log("Reschedule modal - Booking data:", {
                 bookingId: booking.id,
@@ -965,6 +979,34 @@ export default function RescheduleModal({
                                         style={{ marginRight: 8 }}
                                     />
                                     Available Time Slots
+                                    {booking.gender_preference &&
+                                    booking.gender_preference !==
+                                        "no_preference" ? (
+                                        <Text
+                                            type="secondary"
+                                            style={{
+                                                fontSize: 14,
+                                                marginLeft: 8,
+                                            }}
+                                        >
+                                            (Filtered for{" "}
+                                            {booking.gender_preference ===
+                                            "male"
+                                                ? "Male"
+                                                : "Female"}{" "}
+                                            HospiPal)
+                                        </Text>
+                                    ) : (
+                                        <Text
+                                            type="secondary"
+                                            style={{
+                                                fontSize: 14,
+                                                marginLeft: 8,
+                                            }}
+                                        >
+                                            (All available HospiPals)
+                                        </Text>
+                                    )}
                                 </Title>
 
                                 {loading ? (

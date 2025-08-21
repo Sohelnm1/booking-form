@@ -188,6 +188,26 @@ export default function Success({ booking, payment_id, auth }) {
                                 {formatDuration(booking?.duration)}
                             </Space>
                         </Descriptions.Item>
+                        {booking?.gender_preference &&
+                            booking.gender_preference !== "no_preference" && (
+                                <Descriptions.Item label="HospiPal Preference">
+                                    <Space>
+                                        <Text>
+                                            {booking.gender_preference ===
+                                            "male"
+                                                ? "Male"
+                                                : "Female"}{" "}
+                                            HospiPal
+                                        </Text>
+                                        {booking.gender_preference_fee > 0 && (
+                                            <Tag color="blue">
+                                                +₹
+                                                {booking.gender_preference_fee}
+                                            </Tag>
+                                        )}
+                                    </Space>
+                                </Descriptions.Item>
+                            )}
                         <Descriptions.Item label="Status">
                             <Tag color={getStatusColor(booking?.status)}>
                                 {booking?.status_text || booking?.status}

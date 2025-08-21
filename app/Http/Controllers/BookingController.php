@@ -255,6 +255,9 @@ class BookingController extends Controller
         $serviceData = $service->toArray();
         $serviceData['duration_label'] = $service->getDurationLabel();
         
+        // Get booking settings
+        $bookingSettings = BookingSetting::getAllSettings();
+        
         return Inertia::render('Booking/SelectDateTime', [
             'service' => $serviceData,
             'selectedExtras' => $extrasWithQuantities,
@@ -262,6 +265,7 @@ class BookingController extends Controller
             'selectedPricingTier' => $selectedPricingTier,
             'selectedDuration' => $selectedDuration,
             'selectedPrice' => $selectedPrice,
+            'bookingSettings' => $bookingSettings,
             'auth' => [
                 'user' => Auth::user(),
             ],
@@ -336,6 +340,9 @@ class BookingController extends Controller
             $selectedPricingTier = ServicePricingTier::find($pricingTierId);
         }
 
+        // Get booking settings
+        $bookingSettings = BookingSetting::getAllSettings();
+
         // Add duration label to service
         $serviceData = $service->toArray();
         $serviceData['duration_label'] = $service->getDurationLabel();
@@ -349,6 +356,7 @@ class BookingController extends Controller
             'selectedPricingTier' => $selectedPricingTier,
             'selectedDuration' => $selectedDuration,
             'selectedPrice' => $selectedPrice,
+            'bookingSettings' => $bookingSettings,
             'auth' => [
                 'user' => Auth::user(),
             ],
@@ -537,6 +545,21 @@ class BookingController extends Controller
             $totalPrice += floatval($extra['price']) * $quantity;
         }
         
+        // Get booking settings
+        $bookingSettings = BookingSetting::getAllSettings();
+        
+        // Add gender preference fee to total price
+        $genderPreference = $request->get('gender_preference', 'no_preference');
+        $genderPreferenceFee = 0;
+        if ($genderPreference !== 'no_preference') {
+            if ($genderPreference === 'male') {
+                $genderPreferenceFee = $bookingSettings['male_preference_fee'] ?? 0;
+            } elseif ($genderPreference === 'female') {
+                $genderPreferenceFee = $bookingSettings['female_preference_fee'] ?? 0;
+            }
+        }
+        $totalPrice += $genderPreferenceFee;
+        
         // Add duration label to service
         $serviceData = $service->toArray();
         $serviceData['duration_label'] = $service->getDurationLabel();
@@ -555,6 +578,7 @@ class BookingController extends Controller
             'selectedPricingTier' => $selectedPricingTier,
             'selectedDuration' => $selectedDuration,
             'selectedPrice' => $selectedPrice,
+            'bookingSettings' => $bookingSettings,
             'auth' => [
                 'user' => Auth::user(),
             ],
@@ -706,6 +730,19 @@ class BookingController extends Controller
                 $totalPrice += floatval($extra['price']) * $quantity;
             }
             
+            // Add gender preference fee to total price
+            $genderPreference = $request->get('gender_preference', 'no_preference');
+            $genderPreferenceFee = 0;
+            if ($genderPreference !== 'no_preference') {
+                $bookingSettings = BookingSetting::getAllSettings();
+                if ($genderPreference === 'male') {
+                    $genderPreferenceFee = $bookingSettings['male_preference_fee'] ?? 0;
+                } elseif ($genderPreference === 'female') {
+                    $genderPreferenceFee = $bookingSettings['female_preference_fee'] ?? 0;
+                }
+            }
+            $totalPrice += $genderPreferenceFee;
+            
             \Log::info('Final booking calculation', [
                 'service_price' => $service->price,
                 'service_duration' => $service->duration,
@@ -720,7 +757,9 @@ class BookingController extends Controller
                 'service_duration_used' => $serviceDuration,
                 'extras_with_quantities' => $extrasWithQuantities,
                 'total_duration' => $totalDuration,
-                'total_price' => $totalPrice
+                'total_price' => $totalPrice,
+                'gender_preference' => $genderPreference,
+                'gender_preference_fee' => $genderPreferenceFee
             ]);
             
             // Create or find customer user first (needed for coupon validation)
@@ -923,7 +962,9 @@ class BookingController extends Controller
                 $service->id,
                 $request->date,
                 $request->time,
-                $totalDuration
+                $totalDuration,
+                null, // exclude_booking_id
+                $request->get('gender_preference', 'no_preference') // gender preference
             );
 
             // Debug logging
@@ -974,6 +1015,8 @@ class BookingController extends Controller
                 'coupon_id' => $couponId
             ]);
             
+
+            
             // Store booking data in session instead of creating booking immediately
             $bookingData = [
                 'user_id' => $customer->id,
@@ -990,13 +1033,15 @@ class BookingController extends Controller
                 'coupon_id' => $couponId,
                 'discount_amount' => $discountAmount,
                 'coupon_code' => $couponCode,
+                'gender_preference' => $request->get('gender_preference', 'no_preference'),
+                'gender_preference_fee' => $genderPreferenceFee,
                 'extras' => $extrasWithQuantities,
                 'custom_fields' => $request->except([
                     'service_id', 'pricing_tier_id', 'selected_duration', 'selected_price', 
                     'extras', 'date', 'time', 'consents', 
                     'customer_name', 'customer_email', 'customer_phone', 
                     'payment_method', 'special_requests', 'coupon_code',
-                    'verified_phone',
+                    'verified_phone', 'gender_preference',
                     // Also exclude dynamic field names
                     $nameField ? $nameField->name : null,
                     $phoneField ? $phoneField->name : null,
@@ -1013,6 +1058,8 @@ class BookingController extends Controller
                 'service_id' => $bookingData['service_id'],
                 'total_amount' => $bookingData['total_amount'],
                 'coupon_code' => $bookingData['coupon_code'],
+                'gender_preference' => $bookingData['gender_preference'],
+                'gender_preference_fee' => $bookingData['gender_preference_fee'],
                 'custom_fields_keys' => array_keys($bookingData['custom_fields'])
             ]);
             
@@ -1038,6 +1085,8 @@ class BookingController extends Controller
             \Log::info('Created temporary booking for Razorpay', [
                 'temp_booking_id' => $tempBooking->id,
                 'total_amount' => $tempBooking->total_amount,
+                'gender_preference' => $tempBooking->gender_preference,
+                'gender_preference_fee' => $tempBooking->gender_preference_fee,
                 'service_id' => $tempBooking->service_id,
                 'user_id' => $tempBooking->user_id
             ]);
@@ -1174,6 +1223,8 @@ class BookingController extends Controller
             'payment_status' => 'paid',
             'payment_method' => $paymentDetails->method ?? 'razorpay',
             'transaction_id' => $request->razorpay_payment_id,
+            'gender_preference' => $bookingData['gender_preference'] ?? 'no_preference',
+            'gender_preference_fee' => $bookingData['gender_preference_fee'] ?? 0,
         ]);
 
         // Create invoice for the booking
@@ -1248,8 +1299,12 @@ class BookingController extends Controller
             ];
         }
 
+        // Load the booking with all necessary relationships for display
+        $booking = Booking::with(['service', 'employee', 'customer', 'pricingTier', 'extras'])
+            ->find($booking->id);
+
         return Inertia::render('Booking/Success', [
-            'booking' => $bookingData,
+            'booking' => $booking,
             'payment_id' => $request->razorpay_payment_id,
             'auth' => [
                 'user' => Auth::user(),
@@ -1307,6 +1362,7 @@ class BookingController extends Controller
                 'pricing_tier_id' => 'nullable|exists:service_pricing_tiers,id',
                 'selected_duration' => 'nullable|integer',
                 'selected_price' => 'nullable|numeric',
+                'gender_preference' => 'nullable|in:male,female,no_preference',
             ]);
 
             $service = Service::findOrFail($request->service_id);
@@ -1352,7 +1408,9 @@ class BookingController extends Controller
                 'request_duration' => $request->duration,
                 'request_extras' => $request->extras,
                 'calculated_total_duration' => $totalDuration,
-                'exclude_booking_id' => $request->exclude_booking_id
+                'exclude_booking_id' => $request->exclude_booking_id,
+                'gender_preference' => $request->gender_preference,
+                'is_reschedule' => !empty($request->exclude_booking_id)
             ]);
             
             // Get the most appropriate schedule setting
@@ -1383,18 +1441,38 @@ class BookingController extends Controller
                 $slots = $this->generateFlexibleSlots($date, $service, $scheduleSetting, $totalDuration, $request->exclude_booking_id);
             } else {
                 // Fallback to sequential slot generation
-                $slots = $scheduleSetting->getAvailableSlots($date, $totalDuration, $request->exclude_booking_id);
+                $slots = $scheduleSetting->getAvailableSlots($date, $totalDuration, $request->exclude_booking_id, $request->gender_preference, $service->id);
                 
                 // Process sequential slots for employee availability
                 $processedSlots = [];
                 foreach ($slots as $slot) {
+                    \Log::info('Processing slot for employee availability', [
+                        'slot' => $slot['start'],
+                        'gender_preference' => $request->gender_preference,
+                        'service_id' => $service->id,
+                        'total_duration' => $totalDuration
+                    ]);
+                    
                     $availableEmployees = User::getAvailableEmployeesForSlot(
                         $service->id,
                         $date->format('Y-m-d'),
                         $slot['start'],
                         $totalDuration,
-                        $request->exclude_booking_id // Pass the booking ID to exclude
+                        $request->exclude_booking_id, // Pass the booking ID to exclude
+                        $request->gender_preference // Pass the gender preference
                     );
+                    
+                    \Log::info('Available employees for slot', [
+                        'slot' => $slot['start'],
+                        'available_count' => $availableEmployees->count(),
+                        'employees' => $availableEmployees->map(function($emp) {
+                            return [
+                                'id' => $emp->id,
+                                'name' => $emp->name,
+                                'gender' => $emp->gender
+                            ];
+                        })->toArray()
+                    ]);
                     
                     // Only include slots that have available employees
                     if ($availableEmployees->count() > 0) {
@@ -1405,7 +1483,8 @@ class BookingController extends Controller
                         \Log::info('Slot excluded - no available employees', [
                             'slot' => $slot['start'],
                             'service_id' => $service->id,
-                            'exclude_booking_id' => $request->exclude_booking_id
+                            'exclude_booking_id' => $request->exclude_booking_id,
+                            'gender_preference' => $request->gender_preference
                         ]);
                     }
                 }
@@ -2039,7 +2118,8 @@ class BookingController extends Controller
                 $date->format('Y-m-d'),
                 $slotStartTime->format('H:i'),
                 $serviceDuration,
-                $excludeBookingId
+                $excludeBookingId,
+                null // gender preference - not used in flexible slots generation
             );
             
             if ($availableEmployees->count() > 0) {

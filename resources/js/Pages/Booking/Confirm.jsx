@@ -57,6 +57,7 @@ export default function Confirm({
     selectedPricingTier,
     selectedDuration,
     selectedPrice,
+    bookingSettings,
     auth,
 }) {
     const [formInstance] = Form.useForm();
@@ -92,6 +93,15 @@ export default function Confirm({
         console.log("Confirm page - verifiedPhone received:", verifiedPhone);
         console.log("Confirm page - formInstance available:", !!formInstance);
         console.log("Confirm page - formFields:", formFields);
+        console.log("Confirm page - bookingSettings:", bookingSettings);
+        console.log(
+            "Confirm page - URL search params:",
+            window.location.search
+        );
+        console.log(
+            "Confirm page - gender preference from URL:",
+            new URLSearchParams(window.location.search).get("gender_preference")
+        );
 
         if (verifiedPhone && formFields) {
             // Find the phone number field dynamically
@@ -230,6 +240,13 @@ export default function Confirm({
                 payment_method: values.payment_method,
                 special_requests: values.special_requests || "",
                 coupon_code: appliedCoupon ? appliedCoupon.code : null,
+                gender_preference: window.location.search.includes(
+                    "gender_preference="
+                )
+                    ? new URLSearchParams(window.location.search).get(
+                          "gender_preference"
+                      )
+                    : "no_preference",
             };
 
             // Add form field values dynamically
@@ -243,6 +260,10 @@ export default function Confirm({
 
             // Debug: Log what's being sent to backend
             console.log("Form data being sent to backend:", formData);
+            console.log(
+                "Gender preference being sent:",
+                formData.gender_preference
+            );
             console.log("Pricing tier debug:", {
                 selectedPricingTier: selectedPricingTier,
                 pricing_tier_id: formData.pricing_tier_id,
@@ -700,6 +721,71 @@ export default function Confirm({
                                     />
                                     {formatTime(time)}
                                 </Descriptions.Item>
+
+                                {(() => {
+                                    const urlParams = new URLSearchParams(
+                                        window.location.search
+                                    );
+                                    const genderPreference =
+                                        urlParams.get("gender_preference");
+                                    const shouldShow =
+                                        genderPreference &&
+                                        genderPreference !== "no_preference";
+                                    console.log("Gender preference debug:", {
+                                        urlParams: window.location.search,
+                                        genderPreference,
+                                        shouldShow,
+                                        bookingSettings: bookingSettings,
+                                    });
+                                    return shouldShow;
+                                })() && (
+                                    <Descriptions.Item label="HospiPal Preference">
+                                        <Text>
+                                            {(() => {
+                                                const urlParams =
+                                                    new URLSearchParams(
+                                                        window.location.search
+                                                    );
+                                                const genderPreference =
+                                                    urlParams.get(
+                                                        "gender_preference"
+                                                    );
+                                                return genderPreference ===
+                                                    "male"
+                                                    ? "Male"
+                                                    : "Female";
+                                            })()}{" "}
+                                            HospiPal
+                                            {bookingSettings?.enable_gender_preference && (
+                                                <Text
+                                                    type="secondary"
+                                                    style={{
+                                                        marginLeft: 8,
+                                                    }}
+                                                >
+                                                    (+₹
+                                                    {(() => {
+                                                        const urlParams =
+                                                            new URLSearchParams(
+                                                                window.location.search
+                                                            );
+                                                        const genderPreference =
+                                                            urlParams.get(
+                                                                "gender_preference"
+                                                            );
+                                                        return genderPreference ===
+                                                            "male"
+                                                            ? bookingSettings?.male_preference_fee ||
+                                                                  0
+                                                            : bookingSettings?.female_preference_fee ||
+                                                                  0;
+                                                    })()}
+                                                    )
+                                                </Text>
+                                            )}
+                                        </Text>
+                                    </Descriptions.Item>
+                                )}
 
                                 {/* <Descriptions.Item label="Total Duration">
                                     {formatDuration(totalDuration)}
@@ -1511,6 +1597,49 @@ export default function Confirm({
                                     })}
                                 </>
                             )}
+
+                            {/* Gender Preference Fee */}
+                            {window.location.search.includes(
+                                "gender_preference="
+                            ) &&
+                                new URLSearchParams(window.location.search).get(
+                                    "gender_preference"
+                                ) !== "no_preference" && (
+                                    <>
+                                        <Divider style={{ margin: "12px 0" }} />
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                marginBottom: 8,
+                                            }}
+                                        >
+                                            <Text>
+                                                +{" "}
+                                                {new URLSearchParams(
+                                                    window.location.search
+                                                ).get("gender_preference") ===
+                                                "male"
+                                                    ? "Male"
+                                                    : "Female"}{" "}
+                                                Preference
+                                            </Text>
+                                            <Text>
+                                                {formatPrice(
+                                                    new URLSearchParams(
+                                                        window.location.search
+                                                    ).get(
+                                                        "gender_preference"
+                                                    ) === "male"
+                                                        ? bookingSettings?.male_preference_fee ||
+                                                              0
+                                                        : bookingSettings?.female_preference_fee ||
+                                                              0
+                                                )}
+                                            </Text>
+                                        </div>
+                                    </>
+                                )}
 
                             {/* Appointment Details */}
                             <Divider style={{ margin: "16px 0" }} />

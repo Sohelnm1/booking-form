@@ -427,6 +427,39 @@ export default function BookingDetail({ auth, booking }) {
                                             </div>
                                         </div>
                                     </Col>
+                                    {booking.gender_preference &&
+                                        booking.gender_preference !==
+                                            "no_preference" && (
+                                            <Col xs={24} sm={12}>
+                                                <div
+                                                    style={{ marginBottom: 16 }}
+                                                >
+                                                    <Text strong>
+                                                        HospiPal Preference
+                                                    </Text>
+                                                    <div>
+                                                        <Space>
+                                                            <Text>
+                                                                {booking.gender_preference ===
+                                                                "male"
+                                                                    ? "Male"
+                                                                    : "Female"}{" "}
+                                                                HospiPal
+                                                            </Text>
+                                                            {booking.gender_preference_fee >
+                                                                0 && (
+                                                                <Tag color="blue">
+                                                                    +₹
+                                                                    {
+                                                                        booking.gender_preference_fee
+                                                                    }
+                                                                </Tag>
+                                                            )}
+                                                        </Space>
+                                                    </div>
+                                                </div>
+                                            </Col>
+                                        )}
                                     <Col xs={24} sm={12}>
                                         <div style={{ marginBottom: 16 }}>
                                             <Text strong>Status</Text>

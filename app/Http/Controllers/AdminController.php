@@ -867,23 +867,40 @@ class AdminController extends Controller
         $request->validate([
             'max_extras_per_booking' => 'required|integer|min:1|max:50',
             'enable_extra_quantities' => 'boolean',
+            'enable_gender_preference' => 'boolean',
+            'male_preference_fee' => 'required|integer|min:0|max:1000',
+            'female_preference_fee' => 'required|integer|min:0|max:1000',
+            'gender_preference_label' => 'required|string|max:255',
+            'gender_preference_description' => 'required|string',
         ]);
 
         // Debug logging
         \Log::info('UpdateBookingSettings - Request data:', [
             'max_extras_per_booking' => $request->max_extras_per_booking,
             'enable_extra_quantities' => $request->boolean('enable_extra_quantities'),
-            'enable_extra_quantities_raw' => $request->input('enable_extra_quantities'),
+            'enable_gender_preference' => $request->boolean('enable_gender_preference'),
+            'male_preference_fee' => $request->male_preference_fee,
+            'female_preference_fee' => $request->female_preference_fee,
+            'gender_preference_label' => $request->gender_preference_label,
+            'gender_preference_description' => $request->gender_preference_description,
         ]);
 
         // Update settings
         BookingSetting::setValue('max_extras_per_booking', $request->max_extras_per_booking, 'integer');
         BookingSetting::setValue('enable_extra_quantities', $request->boolean('enable_extra_quantities'), 'boolean');
+        BookingSetting::setValue('enable_gender_preference', $request->boolean('enable_gender_preference'), 'boolean');
+        BookingSetting::setValue('male_preference_fee', $request->male_preference_fee, 'integer');
+        BookingSetting::setValue('female_preference_fee', $request->female_preference_fee, 'integer');
+        BookingSetting::setValue('gender_preference_label', $request->gender_preference_label, 'string');
+        BookingSetting::setValue('gender_preference_description', $request->gender_preference_description, 'string');
 
         // Debug logging after update
         \Log::info('UpdateBookingSettings - After update:', [
             'max_extras_per_booking' => BookingSetting::getValue('max_extras_per_booking'),
             'enable_extra_quantities' => BookingSetting::getValue('enable_extra_quantities'),
+            'enable_gender_preference' => BookingSetting::getValue('enable_gender_preference'),
+            'male_preference_fee' => BookingSetting::getValue('male_preference_fee'),
+            'female_preference_fee' => BookingSetting::getValue('female_preference_fee'),
         ]);
 
         return redirect()->back()->with('success', 'Booking settings updated successfully');
