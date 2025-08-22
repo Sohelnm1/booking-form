@@ -25,6 +25,11 @@ class FormField extends Model
         'validation_rules',
         'settings',
         'rendering_control',
+        'has_distance_calculation',
+        'distance_calculation_type',
+        'linked_extra_id',
+        'covered_distance_km',
+        'price_per_extra_km',
     ];
 
     protected $casts = [
@@ -33,6 +38,9 @@ class FormField extends Model
         'options' => 'array',
         'validation_rules' => 'array',
         'settings' => 'array',
+        'has_distance_calculation' => 'boolean',
+        'covered_distance_km' => 'decimal:2',
+        'price_per_extra_km' => 'decimal:2',
     ];
 
     /**
@@ -62,6 +70,14 @@ class FormField extends Model
     }
 
     /**
+     * Get the linked extra for distance calculation
+     */
+    public function linkedExtra(): BelongsTo
+    {
+        return $this->belongsTo(Extra::class, 'linked_extra_id');
+    }
+
+    /**
      * Get available field types
      */
     public static function getFieldTypes()
@@ -81,6 +97,7 @@ class FormField extends Model
             'datetime' => 'Date & Time Picker',
             'url' => 'URL Input',
             'password' => 'Password Input',
+            'location' => 'Location Picker',
         ];
     }
 
@@ -113,6 +130,9 @@ class FormField extends Model
                 break;
             case 'file':
                 $rules[] = 'file';
+                break;
+            case 'location':
+                $rules[] = 'string';
                 break;
         }
 

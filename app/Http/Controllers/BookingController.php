@@ -17,6 +17,7 @@ use App\Models\CouponUsage;
 use App\Models\BookingSetting;
 use App\Models\ServicePricingTier;
 use App\Services\RazorpayService;
+use App\Services\DistanceCalculationService;
 use Illuminate\Support\Str;
 use Twilio\Rest\Client;
 use Illuminate\Support\Facades\Auth;
@@ -727,7 +728,7 @@ class BookingController extends Controller
                 } else {
                     $totalDuration += ($extra['total_duration'] ?? 0) * $quantity;
                 }
-                $totalPrice += floatval($extra['price']) * $quantity;
+                $totalPrice = round($totalPrice + (floatval($extra['price']) * $quantity), 2);
             }
             
             // Add gender preference fee to total price
@@ -741,7 +742,11 @@ class BookingController extends Controller
                     $genderPreferenceFee = $bookingSettings['female_preference_fee'] ?? 0;
                 }
             }
-            $totalPrice += $genderPreferenceFee;
+            $totalPrice = round($totalPrice + $genderPreferenceFee, 2);
+            
+            // Add distance charges if provided
+            $distanceCharges = $request->get('distance_charges', 0);
+            $totalPrice = round($totalPrice + floatval($distanceCharges), 2); // Round to 2 decimal places
             
             \Log::info('Final booking calculation', [
                 'service_price' => $service->price,
@@ -759,7 +764,8 @@ class BookingController extends Controller
                 'total_duration' => $totalDuration,
                 'total_price' => $totalPrice,
                 'gender_preference' => $genderPreference,
-                'gender_preference_fee' => $genderPreferenceFee
+                'gender_preference_fee' => $genderPreferenceFee,
+                'distance_charges' => $distanceCharges
             ]);
             
             // Create or find customer user first (needed for coupon validation)
@@ -1035,6 +1041,7 @@ class BookingController extends Controller
                 'coupon_code' => $couponCode,
                 'gender_preference' => $request->get('gender_preference', 'no_preference'),
                 'gender_preference_fee' => $genderPreferenceFee,
+                'distance_charges' => $distanceCharges,
                 'extras' => $extrasWithQuantities,
                 'custom_fields' => $request->except([
                     'service_id', 'pricing_tier_id', 'selected_duration', 'selected_price', 
@@ -1060,6 +1067,7 @@ class BookingController extends Controller
                 'coupon_code' => $bookingData['coupon_code'],
                 'gender_preference' => $bookingData['gender_preference'],
                 'gender_preference_fee' => $bookingData['gender_preference_fee'],
+                'distance_charges' => $bookingData['distance_charges'],
                 'custom_fields_keys' => array_keys($bookingData['custom_fields'])
             ]);
             
@@ -1123,6 +1131,8 @@ class BookingController extends Controller
     public function success()
     {
         return Inertia::render('Booking/Success', [
+            'booking' => null, // No booking data for general success page
+            'payment_id' => null,
             'auth' => [
                 'user' => Auth::user(),
             ],
@@ -1225,6 +1235,7 @@ class BookingController extends Controller
             'transaction_id' => $request->razorpay_payment_id,
             'gender_preference' => $bookingData['gender_preference'] ?? 'no_preference',
             'gender_preference_fee' => $bookingData['gender_preference_fee'] ?? 0,
+            'distance_charges' => $bookingData['distance_charges'] ?? 0,
         ]);
 
         // Create invoice for the booking
@@ -1262,6 +1273,8 @@ class BookingController extends Controller
             $this->storeCustomFieldResponses($booking, $bookingData['custom_fields']);
         }
 
+        // Distance charges are already included in the total_amount from the booking process
+
         // Handle coupon usage if coupon was applied
         if ($booking->coupon_id) {
             $coupon = Coupon::find($booking->coupon_id);
@@ -1288,20 +1301,26 @@ class BookingController extends Controller
         // TODO: Send confirmation email
         // TODO: Send SMS notification
 
-        // Ensure pricing tier data is explicitly included
-        $bookingData = $booking->load(['customer', 'service', 'pricingTier', 'employee', 'extras.durationRelation', 'formResponses.formField'])->toArray();
-        if ($booking->pricingTier) {
-            $bookingData['pricingTier'] = [
-                'id' => $booking->pricingTier->id,
-                'name' => $booking->pricingTier->name,
-                'price' => $booking->pricingTier->price,
-                'duration_minutes' => $booking->pricingTier->duration_minutes,
-            ];
+        // Load the booking with all necessary relationships for display
+        $booking = Booking::with(['service', 'employee', 'customer', 'pricingTier', 'extras.durationRelation', 'formResponses.formField'])
+            ->find($booking->id);
+
+        // Ensure pricing tier relationship is loaded
+        if ($booking->pricing_tier_id && !$booking->pricingTier) {
+            $pricingTier = \App\Models\ServicePricingTier::find($booking->pricing_tier_id);
+            if ($pricingTier) {
+                $booking->setRelation('pricingTier', $pricingTier);
+            }
         }
 
-        // Load the booking with all necessary relationships for display
-        $booking = Booking::with(['service', 'employee', 'customer', 'pricingTier', 'extras'])
-            ->find($booking->id);
+        // Debug: Log pricing tier information
+        \Log::info('Payment success - pricing tier debug', [
+            'booking_id' => $booking->id,
+            'pricing_tier_id' => $booking->pricing_tier_id,
+            'pricing_tier_loaded' => $booking->relationLoaded('pricingTier'),
+            'pricing_tier_object' => $booking->pricingTier ? 'exists' : 'null',
+            'pricing_tier_name' => $booking->pricingTier?->name ?? 'not_available',
+        ]);
 
         return Inertia::render('Booking/Success', [
             'booking' => $booking,
@@ -1343,6 +1362,107 @@ class BookingController extends Controller
             'auth' => [
                 'user' => Auth::user(),
             ],
+        ]);
+    }
+
+    /**
+     * Calculate distance between two locations
+     */
+    public function calculateDistance(Request $request)
+    {
+        $request->validate([
+            'origin' => 'required|string',
+            'destination' => 'required|string',
+        ]);
+
+        $distanceService = new DistanceCalculationService();
+        $result = $distanceService->calculateDistance($request->origin, $request->destination);
+
+        return response()->json($result);
+    }
+
+    /**
+     * Calculate extra charges for distance-based form fields
+     */
+    public function calculateExtraCharges(Request $request)
+    {
+        \Log::info('calculateExtraCharges called with:', $request->all());
+        
+        $request->validate([
+            'form_responses' => 'required|array',
+            'form_responses.*.field_name' => 'required|string',
+            'form_responses.*.response_value' => 'nullable|string',
+        ]);
+
+        $distanceService = new DistanceCalculationService();
+        $totalExtraCharges = 0;
+        $distanceCalculations = [];
+
+        // Get form fields with distance calculation enabled
+        $formFields = FormField::where('has_distance_calculation', true)
+            ->whereIn('name', collect($request->form_responses)->pluck('field_name'))
+            ->with('linkedExtra')
+            ->get();
+
+        \Log::info('Form fields found:', $formFields->toArray());
+
+        // Group fields by linked extra
+        $fieldsByExtra = $formFields->groupBy('linked_extra_id');
+
+        foreach ($fieldsByExtra as $extraId => $fields) {
+            if (!$extraId) continue;
+
+            $extra = $fields->first()->linkedExtra;
+            if (!$extra) continue;
+
+            // Find origin and destination fields
+            $originField = $fields->where('distance_calculation_type', 'origin')->first();
+            $destinationField = $fields->where('distance_calculation_type', 'destination')->first();
+
+            if ($originField && $destinationField) {
+                // Get the response values
+                $originResponse = collect($request->form_responses)
+                    ->where('field_name', $originField->name)
+                    ->first();
+                $destinationResponse = collect($request->form_responses)
+                    ->where('field_name', $destinationField->name)
+                    ->first();
+
+                if ($originResponse && $destinationResponse) {
+                    // Get the origin field settings for distance calculation (only origin field has settings)
+                    $originField = $formFields->where('name', $originResponse['field_name'])->first();
+                    
+                    // Use the origin field's settings
+                    $coveredDistance = $originField ? $originField->covered_distance_km : 10.00;
+                    $pricePerKm = $originField ? $originField->price_per_extra_km : 10.00;
+                    
+                    $summary = $distanceService->getDistanceSummary(
+                        $originResponse['response_value'],
+                        $destinationResponse['response_value'],
+                        $coveredDistance,
+                        $pricePerKm
+                    );
+
+                    $extraCharge = $summary['extra_charge'];
+                    $totalExtraCharges += $extraCharge;
+
+                    $distanceCalculations[] = [
+                        'extra_id' => $extraId,
+                        'extra_name' => $extra->name,
+                        'distance' => $summary['distance'],
+                        'extra_km' => $summary['extra_km'],
+                        'extra_charge' => $extraCharge,
+                        'origin_field' => $originField->label,
+                        'destination_field' => $destinationField->label,
+                        'status' => $summary['status']
+                    ];
+                }
+            }
+        }
+
+        return response()->json([
+            'total_extra_charges' => $totalExtraCharges,
+            'distance_calculations' => $distanceCalculations
         ]);
     }
 
@@ -1693,11 +1813,30 @@ class BookingController extends Controller
             return;
         }
 
+        // Get the extras data from the booking data if available
+        $bookingExtras = [];
+        if (isset($customFieldsData['extras'])) {
+            $bookingExtras = collect($customFieldsData['extras'])->pluck('id')->toArray();
+        } elseif (isset($customFieldsData['extra_quantities'])) {
+            $bookingExtras = collect($customFieldsData['extra_quantities'])->pluck('id')->toArray();
+        } elseif ($booking->relationLoaded('extras')) {
+            $bookingExtras = $booking->extras->pluck('id')->toArray();
+        }
+
+        \Log::info('Booking extras for rendering control', [
+            'booking_id' => $booking->id,
+            'booking_extras' => $bookingExtras,
+            'extras_from_custom_fields' => isset($customFieldsData['extras']) ? collect($customFieldsData['extras'])->pluck('id')->toArray() : [],
+            'extra_quantities_from_custom_fields' => isset($customFieldsData['extra_quantities']) ? collect($customFieldsData['extra_quantities'])->pluck('id')->toArray() : [],
+            'extras_from_booking_relation' => $booking->relationLoaded('extras') ? $booking->extras->pluck('id')->toArray() : []
+        ]);
+
         \Log::info('Storing custom field responses', [
             'booking_id' => $booking->id,
             'form_id' => $form->id,
             'form_name' => $form->name,
-            'custom_fields_data' => $customFieldsData
+            'custom_fields_data' => $customFieldsData,
+            'custom_fields_keys' => array_keys($customFieldsData)
         ]);
 
         // Get all form fields (primary and custom) with relationships
@@ -1706,6 +1845,8 @@ class BookingController extends Controller
         foreach ($formFields as $field) {
             $fieldName = $field->name;
             $fieldValue = $customFieldsData[$fieldName] ?? null;
+
+
 
             // Skip if no value provided
             if ($fieldValue === null || $fieldValue === '') {
@@ -1730,11 +1871,10 @@ class BookingController extends Controller
                     case 'extras':
                         // Check extras-based rendering
                         $fieldExtras = $field->extras;
-                        $bookingExtras = $booking->extras;
                         
                         if ($fieldExtras->count() > 0) {
-                            if ($bookingExtras->count() > 0) {
-                                $shouldStore = $fieldExtras->intersect($bookingExtras)->count() > 0;
+                            if (!empty($bookingExtras)) {
+                                $shouldStore = $fieldExtras->whereIn('id', $bookingExtras)->count() > 0;
                             } else {
                                 $shouldStore = false; // No extras selected
                             }
@@ -1758,11 +1898,10 @@ class BookingController extends Controller
                         
                         // Extras check
                         $fieldExtras = $field->extras;
-                        $bookingExtras = $booking->extras;
                         
                         if ($fieldExtras->count() > 0) {
-                            if ($bookingExtras->count() > 0) {
-                                $extrasMatch = $fieldExtras->intersect($bookingExtras)->count() > 0;
+                            if (!empty($bookingExtras)) {
+                                $extrasMatch = $fieldExtras->whereIn('id', $bookingExtras)->count() > 0;
                             } else {
                                 $extrasMatch = false;
                             }
@@ -1779,6 +1918,7 @@ class BookingController extends Controller
                 }
                 
                 if (!$shouldStore) {
+
                     continue; // Skip this field as it doesn't apply
                 }
             }
@@ -1830,6 +1970,24 @@ class BookingController extends Controller
                     'formatted_time' => $value ? date('H:i', strtotime($value)) : null,
                     'raw_value' => $value,
                 ];
+            
+            case 'location':
+                // Handle location data which might be a string or an object
+                if (is_array($value) || is_object($value)) {
+                    return [
+                        'address' => $value['address'] ?? $value,
+                        'latitude' => $value['latitude'] ?? null,
+                        'longitude' => $value['longitude'] ?? null,
+                        'place_id' => $value['place_id'] ?? null,
+                        'name' => $value['name'] ?? null,
+                        'raw_value' => $value,
+                    ];
+                } else {
+                    return [
+                        'address' => $value,
+                        'raw_value' => $value,
+                    ];
+                }
             
             default:
                 return [

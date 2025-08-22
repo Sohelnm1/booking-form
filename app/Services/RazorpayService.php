@@ -29,12 +29,14 @@ class RazorpayService
             $api = new Api($this->keyId, $this->keySecret);
 
             // Debug: Log the amount being used for Razorpay order
+            $amountInPaise = (int)round($booking->total_amount * 100);
             Log::info('Creating Razorpay order', [
                 'booking_id' => $booking->id,
                 'booking_total_amount' => $booking->total_amount,
                 'booking_discount_amount' => $booking->discount_amount ?? 0,
-                'razorpay_amount_paise' => $booking->total_amount * 100,
-                'razorpay_amount_rupees' => $booking->total_amount
+                'razorpay_amount_paise' => $amountInPaise,
+                'razorpay_amount_rupees' => $booking->total_amount,
+                'amount_type' => gettype($amountInPaise)
             ]);
 
             // Handle temporary bookings that don't have relationships loaded
@@ -53,7 +55,7 @@ class RazorpayService
                 'receipt' => str_starts_with($booking->id, 'reschedule_') 
                     ? 'reschedule_' . str_replace('reschedule_', '', $booking->id)
                     : 'booking_' . $booking->id,
-                'amount' => $booking->total_amount * 100, // Convert to paise
+                'amount' => (int)round($booking->total_amount * 100), // Convert to paise and ensure integer
                 'currency' => 'INR',
                 'notes' => [
                     'booking_id' => $booking->id,
@@ -89,7 +91,18 @@ class RazorpayService
             ];
 
         } catch (\Exception $e) {
-            Log::error('Razorpay order creation failed: ' . $e->getMessage());
+            Log::error('Razorpay order creation failed: ' . $e->getMessage(), [
+                'booking_id' => $booking->id,
+                'amount' => $booking->total_amount,
+                'error_type' => get_class($e),
+                'error_code' => $e->getCode()
+            ]);
+            
+            // Check if it's a network timeout issue
+            if (strpos($e->getMessage(), 'Timeout') !== false || strpos($e->getMessage(), 'cURL error 28') !== false) {
+                throw new \Exception('Payment gateway is temporarily unavailable. Please try again in a few moments.');
+            }
+            
             throw new \Exception('Failed to create payment order: ' . $e->getMessage());
         }
     }

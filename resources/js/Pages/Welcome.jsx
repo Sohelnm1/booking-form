@@ -154,10 +154,12 @@ export default function Welcome() {
                             <Button
                                 size="small"
                                 onClick={() =>
-                                    router.visit(route("booking.success"))
+                                    router.visit(
+                                        route("booking.select-service")
+                                    )
                                 }
                             >
-                                Success Page
+                                Start Booking
                             </Button>
                         </Space>
                     </div>

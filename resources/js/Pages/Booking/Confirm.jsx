@@ -23,6 +23,7 @@ import {
     DatePicker,
     TimePicker,
     message,
+    Spin,
 } from "antd";
 import {
     UserOutlined,
@@ -39,6 +40,7 @@ import {
 import dayjs from "dayjs";
 import BookingHeader from "../../Components/BookingHeader";
 import Logo from "../../Components/Logo";
+import LocationField from "../../Components/LocationField";
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -68,6 +70,8 @@ export default function Confirm({
     const [appliedCoupon, setAppliedCoupon] = useState(null);
     const [couponError, setCouponError] = useState("");
     const [finalPrice, setFinalPrice] = useState(totalPrice);
+    const [distanceCharges, setDistanceCharges] = useState(0);
+    const [distanceLoading, setDistanceLoading] = useState(false);
 
     // Calculate total duration
     const serviceDuration = selectedPricingTier
@@ -138,6 +142,146 @@ export default function Confirm({
             console.log("No verified phone number available or no form fields");
         }
     }, [verifiedPhone, formInstance, formFields]);
+
+    // Function to calculate distance charges
+    const calculateDistanceCharges = async (formValues) => {
+        console.log("calculateDistanceCharges called with:", formValues);
+        if (!formValues) return;
+
+        // Find location fields with distance calculation enabled
+        const locationFields =
+            formFields?.filter(
+                (field) =>
+                    field.type === "location" &&
+                    field.has_distance_calculation &&
+                    field.linked_extra_id
+            ) || [];
+
+        console.log("Location fields found:", locationFields);
+        if (locationFields.length === 0) {
+            console.log("No location fields with distance calculation found");
+            return;
+        }
+
+        // Group fields by linked extra
+        const fieldsByExtra = {};
+        locationFields.forEach((field) => {
+            if (!fieldsByExtra[field.linked_extra_id]) {
+                fieldsByExtra[field.linked_extra_id] = [];
+            }
+            fieldsByExtra[field.linked_extra_id].push(field);
+        });
+
+        // Check if we have both origin and destination for any extra
+        let hasCompleteData = false;
+        for (const extraId in fieldsByExtra) {
+            const fields = fieldsByExtra[extraId];
+            const hasOrigin = fields.some(
+                (f) =>
+                    f.distance_calculation_type === "origin" &&
+                    formValues[f.name]
+            );
+            const hasDestination = fields.some(
+                (f) =>
+                    f.distance_calculation_type === "destination" &&
+                    formValues[f.name]
+            );
+
+            console.log("Extra ID:", extraId, "Fields:", fields);
+            console.log(
+                "Has origin:",
+                hasOrigin,
+                "Has destination:",
+                hasDestination
+            );
+
+            if (hasOrigin && hasDestination) {
+                hasCompleteData = true;
+                break;
+            }
+        }
+
+        if (!hasCompleteData) {
+            console.log("No complete data for distance calculation");
+            setDistanceCharges(0);
+            return;
+        }
+
+        setDistanceLoading(true);
+
+        const requestData = {
+            form_responses: Object.keys(formValues)
+                .filter(
+                    (fieldName) =>
+                        formValues[fieldName] !== undefined &&
+                        formValues[fieldName] !== null &&
+                        formValues[fieldName] !== ""
+                )
+                .map((fieldName) => ({
+                    field_name: fieldName,
+                    response_value: formValues[fieldName],
+                })),
+        };
+
+        console.log("Sending request to API:", requestData);
+
+        try {
+            const response = await fetch(
+                route("booking.calculate-extra-charges"),
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": document
+                            .querySelector('meta[name="csrf-token"]')
+                            .getAttribute("content"),
+                    },
+                    body: JSON.stringify(requestData),
+                }
+            );
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log("API response:", result);
+                setDistanceCharges(result.total_extra_charges || 0);
+                setFinalPrice(totalPrice + (result.total_extra_charges || 0));
+            } else {
+                const errorText = await response.text();
+                console.error(
+                    "Failed to calculate distance charges. Status:",
+                    response.status
+                );
+                console.error("Response text:", errorText);
+                setDistanceCharges(0);
+            }
+        } catch (error) {
+            console.error("Error calculating distance charges:", error);
+            setDistanceCharges(0);
+        } finally {
+            setDistanceLoading(false);
+        }
+    };
+
+    // Handle form field changes to trigger distance calculation
+    const handleFormValuesChange = (changedValues, allValues) => {
+        // Check if any location fields changed
+        const locationFields =
+            formFields?.filter(
+                (field) =>
+                    field.type === "location" && field.has_distance_calculation
+            ) || [];
+
+        const hasLocationFieldChange = locationFields.some((field) =>
+            changedValues.hasOwnProperty(field.name)
+        );
+
+        if (hasLocationFieldChange) {
+            // Debounce the calculation to avoid too many API calls
+            setTimeout(() => {
+                calculateDistanceCharges(allValues);
+            }, 500);
+        }
+    };
 
     const handleBack = () => {
         const extraIds = selectedExtras.map((extra) => extra.id);
@@ -247,6 +391,7 @@ export default function Confirm({
                           "gender_preference"
                       )
                     : "no_preference",
+                distance_charges: distanceCharges, // Include distance charges
             };
 
             // Add form field values dynamically
@@ -555,6 +700,15 @@ export default function Confirm({
                 return <Input {...commonProps} />;
             case "password":
                 return <Input.Password {...commonProps} />;
+            case "location":
+                return (
+                    <LocationField
+                        {...commonProps}
+                        allowCurrentLocation={
+                            field.settings?.allowCurrentLocation !== false
+                        }
+                    />
+                );
             default:
                 return <Input {...commonProps} />;
         }
@@ -818,6 +972,25 @@ export default function Confirm({
                                     </Descriptions.Item>
                                 )}
 
+                                {distanceCharges > 0 && (
+                                    <Descriptions.Item label="Extra Distance Charges">
+                                        <Text
+                                            style={{
+                                                fontSize: 16,
+                                                color: "#fa8c16",
+                                            }}
+                                        >
+                                            + {formatPrice(distanceCharges)}
+                                            {distanceLoading && (
+                                                <Spin
+                                                    size="small"
+                                                    style={{ marginLeft: 8 }}
+                                                />
+                                            )}
+                                        </Text>
+                                    </Descriptions.Item>
+                                )}
+
                                 <Descriptions.Item label="Total Price">
                                     <Text
                                         strong
@@ -917,6 +1090,7 @@ export default function Confirm({
                                 form={formInstance}
                                 layout="vertical"
                                 onFinish={handleSubmit}
+                                onValuesChange={handleFormValuesChange}
                                 initialValues={{
                                     payment_method: "card",
                                 }}
@@ -1658,6 +1832,32 @@ export default function Confirm({
 
                             {/* Total */}
                             <Divider style={{ margin: "16px 0" }} />
+
+                            {distanceCharges > 0 && (
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        marginBottom: 8,
+                                    }}
+                                >
+                                    <Text>Extra Distance Charges</Text>
+                                    <Text
+                                        style={{
+                                            fontSize: 14,
+                                            color: "#fa8c16",
+                                        }}
+                                    >
+                                        + {formatPrice(distanceCharges)}
+                                        {distanceLoading && (
+                                            <Spin
+                                                size="small"
+                                                style={{ marginLeft: 8 }}
+                                            />
+                                        )}
+                                    </Text>
+                                </div>
+                            )}
 
                             {appliedCoupon && (
                                 <>

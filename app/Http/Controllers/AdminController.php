@@ -1061,6 +1061,19 @@ class AdminController extends Controller
                 ]
             ],
             [
+                'id' => 'google_maps',
+                'name' => 'Google Maps API',
+                'description' => 'Location services for address autocomplete and current location detection',
+                'status' => $settings->get('google_maps_api_key')?->value ? 'active' : 'inactive',
+                'api_key' => $settings->get('google_maps_api_key')?->value ? 'AIza****' . substr($settings->get('google_maps_api_key')->value, -4) : '',
+                'is_enabled' => !empty($settings->get('google_maps_api_key')?->value),
+                'last_sync' => now()->format('Y-m-d H:i:s'),
+                'settings' => [
+                    'google_maps_api_key' => $settings->get('google_maps_api_key')?->value ?? '',
+                    'google_maps_enabled_services' => $settings->get('google_maps_enabled_services')?->value ?? 'places,geocoding,maps',
+                ]
+            ],
+            [
                 'id' => 'sms',
                 'name' => 'SMS Gateway (Twilio)',
                 'description' => 'SMS notifications for OTP and booking confirmations',
@@ -1227,6 +1240,12 @@ class AdminController extends Controller
             'extras' => 'nullable|array',
             'extras.*' => 'exists:extras,id',
             'rendering_control' => 'required|in:services,extras,both',
+            // Distance calculation fields
+            'has_distance_calculation' => 'boolean',
+            'distance_calculation_type' => 'nullable|in:origin,destination',
+            'linked_extra_id' => 'nullable|exists:extras,id',
+            'covered_distance_km' => 'nullable|numeric|min:0',
+            'price_per_extra_km' => 'nullable|numeric|min:0',
         ]);
 
         $data = $request->all();
@@ -1280,6 +1299,12 @@ class AdminController extends Controller
             'extras' => 'nullable|array',
             'extras.*' => 'exists:extras,id',
             'rendering_control' => 'required|in:services,extras,both',
+            // Distance calculation fields
+            'has_distance_calculation' => 'boolean',
+            'distance_calculation_type' => 'nullable|in:origin,destination',
+            'linked_extra_id' => 'nullable|exists:extras,id',
+            'covered_distance_km' => 'nullable|numeric|min:0',
+            'price_per_extra_km' => 'nullable|numeric|min:0',
         ]);
 
         $data = $request->all();
@@ -1346,6 +1371,11 @@ class AdminController extends Controller
                     $this->updateSetting('currency', $settings['currency'] ?? 'INR', 'payment');
                     break;
 
+                case 'google_maps':
+                    $this->updateSetting('google_maps_api_key', $settings['google_maps_api_key'] ?? '', 'integration');
+                    $this->updateSetting('google_maps_enabled_services', $settings['google_maps_enabled_services'] ?? 'places,geocoding,maps', 'integration');
+                    break;
+
                 case 'sms':
                     $this->updateSetting('twilio_sid', $settings['twilio_sid'] ?? '', 'notification');
                     $this->updateSetting('twilio_token', $settings['twilio_token'] ?? '', 'notification');
@@ -1402,6 +1432,40 @@ class AdminController extends Controller
                     }
 
                     return response()->json(['success' => 'Razorpay connection successful']);
+
+                case 'google_maps':
+                    // Test Google Maps API connection
+                    $apiKey = \DB::table('settings')->where('key', 'google_maps_api_key')->value('value');
+                    
+                    if (empty($apiKey)) {
+                        return response()->json(['error' => 'Google Maps API key not configured'], 400);
+                    }
+
+                    // Validate API key format (Google Maps API keys typically start with AIza)
+                    if (!str_starts_with($apiKey, 'AIza')) {
+                        return response()->json(['error' => 'Invalid Google Maps API key format'], 400);
+                    }
+
+                    // Test the API key with a simple geocoding request
+                    try {
+                        $testUrl = "https://maps.googleapis.com/maps/api/geocode/json?address=test&key=" . $apiKey;
+                        $response = file_get_contents($testUrl);
+                        $data = json_decode($response, true);
+                        
+                        if ($data && isset($data['status'])) {
+                            if ($data['status'] === 'REQUEST_DENIED') {
+                                return response()->json(['error' => 'Google Maps API key is invalid or restricted'], 400);
+                            } elseif ($data['status'] === 'OK' || $data['status'] === 'ZERO_RESULTS') {
+                                return response()->json(['success' => 'Google Maps API connection successful']);
+                            } else {
+                                return response()->json(['error' => 'Google Maps API test failed: ' . $data['status']], 400);
+                            }
+                        } else {
+                            return response()->json(['error' => 'Unable to test Google Maps API connection'], 400);
+                        }
+                    } catch (\Exception $e) {
+                        return response()->json(['error' => 'Google Maps API test failed: ' . $e->getMessage()], 400);
+                    }
 
                 case 'sms':
                     // Test SMS integration

@@ -105,6 +105,17 @@ export default function Forms({ auth, forms, services, extras, fieldTypes }) {
             services: field.services?.map((s) => s.id) || [],
             extras: field.extras?.map((e) => e.id) || [],
             rendering_control: field.rendering_control || "services",
+            // Distance calculation fields
+            has_distance_calculation: field.has_distance_calculation || false,
+            distance_calculation_type: field.distance_calculation_type || null,
+            linked_extra_id: field.linked_extra_id || null,
+            covered_distance_km: field.covered_distance_km || 10.0,
+            price_per_extra_km: field.price_per_extra_km || 10.0,
+            // Location field settings
+            settings: {
+                allowCurrentLocation:
+                    field.settings?.allowCurrentLocation || false,
+            },
         });
         setIsFieldModalVisible(true);
     };
@@ -142,6 +153,19 @@ export default function Forms({ auth, forms, services, extras, fieldTypes }) {
                 services: values.services || [],
                 extras: values.extras || [],
                 rendering_control: values.rendering_control || "services",
+                // Distance calculation fields
+                has_distance_calculation:
+                    values.has_distance_calculation || false,
+                distance_calculation_type:
+                    values.distance_calculation_type || null,
+                linked_extra_id: values.linked_extra_id || null,
+                covered_distance_km: values.covered_distance_km || 10.0,
+                price_per_extra_km: values.price_per_extra_km || 10.0,
+                // Location field settings
+                settings: {
+                    allowCurrentLocation:
+                        values.settings?.allowCurrentLocation || false,
+                },
             };
 
             if (editingField) {
@@ -396,6 +420,40 @@ export default function Forms({ auth, forms, services, extras, fieldTypes }) {
                             </Tag>
                         );
                 }
+            },
+        },
+        {
+            title: "Distance Calculation",
+            key: "distance_calculation",
+            render: (_, record) => {
+                if (record.has_distance_calculation) {
+                    return (
+                        <div>
+                            <Tag color="blue" size="small">
+                                {record.distance_calculation_type === "origin"
+                                    ? "Origin"
+                                    : "Destination"}
+                            </Tag>
+                            {record.linked_extra && (
+                                <Tag color="green" size="small">
+                                    {record.linked_extra.name}
+                                </Tag>
+                            )}
+                            {record.distance_calculation_type === "origin" && (
+                                <div style={{ marginTop: 4 }}>
+                                    <Text
+                                        type="secondary"
+                                        style={{ fontSize: 11 }}
+                                    >
+                                        {record.covered_distance_km}km covered,
+                                        ₹{record.price_per_extra_km}/km
+                                    </Text>
+                                </div>
+                            )}
+                        </div>
+                    );
+                }
+                return <Tag size="small">-</Tag>;
             },
         },
         {
@@ -701,6 +759,210 @@ export default function Forms({ auth, forms, services, extras, fieldTypes }) {
                                             )}
                                         </Form.List>
                                     </Form.Item>
+                                ) : null;
+                            }}
+                        </Form.Item>
+
+                        {/* Location field settings - only show for location type */}
+                        <Form.Item
+                            noStyle
+                            shouldUpdate={(prevValues, currentValues) =>
+                                prevValues.type !== currentValues.type
+                            }
+                        >
+                            {({ getFieldValue }) => {
+                                const fieldType = getFieldValue("type");
+                                const showLocationSettings =
+                                    fieldType === "location";
+
+                                return showLocationSettings ? (
+                                    <Form.Item
+                                        name={[
+                                            "settings",
+                                            "allowCurrentLocation",
+                                        ]}
+                                        label="Allow Current Location"
+                                        valuePropName="checked"
+                                        initialValue={true}
+                                    >
+                                        <Switch />
+                                    </Form.Item>
+                                ) : null;
+                            }}
+                        </Form.Item>
+
+                        {/* Distance Calculation Settings - only show for location type */}
+                        <Form.Item
+                            noStyle
+                            shouldUpdate={(prevValues, currentValues) =>
+                                prevValues.type !== currentValues.type
+                            }
+                        >
+                            {({ getFieldValue }) => {
+                                const fieldType = getFieldValue("type");
+                                const showDistanceSettings =
+                                    fieldType === "location";
+
+                                return showDistanceSettings ? (
+                                    <>
+                                        <Form.Item
+                                            name="has_distance_calculation"
+                                            label="Enable Distance Calculation"
+                                            valuePropName="checked"
+                                        >
+                                            <Switch />
+                                        </Form.Item>
+
+                                        <Form.Item
+                                            noStyle
+                                            shouldUpdate={(
+                                                prevValues,
+                                                currentValues
+                                            ) =>
+                                                prevValues.has_distance_calculation !==
+                                                currentValues.has_distance_calculation
+                                            }
+                                        >
+                                            {({ getFieldValue }) => {
+                                                const hasDistanceCalculation =
+                                                    getFieldValue(
+                                                        "has_distance_calculation"
+                                                    );
+                                                return hasDistanceCalculation ? (
+                                                    <>
+                                                        <Form.Item
+                                                            name="distance_calculation_type"
+                                                            label="Distance Calculation Type"
+                                                            rules={[
+                                                                {
+                                                                    required: true,
+                                                                    message:
+                                                                        "Please select distance calculation type",
+                                                                },
+                                                            ]}
+                                                        >
+                                                            <Select placeholder="Select type">
+                                                                <Option value="origin">
+                                                                    Origin
+                                                                    (Hospital
+                                                                    Location)
+                                                                </Option>
+                                                                <Option value="destination">
+                                                                    Destination
+                                                                    (Customer
+                                                                    Location)
+                                                                </Option>
+                                                            </Select>
+                                                        </Form.Item>
+
+                                                        <Form.Item
+                                                            name="linked_extra_id"
+                                                            label="Linked Extra (for distance calculation)"
+                                                        >
+                                                            <Select
+                                                                placeholder="Select extra for distance calculation"
+                                                                allowClear
+                                                                showSearch
+                                                                optionFilterProp="children"
+                                                            >
+                                                                {extras.map(
+                                                                    (extra) => (
+                                                                        <Option
+                                                                            key={
+                                                                                extra.id
+                                                                            }
+                                                                            value={
+                                                                                extra.id
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                extra.name
+                                                                            }
+                                                                        </Option>
+                                                                    )
+                                                                )}
+                                                            </Select>
+                                                        </Form.Item>
+
+                                                        {/* Distance settings - only show for origin fields */}
+                                                        <Form.Item
+                                                            noStyle
+                                                            shouldUpdate={(
+                                                                prevValues,
+                                                                currentValues
+                                                            ) =>
+                                                                prevValues.distance_calculation_type !==
+                                                                currentValues.distance_calculation_type
+                                                            }
+                                                        >
+                                                            {({
+                                                                getFieldValue,
+                                                            }) => {
+                                                                const distanceType =
+                                                                    getFieldValue(
+                                                                        "distance_calculation_type"
+                                                                    );
+                                                                return distanceType ===
+                                                                    "origin" ? (
+                                                                    <>
+                                                                        <Form.Item
+                                                                            name="covered_distance_km"
+                                                                            label="Covered Distance (km)"
+                                                                            rules={[
+                                                                                {
+                                                                                    required: true,
+                                                                                    message:
+                                                                                        "Please enter covered distance",
+                                                                                },
+                                                                            ]}
+                                                                        >
+                                                                            <InputNumber
+                                                                                placeholder="e.g., 10"
+                                                                                min={
+                                                                                    0
+                                                                                }
+                                                                                step={
+                                                                                    0.1
+                                                                                }
+                                                                                style={{
+                                                                                    width: "100%",
+                                                                                }}
+                                                                            />
+                                                                        </Form.Item>
+
+                                                                        <Form.Item
+                                                                            name="price_per_extra_km"
+                                                                            label="Price per Extra KM (₹)"
+                                                                            rules={[
+                                                                                {
+                                                                                    required: true,
+                                                                                    message:
+                                                                                        "Please enter price per extra km",
+                                                                                },
+                                                                            ]}
+                                                                        >
+                                                                            <InputNumber
+                                                                                placeholder="e.g., 10"
+                                                                                min={
+                                                                                    0
+                                                                                }
+                                                                                step={
+                                                                                    0.01
+                                                                                }
+                                                                                style={{
+                                                                                    width: "100%",
+                                                                                }}
+                                                                            />
+                                                                        </Form.Item>
+                                                                    </>
+                                                                ) : null;
+                                                            }}
+                                                        </Form.Item>
+                                                    </>
+                                                ) : null;
+                                            }}
+                                        </Form.Item>
+                                    </>
                                 ) : null;
                             }}
                         </Form.Item>

@@ -15,10 +15,14 @@ class BookingFormResponse extends Model
         'form_field_id',
         'response_value',
         'response_data',
+        'calculated_distance_km',
+        'extra_km_charge',
     ];
 
     protected $casts = [
         'response_data' => 'array',
+        'calculated_distance_km' => 'decimal:2',
+        'extra_km_charge' => 'decimal:2',
     ];
 
     /**

@@ -9,6 +9,9 @@ A modern booking platform built with Laravel, React.js, and Inertia.js using Ant
 -   🎨 Professional UI with Ant Design
 -   📱 Responsive design
 -   🔧 Easy to extend and customize
+-   📍 Location field with Google Places integration
+-   🗺️ Current location detection
+-   🔍 Address autocomplete suggestions
 
 ## Tech Stack
 
@@ -60,7 +63,24 @@ A modern booking platform built with Laravel, React.js, and Inertia.js using Ant
     php artisan migrate
     ```
 
-6. **Build assets**
+6. **Google Maps API Setup (Optional)**
+
+    To enable location field functionality, configure your Google Maps API key through the admin panel:
+
+    1. Go to **Admin > Integration**
+    2. Find the **Google Maps API** integration card
+    3. Click **Configure**
+    4. Enter your Google Maps API key
+    5. Select the enabled services (Places API, Geocoding API, Maps JavaScript API)
+    6. Click **Save Changes**
+
+    Ensure your API key has the following services enabled in Google Cloud Console:
+
+    - Places API
+    - Geocoding API
+    - Maps JavaScript API
+
+7. **Build assets**
     ```bash
     npm run build
     ```

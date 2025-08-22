@@ -23,6 +23,14 @@
     
     <!-- Razorpay Script -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    
+    <!-- Google Maps API -->
+    @php
+        $googleMapsApiKey = \DB::table('settings')->where('key', 'google_maps_api_key')->value('value');
+    @endphp
+    @if($googleMapsApiKey)
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ $googleMapsApiKey }}&libraries=places"></script>
+    @endif
 </head>
 <body class="font-sans antialiased">
     @inertia

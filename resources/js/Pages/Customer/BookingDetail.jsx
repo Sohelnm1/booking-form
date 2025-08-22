@@ -623,47 +623,95 @@ export default function BookingDetail({ auth, booking }) {
                             )}
 
                             {/* Form Responses */}
-                            {booking.formResponses &&
-                                booking.formResponses.length > 0 && (
-                                    <Card
-                                        title="Form Responses"
-                                        style={{ marginBottom: 24 }}
-                                    >
-                                        <Row gutter={[16, 16]}>
-                                            {booking.formResponses.map(
-                                                (response) => (
-                                                    <Col
-                                                        xs={24}
-                                                        sm={12}
-                                                        key={response.id}
-                                                    >
-                                                        <div
-                                                            style={{
-                                                                marginBottom: 16,
-                                                            }}
-                                                        >
-                                                            <Text strong>
-                                                                {response
-                                                                    .formField
-                                                                    ?.label ||
-                                                                    response
-                                                                        .formField
-                                                                        ?.name}
-                                                            </Text>
-                                                            <div>
-                                                                <Text>
-                                                                    {
-                                                                        response.value
+                            {(() => {
+                                // Use form_responses (snake_case) instead of formResponses (camelCase)
+                                const formResponses = booking.form_responses;
+
+                                if (formResponses && formResponses.length > 0) {
+                                    // Filter to show only custom fields (non-primary)
+                                    const customFieldResponses =
+                                        formResponses.filter(
+                                            (response) =>
+                                                response.form_field &&
+                                                !response.form_field.is_primary
+                                        );
+
+                                    if (customFieldResponses.length > 0) {
+                                        return (
+                                            <Card
+                                                title="Additional Information"
+                                                style={{ marginBottom: 24 }}
+                                            >
+                                                <Row gutter={[16, 16]}>
+                                                    {customFieldResponses.map(
+                                                        (response) => {
+                                                            const field =
+                                                                response.form_field;
+                                                            const value =
+                                                                response.formatted_value ||
+                                                                response.response_value;
+
+                                                            return (
+                                                                <Col
+                                                                    xs={24}
+                                                                    sm={12}
+                                                                    key={
+                                                                        response.id
                                                                     }
-                                                                </Text>
-                                                            </div>
-                                                        </div>
-                                                    </Col>
-                                                )
-                                            )}
-                                        </Row>
-                                    </Card>
-                                )}
+                                                                >
+                                                                    <div
+                                                                        style={{
+                                                                            marginBottom: 16,
+                                                                        }}
+                                                                    >
+                                                                        <Text
+                                                                            strong
+                                                                        >
+                                                                            {field?.label ||
+                                                                                field?.name ||
+                                                                                "Unknown Field"}
+                                                                            :
+                                                                        </Text>
+                                                                        <div>
+                                                                            <Text>
+                                                                                {value ||
+                                                                                    "Not provided"}
+                                                                            </Text>
+                                                                        </div>
+                                                                    </div>
+                                                                </Col>
+                                                            );
+                                                        }
+                                                    )}
+                                                </Row>
+                                            </Card>
+                                        );
+                                    } else {
+                                        return (
+                                            <Card
+                                                title="Additional Information"
+                                                style={{ marginBottom: 24 }}
+                                            >
+                                                <Text type="secondary">
+                                                    No additional information
+                                                    found.
+                                                </Text>
+                                            </Card>
+                                        );
+                                    }
+                                } else {
+                                    return (
+                                        <Card
+                                            title="Additional Information"
+                                            style={{ marginBottom: 24 }}
+                                        >
+                                            <Text type="secondary">
+                                                No form responses found.
+                                            </Text>
+                                        </Card>
+                                    );
+                                }
+                            })()}
 
                             {/* Notes */}
                             {booking.notes && (
@@ -866,6 +914,34 @@ export default function BookingDetail({ auth, booking }) {
                                                 </Text>
                                             </div>
                                         )}
+                                    {booking.distance_charges > 0 && (
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                marginBottom: 8,
+                                                color: "#1890ff",
+                                            }}
+                                        >
+                                            <Text>
+                                                Extra Distance Charges
+                                                <Tag
+                                                    color="blue"
+                                                    style={{
+                                                        marginLeft: 8,
+                                                        fontSize: 10,
+                                                    }}
+                                                >
+                                                    Travel Buddy
+                                                </Tag>
+                                            </Text>
+                                            <Text>
+                                                {formatPrice(
+                                                    booking.distance_charges
+                                                )}
+                                            </Text>
+                                        </div>
+                                    )}
                                     {booking.discount_amount > 0 && (
                                         <div
                                             style={{

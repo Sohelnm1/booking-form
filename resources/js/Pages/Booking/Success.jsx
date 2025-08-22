@@ -38,6 +38,41 @@ export default function Success({ booking, payment_id, auth }) {
         pricingTierPriceParsed: parseFloat(booking?.pricingTier?.price),
         totalAmount: booking?.total_amount,
     });
+
+    // If no booking data is provided, show a generic success message
+    if (!booking) {
+        return (
+            <div>
+                <Head title="Success" />
+                <BookingHeader auth={auth} />
+                <div
+                    style={{
+                        padding: "24px",
+                        maxWidth: "800px",
+                        margin: "0 auto",
+                    }}
+                >
+                    <Card>
+                        <Result
+                            status="success"
+                            icon={<CheckCircleOutlined />}
+                            title="Success!"
+                            subTitle="Your action has been completed successfully."
+                            extra={[
+                                <Button
+                                    type="primary"
+                                    key="home"
+                                    onClick={() => (window.location.href = "/")}
+                                >
+                                    Back to Home
+                                </Button>,
+                            ]}
+                        />
+                    </Card>
+                </div>
+            </div>
+        );
+    }
     const formatTime = (time) => {
         return dayjs(time).format("h:mm A");
     };
@@ -161,17 +196,7 @@ export default function Success({ booking, payment_id, auth }) {
                         style={{ marginBottom: 24 }}
                     >
                         <Descriptions.Item label="Service">
-                            <div>
-                                <Text>{booking?.service?.name}</Text>
-                                {booking?.pricingTier && (
-                                    <Tag
-                                        color="blue"
-                                        style={{ marginLeft: 8, fontSize: 10 }}
-                                    >
-                                        {booking.pricingTier.name}
-                                    </Tag>
-                                )}
-                            </div>
+                            {booking?.service?.name}
                         </Descriptions.Item>
                         <Descriptions.Item label="Employee">
                             {booking?.employee?.name}
@@ -191,7 +216,13 @@ export default function Success({ booking, payment_id, auth }) {
                         {booking?.gender_preference &&
                             booking.gender_preference !== "no_preference" && (
                                 <Descriptions.Item label="HospiPal Preference">
-                                    <Space>
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "8px",
+                                        }}
+                                    >
                                         <Text>
                                             {booking.gender_preference ===
                                             "male"
@@ -205,7 +236,7 @@ export default function Success({ booking, payment_id, auth }) {
                                                 {booking.gender_preference_fee}
                                             </Tag>
                                         )}
-                                    </Space>
+                                    </div>
                                 </Descriptions.Item>
                             )}
                         <Descriptions.Item label="Status">
@@ -277,34 +308,6 @@ export default function Success({ booking, payment_id, auth }) {
                             })}
                         </Descriptions>
                     )}
-
-                    {/* Custom Field Responses */}
-                    {booking?.form_responses &&
-                        booking.form_responses.length > 0 && (
-                            <Descriptions
-                                title="Additional Information"
-                                bordered
-                                size="small"
-                                style={{ marginBottom: 24 }}
-                            >
-                                {booking.form_responses
-                                    .filter(
-                                        (response) =>
-                                            response.form_field &&
-                                            !response.form_field.is_primary
-                                    )
-                                    .map((response) => (
-                                        <Descriptions.Item
-                                            key={response.id}
-                                            label={response.form_field.label}
-                                        >
-                                            {response.formatted_value ||
-                                                response.response_value ||
-                                                "Not provided"}
-                                        </Descriptions.Item>
-                                    ))}
-                            </Descriptions>
-                        )}
 
                     {/* Important Notes */}
                     <Card

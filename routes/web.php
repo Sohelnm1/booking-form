@@ -34,6 +34,8 @@ Route::prefix('booking')->name('booking.')->group(function () {
     Route::post('/send-otp', [BookingController::class, 'sendOtp'])->name('send-otp');
     Route::post('/verify-otp', [BookingController::class, 'verifyOtp'])->name('verify-otp');
     Route::post('/validate-coupon', [BookingController::class, 'validateCoupon'])->name('validate-coupon');
+    Route::post('/calculate-distance', [BookingController::class, 'calculateDistance'])->name('calculate-distance');
+    Route::post('/calculate-extra-charges', [BookingController::class, 'calculateExtraCharges'])->name('calculate-extra-charges');
 });
 
 // Authentication routes

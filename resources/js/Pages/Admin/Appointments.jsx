@@ -393,6 +393,16 @@ export default function Appointments({ auth, bookings }) {
                         </Text>
                         <Text strong>₹{record.total_amount}</Text>
                     </Space>
+                    {record.distance_charges > 0 && (
+                        <Text
+                            type="secondary"
+                            style={{ fontSize: "11px", color: "#1890ff" }}
+                        >
+                            Includes ₹
+                            {parseFloat(record.distance_charges).toFixed(2)}{" "}
+                            distance charges
+                        </Text>
+                    )}
                     <Space>
                         <Badge
                             status={getStatusColor(record.status)}
@@ -748,6 +758,136 @@ export default function Appointments({ auth, bookings }) {
                                         {formatDateTime(
                                             selectedBooking.rescheduled_at
                                         )}
+                                    </Descriptions.Item>
+                                )}
+                            </Descriptions>
+
+                            <Divider />
+
+                            {/* Payment Details */}
+                            <Descriptions
+                                title="Payment Details"
+                                bordered
+                                size="small"
+                            >
+                                <Descriptions.Item label="Service">
+                                    <div>
+                                        <Text>
+                                            ₹
+                                            {parseFloat(
+                                                selectedBooking.pricingTier
+                                                    ?.price ||
+                                                    selectedBooking.service
+                                                        ?.price ||
+                                                    0
+                                            ).toFixed(2)}
+                                        </Text>
+                                        {selectedBooking.pricingTier && (
+                                            <Tag
+                                                color="blue"
+                                                style={{
+                                                    marginLeft: 8,
+                                                    fontSize: 10,
+                                                }}
+                                            >
+                                                {
+                                                    selectedBooking.pricingTier
+                                                        .name
+                                                }
+                                            </Tag>
+                                        )}
+                                    </div>
+                                </Descriptions.Item>
+                                {selectedBooking.extras &&
+                                    selectedBooking.extras.length > 0 && (
+                                        <Descriptions.Item label="Extras">
+                                            <Text>
+                                                ₹
+                                                {selectedBooking.extras
+                                                    .reduce((sum, extra) => {
+                                                        const quantity =
+                                                            extra.pivot
+                                                                ?.quantity || 1;
+                                                        const price =
+                                                            parseFloat(
+                                                                extra.pivot
+                                                                    ?.price ||
+                                                                    extra.price ||
+                                                                    0
+                                                            );
+                                                        return (
+                                                            sum +
+                                                            price * quantity
+                                                        );
+                                                    }, 0)
+                                                    .toFixed(2)}
+                                            </Text>
+                                        </Descriptions.Item>
+                                    )}
+                                {selectedBooking.distance_charges > 0 && (
+                                    <Descriptions.Item label="Extra Distance Charges">
+                                        <div>
+                                            <Text style={{ color: "#1890ff" }}>
+                                                ₹
+                                                {parseFloat(
+                                                    selectedBooking.distance_charges
+                                                ).toFixed(2)}
+                                            </Text>
+                                            <Tag
+                                                color="blue"
+                                                style={{
+                                                    marginLeft: 8,
+                                                    fontSize: 10,
+                                                }}
+                                            >
+                                                Travel Buddy
+                                            </Tag>
+                                        </div>
+                                    </Descriptions.Item>
+                                )}
+                                {selectedBooking.gender_preference_fee > 0 && (
+                                    <Descriptions.Item label="Gender Preference Fee">
+                                        <Text style={{ color: "#722ed1" }}>
+                                            ₹
+                                            {parseFloat(
+                                                selectedBooking.gender_preference_fee
+                                            ).toFixed(2)}
+                                        </Text>
+                                    </Descriptions.Item>
+                                )}
+                                {selectedBooking.discount_amount > 0 && (
+                                    <Descriptions.Item label="Discount">
+                                        <Text style={{ color: "#52c41a" }}>
+                                            -₹
+                                            {parseFloat(
+                                                selectedBooking.discount_amount
+                                            ).toFixed(2)}
+                                        </Text>
+                                    </Descriptions.Item>
+                                )}
+                                <Descriptions.Item
+                                    label="Total Amount"
+                                    span={2}
+                                >
+                                    <Text strong style={{ fontSize: "16px" }}>
+                                        ₹
+                                        {parseFloat(
+                                            selectedBooking.total_amount
+                                        ).toFixed(2)}
+                                    </Text>
+                                </Descriptions.Item>
+                                {selectedBooking.payment_method && (
+                                    <Descriptions.Item label="Payment Method">
+                                        <Text>
+                                            {selectedBooking.payment_method}
+                                        </Text>
+                                    </Descriptions.Item>
+                                )}
+                                {selectedBooking.transaction_id && (
+                                    <Descriptions.Item label="Transaction ID">
+                                        <Text copyable>
+                                            {selectedBooking.transaction_id}
+                                        </Text>
                                     </Descriptions.Item>
                                 )}
                             </Descriptions>

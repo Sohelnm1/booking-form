@@ -98,6 +98,13 @@ export default function Integration({ auth, integrations = [] }) {
                     settings.razorpay_secret = values.razorpay_secret || "";
                     settings.currency = values.currency || "INR";
                     break;
+                case "google_maps":
+                    settings.google_maps_api_key =
+                        values.google_maps_api_key || "";
+                    settings.google_maps_enabled_services =
+                        values.google_maps_enabled_services ||
+                        "places,geocoding,maps";
+                    break;
                 case "sms":
                     settings.twilio_sid = values.twilio_sid || "";
                     settings.twilio_token = values.twilio_token || "";
@@ -407,6 +414,63 @@ export default function Integration({ auth, integrations = [] }) {
                                         </Select.Option>
                                     </Select>
                                 </Form.Item>
+                            </>
+                        )}
+
+                        {editingIntegration?.id === "google_maps" && (
+                            <>
+                                <Form.Item
+                                    name="google_maps_api_key"
+                                    label="Google Maps API Key"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message:
+                                                "Please enter Google Maps API key",
+                                        },
+                                    ]}
+                                >
+                                    <Input.Password placeholder="AIza..." />
+                                </Form.Item>
+
+                                <Form.Item
+                                    name="google_maps_enabled_services"
+                                    label="Enabled Services"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message:
+                                                "Please select enabled services",
+                                        },
+                                    ]}
+                                >
+                                    <Select
+                                        mode="multiple"
+                                        placeholder="Select enabled services"
+                                        options={[
+                                            {
+                                                label: "Places API",
+                                                value: "places",
+                                            },
+                                            {
+                                                label: "Geocoding API",
+                                                value: "geocoding",
+                                            },
+                                            {
+                                                label: "Maps JavaScript API",
+                                                value: "maps",
+                                            },
+                                        ]}
+                                    />
+                                </Form.Item>
+
+                                <Alert
+                                    message="Google Maps API Setup"
+                                    description="Make sure to enable the following APIs in your Google Cloud Console: Places API, Geocoding API, and Maps JavaScript API. Also ensure your API key has the necessary permissions."
+                                    type="info"
+                                    showIcon
+                                    style={{ marginBottom: 16 }}
+                                />
                             </>
                         )}
 
