@@ -348,8 +348,8 @@ export default function Consent({
 
             // Update auth state if user data is returned
             if (result.user) {
-                // Update the auth state locally instead of reloading
-                // The header will update automatically when auth prop changes
+                // Refresh the page data to update auth state without full reload
+                router.reload({ only: ["auth"] });
             }
 
             // Now add the consent to accepted list
@@ -446,6 +446,8 @@ export default function Consent({
                                 padding: "32px 24px",
                                 marginTop: 24,
                                 border: "1px solid #e6f7ff",
+                                boxShadow:
+                                    "0 4px 20px rgba(24, 144, 255, 0.08)",
                             }}
                         >
                             <Title
@@ -457,16 +459,19 @@ export default function Consent({
                                     WebkitBackgroundClip: "text",
                                     WebkitTextFillColor: "transparent",
                                     backgroundClip: "text",
+                                    fontSize: "clamp(24px, 4vw, 32px)",
+                                    lineHeight: 1.2,
                                 }}
                             >
                                 Confirm & Secure Your Booking
                             </Title>
                             <Text
                                 style={{
-                                    fontSize: 16,
+                                    fontSize: "clamp(14px, 2.5vw, 16px)",
                                     color: "#595959",
-                                    marginBottom: 24,
+                                    marginBottom: 32,
                                     display: "block",
+                                    lineHeight: 1.5,
                                 }}
                             >
                                 To make sure your booking is safe and personally
@@ -477,7 +482,7 @@ export default function Consent({
                                 style={{
                                     display: "flex",
                                     flexDirection: "column",
-                                    gap: "12px",
+                                    gap: "16px",
                                     maxWidth: 500,
                                     margin: "0 auto",
                                 }}
@@ -486,18 +491,19 @@ export default function Consent({
                                     style={{
                                         display: "flex",
                                         alignItems: "center",
-                                        padding: "16px 20px",
+                                        padding: "20px",
                                         background: "white",
-                                        borderRadius: "12px",
+                                        borderRadius: "16px",
                                         border: "1px solid #e6f7ff",
                                         boxShadow:
-                                            "0 2px 8px rgba(24, 144, 255, 0.1)",
+                                            "0 2px 12px rgba(24, 144, 255, 0.08)",
+                                        transition: "all 0.3s ease",
                                     }}
                                 >
                                     <div
                                         style={{
-                                            width: "32px",
-                                            height: "32px",
+                                            width: "40px",
+                                            height: "40px",
                                             borderRadius: "50%",
                                             background:
                                                 "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
@@ -506,17 +512,21 @@ export default function Consent({
                                             justifyContent: "center",
                                             marginRight: "16px",
                                             color: "white",
-                                            fontSize: "14px",
+                                            fontSize: "16px",
                                             fontWeight: "bold",
+                                            flexShrink: 0,
+                                            minWidth: "40px",
                                         }}
                                     >
                                         1
                                     </div>
                                     <Text
                                         style={{
-                                            fontSize: 16,
+                                            fontSize:
+                                                "clamp(14px, 2.5vw, 16px)",
                                             color: "#262626",
                                             fontWeight: 500,
+                                            lineHeight: 1.4,
                                         }}
                                     >
                                         Review and agree to our terms
@@ -527,18 +537,19 @@ export default function Consent({
                                     style={{
                                         display: "flex",
                                         alignItems: "center",
-                                        padding: "16px 20px",
+                                        padding: "20px",
                                         background: "white",
-                                        borderRadius: "12px",
+                                        borderRadius: "16px",
                                         border: "1px solid #e6f7ff",
                                         boxShadow:
-                                            "0 2px 8px rgba(24, 144, 255, 0.1)",
+                                            "0 2px 12px rgba(24, 144, 255, 0.08)",
+                                        transition: "all 0.3s ease",
                                     }}
                                 >
                                     <div
                                         style={{
-                                            width: "32px",
-                                            height: "32px",
+                                            width: "40px",
+                                            height: "40px",
                                             borderRadius: "50%",
                                             background:
                                                 "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
@@ -547,17 +558,21 @@ export default function Consent({
                                             justifyContent: "center",
                                             marginRight: "16px",
                                             color: "white",
-                                            fontSize: "14px",
+                                            fontSize: "16px",
                                             fontWeight: "bold",
+                                            flexShrink: 0,
+                                            minWidth: "40px",
                                         }}
                                     >
                                         2
                                     </div>
                                     <Text
                                         style={{
-                                            fontSize: 16,
+                                            fontSize:
+                                                "clamp(14px, 2.5vw, 16px)",
                                             color: "#262626",
                                             fontWeight: 500,
+                                            lineHeight: 1.4,
                                         }}
                                     >
                                         Verify your phone number to confirm
@@ -568,23 +583,49 @@ export default function Consent({
 
                             <div
                                 style={{
-                                    marginTop: 20,
-                                    padding: "16px 20px",
-                                    background: "rgba(82, 196, 26, 0.1)",
-                                    borderRadius: "12px",
-                                    border: "1px solid rgba(82, 196, 26, 0.2)",
+                                    marginTop: 24,
+                                    padding: "20px",
+                                    background: "rgba(82, 196, 26, 0.08)",
+                                    borderRadius: "16px",
+                                    border: "1px solid rgba(82, 196, 26, 0.15)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: "12px",
                                 }}
                             >
-                                <Text
+                                <div
                                     style={{
-                                        fontSize: 14,
-                                        color: "#52c41a",
-                                        fontWeight: 500,
-                                        textAlign: "center",
-                                        margin: 0,
+                                        width: "24px",
+                                        height: "24px",
+                                        borderRadius: "50%",
+                                        background: "#52c41a",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        flexShrink: 0,
+                                        minWidth: "24px",
                                     }}
                                 >
-                                    🛡️ This step protects you, your family, and
+                                    <span
+                                        style={{
+                                            fontSize: "12px",
+                                            color: "white",
+                                        }}
+                                    >
+                                        🛡️
+                                    </span>
+                                </div>
+                                <Text
+                                    style={{
+                                        fontSize: "clamp(13px, 2.2vw, 14px)",
+                                        color: "#52c41a",
+                                        fontWeight: 500,
+                                        margin: 0,
+                                        lineHeight: 1.4,
+                                    }}
+                                >
+                                    This step protects you, your family, and
                                     your HospiPal journey
                                 </Text>
                             </div>
@@ -598,13 +639,25 @@ export default function Consent({
                             showInfo={false}
                             strokeColor="#1890ff"
                             trailColor="#f0f0f0"
+                            strokeWidth={8}
+                            style={{
+                                borderRadius: "4px",
+                            }}
                         />
-                        <div style={{ textAlign: "center", marginTop: 8 }}>
-                            <Text type="secondary">Step 4 of 5</Text>
+                        <div style={{ textAlign: "center", marginTop: 12 }}>
+                            <Text
+                                type="secondary"
+                                style={{
+                                    fontSize: "clamp(12px, 2vw, 14px)",
+                                    fontWeight: 500,
+                                }}
+                            >
+                                Step 4 of 5
+                            </Text>
                         </div>
                     </div>
 
-                    <Row gutter={[32, 32]}>
+                    <Row gutter={[24, 24]}>
                         {/* Main Content */}
                         <Col xs={24} lg={16}>
                             {/* Required Consents */}
@@ -612,10 +665,11 @@ export default function Consent({
                                 <Card
                                     style={{
                                         marginBottom: 24,
-                                        borderRadius: "16px",
+                                        borderRadius: "20px",
                                         boxShadow:
-                                            "0 4px 20px rgba(0, 0, 0, 0.08)",
+                                            "0 4px 24px rgba(0, 0, 0, 0.06)",
                                         border: "1px solid #f0f0f0",
+                                        overflow: "hidden",
                                     }}
                                 >
                                     <div
@@ -623,42 +677,55 @@ export default function Consent({
                                             display: "flex",
                                             alignItems: "center",
                                             marginBottom: 24,
-                                            padding: "16px 0",
+                                            padding: "20px 0",
+                                            flexWrap: "wrap",
+                                            gap: "12px",
                                         }}
                                     >
                                         <div
                                             style={{
-                                                width: "48px",
-                                                height: "48px",
-                                                borderRadius: "12px",
+                                                width: "52px",
+                                                height: "52px",
+                                                borderRadius: "16px",
                                                 background:
                                                     "linear-gradient(135deg, #ff4d4f 0%, #cf1322 100%)",
                                                 display: "flex",
                                                 alignItems: "center",
                                                 justifyContent: "center",
                                                 marginRight: "16px",
+                                                flexShrink: 0,
+                                                minWidth: "52px",
                                             }}
                                         >
                                             <FileTextOutlined
                                                 style={{
-                                                    fontSize: 24,
+                                                    fontSize:
+                                                        "clamp(20px, 3vw, 24px)",
                                                     color: "white",
                                                 }}
                                             />
                                         </div>
-                                        <div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
                                             <Title
                                                 level={4}
                                                 style={{
                                                     margin: 0,
                                                     color: "#262626",
+                                                    fontSize:
+                                                        "clamp(18px, 3.5vw, 20px)",
+                                                    lineHeight: 1.3,
                                                 }}
                                             >
                                                 Required Agreements
                                             </Title>
                                             <Text
                                                 type="secondary"
-                                                style={{ fontSize: 14 }}
+                                                style={{
+                                                    fontSize:
+                                                        "clamp(13px, 2.2vw, 14px)",
+                                                    lineHeight: 1.4,
+                                                    marginTop: 4,
+                                                }}
                                             >
                                                 Please review and accept these
                                                 terms to continue
@@ -951,42 +1018,55 @@ export default function Consent({
                                         display: "flex",
                                         alignItems: "center",
                                         marginBottom: 24,
-                                        padding: "16px 0",
+                                        padding: "20px 0",
+                                        flexWrap: "wrap",
+                                        gap: "12px",
                                     }}
                                 >
                                     <div
                                         style={{
-                                            width: "48px",
-                                            height: "48px",
-                                            borderRadius: "12px",
+                                            width: "52px",
+                                            height: "52px",
+                                            borderRadius: "16px",
                                             background:
                                                 "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
                                             display: "flex",
                                             alignItems: "center",
                                             justifyContent: "center",
                                             marginRight: "16px",
+                                            flexShrink: 0,
+                                            minWidth: "52px",
                                         }}
                                     >
                                         <CheckCircleOutlined
                                             style={{
-                                                fontSize: 24,
+                                                fontSize:
+                                                    "clamp(20px, 3vw, 24px)",
                                                 color: "white",
                                             }}
                                         />
                                     </div>
-                                    <div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
                                         <Title
                                             level={4}
                                             style={{
                                                 margin: 0,
                                                 color: "#262626",
+                                                fontSize:
+                                                    "clamp(18px, 3.5vw, 20px)",
+                                                lineHeight: 1.3,
                                             }}
                                         >
                                             Booking Summary
                                         </Title>
                                         <Text
                                             type="secondary"
-                                            style={{ fontSize: 14 }}
+                                            style={{
+                                                fontSize:
+                                                    "clamp(13px, 2.2vw, 14px)",
+                                                lineHeight: 1.4,
+                                                marginTop: 4,
+                                            }}
                                         >
                                             Review your booking details
                                         </Text>
@@ -1343,12 +1423,13 @@ export default function Consent({
                         style={{
                             textAlign: "center",
                             marginTop: 48,
-                            padding: "32px 24px",
+                            padding:
+                                "clamp(24px, 4vw, 32px) clamp(20px, 3vw, 24px)",
                             background:
                                 "linear-gradient(135deg, #f8f9ff 0%, #e8f4ff 100%)",
                             borderRadius: "20px",
                             border: "1px solid #e6f7ff",
-                            boxShadow: "0 4px 20px rgba(24, 144, 255, 0.1)",
+                            boxShadow: "0 4px 20px rgba(24, 144, 255, 0.08)",
                         }}
                     >
                         <div
@@ -1358,12 +1439,14 @@ export default function Consent({
                                 justifyContent: "center",
                                 maxWidth: 600,
                                 margin: "0 auto",
+                                flexWrap: "wrap",
+                                gap: "12px",
                             }}
                         >
                             <div
                                 style={{
-                                    width: "48px",
-                                    height: "48px",
+                                    width: "clamp(40px, 6vw, 48px)",
+                                    height: "clamp(40px, 6vw, 48px)",
                                     borderRadius: "50%",
                                     background:
                                         "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
@@ -1372,19 +1455,27 @@ export default function Consent({
                                     justifyContent: "center",
                                     marginRight: "16px",
                                     flexShrink: 0,
+                                    minWidth: "clamp(40px, 6vw, 48px)",
                                 }}
                             >
-                                <span style={{ fontSize: 20, color: "white" }}>
+                                <span
+                                    style={{
+                                        fontSize: "clamp(16px, 2.5vw, 20px)",
+                                        color: "white",
+                                    }}
+                                >
                                     📌
                                 </span>
                             </div>
                             <Text
                                 style={{
-                                    fontSize: 15,
+                                    fontSize: "clamp(13px, 2.2vw, 15px)",
                                     color: "#262626",
                                     fontWeight: 500,
                                     lineHeight: 1.6,
                                     margin: 0,
+                                    flex: 1,
+                                    minWidth: 0,
                                 }}
                             >
                                 By verifying, you agree to receive
