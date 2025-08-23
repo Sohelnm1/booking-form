@@ -11,9 +11,9 @@ import Logo from "../Components/Logo";
 
 const { Title, Paragraph } = Typography;
 
-export default function Welcome() {
+export default function Welcome({ auth }) {
     return (
-        <AppLayout>
+        <AppLayout auth={auth}>
             <Head title="Welcome" />
             <div
                 style={{

@@ -157,10 +157,11 @@ export default function SelectService({ services, upcomingServices, auth }) {
                             level={2}
                             style={{ marginTop: 24, marginBottom: 8 }}
                         >
-                            Choose Your Service
+                            Choose Your HospiPal Service 🏥
                         </Title>
                         <Text type="secondary" style={{ fontSize: 16 }}>
-                            Select the service you'd like to book
+                            Trained, caring HospiPals by your side — for OPD
+                            visits, admissions, discharges, and more.
                         </Text>
                     </div>
 
@@ -175,6 +176,20 @@ export default function SelectService({ services, upcomingServices, auth }) {
                         <div style={{ textAlign: "center", marginTop: 8 }}>
                             <Text type="secondary">Step 1 of 5</Text>
                         </div>
+                    </div>
+
+                    {/* Instruction Line */}
+                    <div style={{ textAlign: "center", marginBottom: 32 }}>
+                        <Text
+                            style={{
+                                fontSize: 16,
+                                color: "#666",
+                                lineHeight: 1.5,
+                            }}
+                        >
+                            Select the service that matches your hospital need.
+                            You can always add extra support later.
+                        </Text>
                     </div>
 
                     {/* Services Grid */}
@@ -637,6 +652,68 @@ export default function SelectService({ services, upcomingServices, auth }) {
                         ))}
                     </Row>
 
+                    {/* Trust Anchors */}
+                    <div
+                        style={{
+                            textAlign: "center",
+                            marginBottom: 48,
+                            padding: "32px 0",
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                gap: 32,
+                                flexWrap: "wrap",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                }}
+                            >
+                                <CheckOutlined
+                                    style={{ color: "#52c41a", fontSize: 16 }}
+                                />
+                                <Text style={{ fontSize: 14, color: "#666" }}>
+                                    Non-medical trained companions
+                                </Text>
+                            </div>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                }}
+                            >
+                                <CheckOutlined
+                                    style={{ color: "#52c41a", fontSize: 16 }}
+                                />
+                                <Text style={{ fontSize: 14, color: "#666" }}>
+                                    Flexible rescheduling available
+                                </Text>
+                            </div>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                }}
+                            >
+                                <CheckOutlined
+                                    style={{ color: "#52c41a", fontSize: 16 }}
+                                />
+                                <Text style={{ fontSize: 14, color: "#666" }}>
+                                    Support that families trust
+                                </Text>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Upcoming Services Section */}
                     {upcomingServices && upcomingServices.length > 0 && (
                         <div style={{ marginBottom: 48 }}>
@@ -1049,6 +1126,37 @@ export default function SelectService({ services, upcomingServices, auth }) {
                             </Row>
                         </div>
                     )}
+
+                    {/* Helper Option */}
+                    <div
+                        style={{
+                            textAlign: "center",
+                            marginTop: 48,
+                            padding: "24px 0",
+                        }}
+                    >
+                        <div
+                            style={{
+                                padding: "20px",
+                                background:
+                                    "linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%)",
+                                borderRadius: "16px",
+                                border: "1px solid #bae7ff",
+                                display: "inline-block",
+                            }}
+                        >
+                            <Text
+                                style={{
+                                    fontSize: 16,
+                                    color: "#1890ff",
+                                    fontWeight: 500,
+                                }}
+                            >
+                                Need help choosing? 💬 Chat with us on WhatsApp
+                                anytime.
+                            </Text>
+                        </div>
+                    </div>
                 </div>
             </Content>
 

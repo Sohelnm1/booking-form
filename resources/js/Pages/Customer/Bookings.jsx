@@ -7,9 +7,6 @@ import {
     Tag,
     Typography,
     Space,
-    Layout,
-    Menu,
-    Avatar,
     Empty,
     message,
 } from "antd";
@@ -17,16 +14,13 @@ import {
     CalendarOutlined,
     UserOutlined,
     PhoneOutlined,
-    LogoutOutlined,
-    BookOutlined,
     ArrowLeftOutlined,
 } from "@ant-design/icons";
-import Logo from "../../Components/Logo";
+import BookingHeader from "../../Components/BookingHeader";
 import CancelModal from "../../Components/CancelModal";
 import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
-const { Header, Content } = Layout;
 
 export default function CustomerBookings({ auth, bookings }) {
     const [cancelModalVisible, setCancelModalVisible] = useState(false);
@@ -104,16 +98,6 @@ export default function CustomerBookings({ auth, bookings }) {
         }
     };
 
-    const getInitials = (name) => {
-        if (!name) return "CU"; // Default initials if no name
-        return name
-            .split(" ")
-            .map((n) => n[0])
-            .join("")
-            .toUpperCase()
-            .slice(0, 2);
-    };
-
     const handleCancelBooking = (booking) => {
         setSelectedBooking(booking);
         setCancelModalVisible(true);
@@ -131,33 +115,6 @@ export default function CustomerBookings({ auth, bookings }) {
         setCancelModalVisible(false);
         setSelectedBooking(null);
     };
-
-    const handleLogout = () => {
-        router.post(
-            route("logout"),
-            {},
-            {
-                onSuccess: () => {
-                    // Force a page refresh to get a new CSRF token
-                    window.location.reload();
-                },
-            }
-        );
-    };
-
-    const menuItems = [
-        {
-            key: "services",
-            icon: <BookOutlined />,
-            label: "Services",
-            onClick: () => router.visit(route("booking.select-service")),
-        },
-        {
-            key: "bookings",
-            icon: <CalendarOutlined />,
-            label: "Your Bookings",
-        },
-    ];
 
     const columns = [
         {
@@ -277,177 +234,90 @@ export default function CustomerBookings({ auth, bookings }) {
     ];
 
     return (
-        <Layout style={{ minHeight: "100vh" }}>
+        <div>
             <Head title="Your Bookings - HospiPal" />
+            <BookingHeader auth={auth} />
 
-            {/* Header */}
-            <Header
-                style={{
-                    background: "#fff",
-                    padding: "0 16px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                    height: "auto",
-                    minHeight: 64,
-                    maxWidth: "100vw",
-                    width: "100%",
-                    overflow: "hidden",
-                }}
-            >
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        flexShrink: 0,
-                        minWidth: 0,
-                    }}
-                >
-                    <Logo
-                        variant="primary"
-                        color="color"
-                        background="white"
-                        size="medium"
-                    />
+            <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px" }}>
+                {/* Add responsive top spacing for mobile */}
+                <div className="mobile-top-spacing" />
+                {/* Header */}
+                <div style={{ marginBottom: 24 }}>
+                    <Button
+                        icon={<ArrowLeftOutlined />}
+                        onClick={() => router.visit(route("welcome"))}
+                        style={{ marginBottom: 16 }}
+                    >
+                        Back to Home
+                    </Button>
+                    <Title level={2} style={{ marginBottom: 8 }}>
+                        Your Bookings
+                    </Title>
+                    <Text type="secondary">
+                        View and manage all your appointments
+                    </Text>
                 </div>
 
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        flex: 1,
-                        justifyContent: "flex-end",
-                        minWidth: 0,
-                        overflow: "hidden",
-                    }}
-                >
-                    <Menu
-                        mode="horizontal"
-                        items={menuItems}
-                        selectedKeys={["bookings"]}
-                        style={{
-                            border: "none",
-                            background: "transparent",
-                            fontSize: "14px",
-                            minWidth: 0,
-                            flexShrink: 1,
-                            maxWidth: "100%",
-                        }}
-                    />
+                {/* Bookings Table */}
+                <Card>
+                    {bookings && bookings.length > 0 ? (
+                        <>
+                            {/* Desktop Table View */}
+                            <div className="hidden-xs">
+                                <Table
+                                    columns={columns}
+                                    dataSource={bookings}
+                                    rowKey="id"
+                                    pagination={{
+                                        pageSize: 10,
+                                        showSizeChanger: true,
+                                        showQuickJumper: true,
+                                        showTotal: (total, range) =>
+                                            `${range[0]}-${range[1]} of ${total} bookings`,
+                                    }}
+                                />
+                            </div>
 
-                    <Space size="small" style={{ flexShrink: 0 }}>
-                        <Avatar
-                            style={{
-                                backgroundColor: "#1890ff",
-                                cursor: "pointer",
-                            }}
-                            onClick={() =>
-                                message.info("Profile settings coming soon")
-                            }
-                        >
-                            {getInitials(auth.user?.name)}
-                        </Avatar>
-                        <Button
-                            type="text"
-                            icon={<LogoutOutlined />}
-                            onClick={handleLogout}
-                            size="small"
-                        >
-                            <span className="hidden-xs">Logout</span>
-                        </Button>
-                    </Space>
-                </div>
-            </Header>
-
-            {/* Content */}
-            <Content style={{ padding: "16px" }}>
-                <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-                    {/* Add responsive top spacing for mobile */}
-                    <div className="mobile-top-spacing" />
-                    {/* Header */}
-                    <div style={{ marginBottom: 24 }}>
-                        <Button
-                            icon={<ArrowLeftOutlined />}
-                            onClick={() => router.visit(route("welcome"))}
-                            style={{ marginBottom: 16 }}
-                        >
-                            Back to Home
-                        </Button>
-                        <Title level={2} style={{ marginBottom: 8 }}>
-                            Your Bookings
-                        </Title>
-                        <Text type="secondary">
-                            View and manage all your appointments
-                        </Text>
-                    </div>
-
-                    {/* Bookings Table */}
-                    <Card>
-                        {bookings && bookings.length > 0 ? (
-                            <>
-                                {/* Desktop Table View */}
-                                <div className="hidden-xs">
-                                    <Table
-                                        columns={columns}
-                                        dataSource={bookings}
-                                        rowKey="id"
-                                        pagination={{
-                                            pageSize: 10,
-                                            showSizeChanger: true,
-                                            showQuickJumper: true,
-                                            showTotal: (total, range) =>
-                                                `${range[0]}-${range[1]} of ${total} bookings`,
-                                        }}
-                                    />
-                                </div>
-
-                                {/* Mobile Card View */}
-                                <div className="visible-xs">
-                                    {bookings.map((booking) => (
-                                        <Card
-                                            key={booking.id}
-                                            style={{ marginBottom: 16 }}
-                                            styles={{ body: { padding: 16 } }}
-                                        >
-                                            <div style={{ marginBottom: 12 }}>
-                                                <div
-                                                    style={{
-                                                        display: "flex",
-                                                        justifyContent:
-                                                            "space-between",
-                                                        alignItems:
-                                                            "flex-start",
-                                                        marginBottom: 8,
-                                                    }}
-                                                >
-                                                    <Text
-                                                        strong
-                                                        style={{ fontSize: 16 }}
-                                                    >
+                            {/* Mobile Card View */}
+                            <div className="visible-xs">
+                                {bookings.map((booking) => (
+                                    <Card
+                                        key={booking.id}
+                                        style={{ marginBottom: 16 }}
+                                        styles={{ body: { padding: 16 } }}
+                                    >
+                                        <div style={{ marginBottom: 12 }}>
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent:
+                                                        "space-between",
+                                                    alignItems: "flex-start",
+                                                    marginBottom: 8,
+                                                }}
+                                            >
+                                                <div>
+                                                    <Text strong>
                                                         {booking.service?.name}
                                                     </Text>
-                                                    <Tag
-                                                        color={getStatusColor(
-                                                            booking.status
+                                                    <br />
+                                                    <Text type="secondary">
+                                                        {formatDateTime(
+                                                            booking.appointment_time
                                                         )}
-                                                    >
-                                                        {booking.status
-                                                            .charAt(0)
-                                                            .toUpperCase() +
-                                                            booking.status.slice(
-                                                                1
-                                                            )}
-                                                    </Tag>
+                                                    </Text>
                                                 </div>
-                                                <Text type="secondary">
-                                                    {formatDateTime(
-                                                        booking.appointment_time
+                                                <Tag
+                                                    color={getStatusColor(
+                                                        booking.status
                                                     )}
-                                                </Text>
+                                                >
+                                                    {booking.status
+                                                        .charAt(0)
+                                                        .toUpperCase() +
+                                                        booking.status.slice(1)}
+                                                </Tag>
                                             </div>
-
                                             <div
                                                 style={{
                                                     display: "flex",
@@ -515,38 +385,38 @@ export default function CustomerBookings({ auth, bookings }) {
                                                     View Details
                                                 </Button>
                                             </div>
-                                        </Card>
-                                    ))}
-                                </div>
-                            </>
-                        ) : (
-                            <Empty
-                                description="No bookings found"
-                                style={{ padding: "40px 0" }}
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        </>
+                    ) : (
+                        <Empty
+                            description="No bookings found"
+                            style={{ padding: "40px 0" }}
+                        >
+                            <Button
+                                type="primary"
+                                onClick={() =>
+                                    router.visit(
+                                        route("booking.select-service")
+                                    )
+                                }
                             >
-                                <Button
-                                    type="primary"
-                                    onClick={() =>
-                                        router.visit(
-                                            route("booking.select-service")
-                                        )
-                                    }
-                                >
-                                    Book Your First Appointment
-                                </Button>
-                            </Empty>
-                        )}
-                    </Card>
-                </div>
-            </Content>
+                                Book Your First Appointment
+                            </Button>
+                        </Empty>
+                    )}
+                </Card>
 
-            {/* Cancel Modal */}
-            <CancelModal
-                visible={cancelModalVisible}
-                onCancel={handleCancelModalCancel}
-                onSuccess={handleCancelSuccess}
-                booking={selectedBooking}
-            />
-        </Layout>
+                {/* Cancel Modal */}
+                <CancelModal
+                    visible={cancelModalVisible}
+                    onCancel={handleCancelModalCancel}
+                    onSuccess={handleCancelSuccess}
+                    booking={selectedBooking}
+                />
+            </div>
+        </div>
     );
 }

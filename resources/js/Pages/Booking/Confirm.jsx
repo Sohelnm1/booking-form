@@ -36,6 +36,7 @@ import {
     ClockCircleOutlined,
     DollarOutlined,
     GiftOutlined,
+    CheckOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import BookingHeader from "../../Components/BookingHeader";
@@ -739,10 +740,10 @@ export default function Confirm({
                         size="large"
                     />
                     <Title level={2} style={{ marginTop: 24, marginBottom: 8 }}>
-                        Confirm & Pay
+                        Almost Done! Confirm & Secure Your HospiPal
                     </Title>
                     <Text type="secondary" style={{ fontSize: 16 }}>
-                        Review your booking and complete payment
+                        Complete your booking to secure your HospiPal support
                     </Text>
                 </div>
 
@@ -763,13 +764,54 @@ export default function Confirm({
                     {/* Main Content */}
                     <Col xs={24} lg={16}>
                         {/* Booking Summary */}
-                        <Card style={{ marginBottom: 24 }}>
-                            <Title level={4} style={{ marginBottom: 16 }}>
-                                <CheckCircleOutlined
-                                    style={{ marginRight: 8, color: "#52c41a" }}
-                                />
-                                Booking Summary
-                            </Title>
+                        <Card
+                            style={{
+                                marginBottom: 24,
+                                borderRadius: "16px",
+                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+                                border: "1px solid #f0f0f0",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    marginBottom: 24,
+                                    padding: "16px 0",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        width: "48px",
+                                        height: "48px",
+                                        borderRadius: "12px",
+                                        background:
+                                            "linear-gradient(135deg, #52c41a 0%, #389e0d 100%)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        marginRight: "16px",
+                                    }}
+                                >
+                                    <CheckCircleOutlined
+                                        style={{ fontSize: 24, color: "white" }}
+                                    />
+                                </div>
+                                <div>
+                                    <Title
+                                        level={4}
+                                        style={{ margin: 0, color: "#262626" }}
+                                    >
+                                        Your Booking at a Glance
+                                    </Title>
+                                    <Text
+                                        type="secondary"
+                                        style={{ fontSize: 14 }}
+                                    >
+                                        Transparent pricing. No hidden charges.
+                                    </Text>
+                                </div>
+                            </div>
 
                             <Descriptions bordered column={1} size="small">
                                 <Descriptions.Item label="Service">
@@ -1009,11 +1051,55 @@ export default function Confirm({
                         </Card>
 
                         {/* Coupon Section */}
-                        <Card style={{ marginBottom: 24 }}>
-                            <Title level={4} style={{ marginBottom: 16 }}>
-                                <GiftOutlined style={{ marginRight: 8 }} />
-                                Apply Coupon
-                            </Title>
+                        <Card
+                            style={{
+                                marginBottom: 24,
+                                borderRadius: "16px",
+                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+                                border: "1px solid #f0f0f0",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    marginBottom: 24,
+                                    padding: "16px 0",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        width: "48px",
+                                        height: "48px",
+                                        borderRadius: "12px",
+                                        background:
+                                            "linear-gradient(135deg, #722ed1 0%, #531dab 100%)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        marginRight: "16px",
+                                    }}
+                                >
+                                    <GiftOutlined
+                                        style={{ fontSize: 24, color: "white" }}
+                                    />
+                                </div>
+                                <div>
+                                    <Title
+                                        level={4}
+                                        style={{ margin: 0, color: "#262626" }}
+                                    >
+                                        Have a Coupon Code?
+                                    </Title>
+                                    <Text
+                                        type="secondary"
+                                        style={{ fontSize: 14 }}
+                                    >
+                                        Enter your coupon below to unlock any
+                                        special discount
+                                    </Text>
+                                </div>
+                            </div>
 
                             {!appliedCoupon ? (
                                 <Row gutter={16}>
@@ -1080,11 +1166,54 @@ export default function Confirm({
                         </Card>
 
                         {/* Customer Information Form */}
-                        <Card>
-                            <Title level={4} style={{ marginBottom: 16 }}>
-                                <UserOutlined style={{ marginRight: 8 }} />
-                                Customer Information
-                            </Title>
+                        <Card
+                            style={{
+                                borderRadius: "16px",
+                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+                                border: "1px solid #f0f0f0",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    marginBottom: 24,
+                                    padding: "16px 0",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        width: "48px",
+                                        height: "48px",
+                                        borderRadius: "12px",
+                                        background:
+                                            "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        marginRight: "16px",
+                                    }}
+                                >
+                                    <UserOutlined
+                                        style={{ fontSize: 24, color: "white" }}
+                                    />
+                                </div>
+                                <div>
+                                    <Title
+                                        level={4}
+                                        style={{ margin: 0, color: "#262626" }}
+                                    >
+                                        Patient & Hospital Information
+                                    </Title>
+                                    <Text
+                                        type="secondary"
+                                        style={{ fontSize: 14 }}
+                                    >
+                                        Help us serve your family with care and
+                                        clarity
+                                    </Text>
+                                </div>
+                            </div>
 
                             <Form
                                 form={formInstance}
@@ -1624,10 +1753,100 @@ export default function Confirm({
                                     </>
                                 )}
 
+                                {/* Trust Anchors */}
+                                <div
+                                    style={{
+                                        marginBottom: 24,
+                                        padding: "20px",
+                                        background:
+                                            "linear-gradient(135deg, #f6ffed 0%, #f0f9ff 100%)",
+                                        borderRadius: "12px",
+                                        border: "1px solid #b7eb8f",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: "8px",
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "8px",
+                                            }}
+                                        >
+                                            <CheckOutlined
+                                                style={{
+                                                    color: "#52c41a",
+                                                    fontSize: 16,
+                                                }}
+                                            />
+                                            <Text
+                                                style={{
+                                                    fontSize: 14,
+                                                    color: "#262626",
+                                                }}
+                                            >
+                                                Trained non-medical companion
+                                                support only
+                                            </Text>
+                                        </div>
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "8px",
+                                            }}
+                                        >
+                                            <CheckOutlined
+                                                style={{
+                                                    color: "#52c41a",
+                                                    fontSize: 16,
+                                                }}
+                                            />
+                                            <Text
+                                                style={{
+                                                    fontSize: 14,
+                                                    color: "#262626",
+                                                }}
+                                            >
+                                                Secure, encrypted payments
+                                            </Text>
+                                        </div>
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "8px",
+                                            }}
+                                        >
+                                            <CheckOutlined
+                                                style={{
+                                                    color: "#52c41a",
+                                                    fontSize: 16,
+                                                }}
+                                            />
+                                            <Text
+                                                style={{
+                                                    fontSize: 14,
+                                                    color: "#262626",
+                                                }}
+                                            >
+                                                Flexible rescheduling and
+                                                cancellation as per booking
+                                                policy
+                                            </Text>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {/* Terms Confirmation */}
                                 <Alert
-                                    message="Booking Confirmation"
-                                    description="By clicking 'Confirm & Pay', you agree to our terms and conditions and confirm your appointment booking."
+                                    message="Final Reminder"
+                                    description="Your booking is not confirmed until payment is completed. Complete payment now to secure your HospiPal and ensure peace of mind for your hospital journey."
                                     type="info"
                                     showIcon
                                     style={{ marginBottom: 24 }}
@@ -1659,9 +1878,11 @@ export default function Confirm({
                                         style={{ width: "100%" }}
                                     >
                                         <span className="hidden-xs">
-                                            Confirm & Pay
+                                            Confirm & Secure My HospiPal
                                         </span>
-                                        <span className="visible-xs">Pay</span>{" "}
+                                        <span className="visible-xs">
+                                            Secure
+                                        </span>{" "}
                                         {formatPrice(finalPrice)}
                                     </Button>
                                 </div>
@@ -1671,10 +1892,55 @@ export default function Confirm({
 
                     {/* Sidebar - Summary */}
                     <Col xs={24} lg={8}>
-                        <Card style={{ position: "sticky", top: 24 }}>
-                            <Title level={4} style={{ marginBottom: 16 }}>
-                                Final Summary
-                            </Title>
+                        <Card
+                            style={{
+                                position: "sticky",
+                                top: 24,
+                                borderRadius: "16px",
+                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+                                border: "1px solid #f0f0f0",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    marginBottom: 24,
+                                    padding: "16px 0",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        width: "48px",
+                                        height: "48px",
+                                        borderRadius: "12px",
+                                        background:
+                                            "linear-gradient(135deg, #52c41a 0%, #389e0d 100%)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        marginRight: "16px",
+                                    }}
+                                >
+                                    <CheckCircleOutlined
+                                        style={{ fontSize: 24, color: "white" }}
+                                    />
+                                </div>
+                                <div>
+                                    <Title
+                                        level={4}
+                                        style={{ margin: 0, color: "#262626" }}
+                                    >
+                                        Final Summary
+                                    </Title>
+                                    <Text
+                                        type="secondary"
+                                        style={{ fontSize: 14 }}
+                                    >
+                                        Complete booking overview
+                                    </Text>
+                                </div>
+                            </div>
 
                             {/* Service */}
                             <div style={{ marginBottom: 16 }}>
@@ -1969,6 +2235,64 @@ export default function Confirm({
                         </Card>
                     </Col>
                 </Row>
+
+                {/* Bottom Note */}
+                <div
+                    style={{
+                        textAlign: "center",
+                        marginTop: 48,
+                        padding: "32px 24px",
+                        background:
+                            "linear-gradient(135deg, #f8f9ff 0%, #e8f4ff 100%)",
+                        borderRadius: "20px",
+                        border: "1px solid #e6f7ff",
+                        boxShadow: "0 4px 20px rgba(24, 144, 255, 0.1)",
+                    }}
+                >
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            maxWidth: 800,
+                            margin: "0 auto",
+                        }}
+                    >
+                        <div
+                            style={{
+                                width: "48px",
+                                height: "48px",
+                                borderRadius: "50%",
+                                background:
+                                    "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                marginRight: "16px",
+                                flexShrink: 0,
+                            }}
+                        >
+                            <span style={{ fontSize: 20, color: "white" }}>
+                                📌
+                            </span>
+                        </div>
+                        <Text
+                            style={{
+                                fontSize: 15,
+                                color: "#262626",
+                                fontWeight: 500,
+                                lineHeight: 1.6,
+                                margin: 0,
+                            }}
+                        >
+                            By confirming and paying, you agree to HospiPal's
+                            Terms & Conditions, Privacy Policy, and Booking
+                            Consent. HospiPal provides non-medical companion
+                            support only. Payment details are processed
+                            securely.
+                        </Text>
+                    </div>
+                </div>
             </div>
         </div>
     );

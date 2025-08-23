@@ -438,15 +438,157 @@ export default function Consent({
                             background="white"
                             size="large"
                         />
-                        <Title
-                            level={2}
-                            style={{ marginTop: 24, marginBottom: 8 }}
+                        <div
+                            style={{
+                                background:
+                                    "linear-gradient(135deg, #f8f9ff 0%, #e8f4ff 100%)",
+                                borderRadius: "20px",
+                                padding: "32px 24px",
+                                marginTop: 24,
+                                border: "1px solid #e6f7ff",
+                            }}
                         >
-                            Consent & Terms
-                        </Title>
-                        <Text type="secondary" style={{ fontSize: 16 }}>
-                            Please review and accept our terms and conditions
-                        </Text>
+                            <Title
+                                level={2}
+                                style={{
+                                    marginBottom: 16,
+                                    background:
+                                        "linear-gradient(135deg, #1890ff 0%, #722ed1 100%)",
+                                    WebkitBackgroundClip: "text",
+                                    WebkitTextFillColor: "transparent",
+                                    backgroundClip: "text",
+                                }}
+                            >
+                                Confirm & Secure Your Booking
+                            </Title>
+                            <Text
+                                style={{
+                                    fontSize: 16,
+                                    color: "#595959",
+                                    marginBottom: 24,
+                                    display: "block",
+                                }}
+                            >
+                                To make sure your booking is safe and personally
+                                agreed by you, please:
+                            </Text>
+
+                            <div
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "12px",
+                                    maxWidth: 500,
+                                    margin: "0 auto",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        padding: "16px 20px",
+                                        background: "white",
+                                        borderRadius: "12px",
+                                        border: "1px solid #e6f7ff",
+                                        boxShadow:
+                                            "0 2px 8px rgba(24, 144, 255, 0.1)",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            width: "32px",
+                                            height: "32px",
+                                            borderRadius: "50%",
+                                            background:
+                                                "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            marginRight: "16px",
+                                            color: "white",
+                                            fontSize: "14px",
+                                            fontWeight: "bold",
+                                        }}
+                                    >
+                                        1
+                                    </div>
+                                    <Text
+                                        style={{
+                                            fontSize: 16,
+                                            color: "#262626",
+                                            fontWeight: 500,
+                                        }}
+                                    >
+                                        Review and agree to our terms
+                                    </Text>
+                                </div>
+
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        padding: "16px 20px",
+                                        background: "white",
+                                        borderRadius: "12px",
+                                        border: "1px solid #e6f7ff",
+                                        boxShadow:
+                                            "0 2px 8px rgba(24, 144, 255, 0.1)",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            width: "32px",
+                                            height: "32px",
+                                            borderRadius: "50%",
+                                            background:
+                                                "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            marginRight: "16px",
+                                            color: "white",
+                                            fontSize: "14px",
+                                            fontWeight: "bold",
+                                        }}
+                                    >
+                                        2
+                                    </div>
+                                    <Text
+                                        style={{
+                                            fontSize: 16,
+                                            color: "#262626",
+                                            fontWeight: 500,
+                                        }}
+                                    >
+                                        Verify your phone number to confirm
+                                        consent
+                                    </Text>
+                                </div>
+                            </div>
+
+                            <div
+                                style={{
+                                    marginTop: 20,
+                                    padding: "16px 20px",
+                                    background: "rgba(82, 196, 26, 0.1)",
+                                    borderRadius: "12px",
+                                    border: "1px solid rgba(82, 196, 26, 0.2)",
+                                }}
+                            >
+                                <Text
+                                    style={{
+                                        fontSize: 14,
+                                        color: "#52c41a",
+                                        fontWeight: 500,
+                                        textAlign: "center",
+                                        margin: 0,
+                                    }}
+                                >
+                                    🛡️ This step protects you, your family, and
+                                    your HospiPal journey
+                                </Text>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Progress Bar */}
@@ -467,19 +609,62 @@ export default function Consent({
                         <Col xs={24} lg={16}>
                             {/* Required Consents */}
                             {requiredConsents.length > 0 && (
-                                <Card style={{ marginBottom: 24 }}>
-                                    <Title
-                                        level={4}
-                                        style={{ marginBottom: 16 }}
+                                <Card
+                                    style={{
+                                        marginBottom: 24,
+                                        borderRadius: "16px",
+                                        boxShadow:
+                                            "0 4px 20px rgba(0, 0, 0, 0.08)",
+                                        border: "1px solid #f0f0f0",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            marginBottom: 24,
+                                            padding: "16px 0",
+                                        }}
                                     >
-                                        <FileTextOutlined
+                                        <div
                                             style={{
-                                                marginRight: 8,
-                                                color: "#ff4d4f",
+                                                width: "48px",
+                                                height: "48px",
+                                                borderRadius: "12px",
+                                                background:
+                                                    "linear-gradient(135deg, #ff4d4f 0%, #cf1322 100%)",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                marginRight: "16px",
                                             }}
-                                        />
-                                        Required Agreements
-                                    </Title>
+                                        >
+                                            <FileTextOutlined
+                                                style={{
+                                                    fontSize: 24,
+                                                    color: "white",
+                                                }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <Title
+                                                level={4}
+                                                style={{
+                                                    margin: 0,
+                                                    color: "#262626",
+                                                }}
+                                            >
+                                                Required Agreements
+                                            </Title>
+                                            <Text
+                                                type="secondary"
+                                                style={{ fontSize: 14 }}
+                                            >
+                                                Please review and accept these
+                                                terms to continue
+                                            </Text>
+                                        </div>
+                                    </div>
 
                                     {requiredConsents.map((consent) => {
                                         const isAccepted =
@@ -490,22 +675,52 @@ export default function Consent({
                                         return (
                                             <div
                                                 key={consent.id}
-                                                style={{ marginBottom: 16 }}
+                                                style={{ marginBottom: 20 }}
                                             >
                                                 <div
                                                     style={{
                                                         display: "flex",
                                                         alignItems:
                                                             "flex-start",
-                                                        padding: 16,
-                                                        border: "1px solid #f0f0f0",
-                                                        borderRadius: 8,
+                                                        padding: "24px",
+                                                        border: isAccepted
+                                                            ? "2px solid #52c41a"
+                                                            : "2px solid #f0f0f0",
+                                                        borderRadius: "16px",
                                                         backgroundColor:
                                                             isAccepted
-                                                                ? "#f6ffed"
+                                                                ? "rgba(82, 196, 26, 0.05)"
                                                                 : "white",
+                                                        transition:
+                                                            "all 0.3s ease",
+                                                        position: "relative",
+                                                        overflow: "hidden",
                                                     }}
                                                 >
+                                                    {isAccepted && (
+                                                        <div
+                                                            style={{
+                                                                position:
+                                                                    "absolute",
+                                                                top: 0,
+                                                                right: 0,
+                                                                background:
+                                                                    "linear-gradient(135deg, #52c41a 0%, #389e0d 100%)",
+                                                                color: "white",
+                                                                padding:
+                                                                    "4px 12px",
+                                                                fontSize:
+                                                                    "12px",
+                                                                fontWeight:
+                                                                    "bold",
+                                                                borderBottomLeftRadius:
+                                                                    "12px",
+                                                            }}
+                                                        >
+                                                            ✓ ACCEPTED
+                                                        </div>
+                                                    )}
+
                                                     <Checkbox
                                                         checked={isAccepted}
                                                         onChange={() =>
@@ -514,8 +729,8 @@ export default function Consent({
                                                             )
                                                         }
                                                         style={{
-                                                            marginRight: 12,
-                                                            marginTop: 2,
+                                                            marginRight: 16,
+                                                            marginTop: 4,
                                                         }}
                                                     />
                                                     <div style={{ flex: 1 }}>
@@ -525,24 +740,35 @@ export default function Consent({
                                                                 justifyContent:
                                                                     "space-between",
                                                                 alignItems:
-                                                                    "center",
-                                                                marginBottom: 8,
+                                                                    "flex-start",
+                                                                marginBottom: 12,
                                                             }}
                                                         >
                                                             <Title
                                                                 level={5}
                                                                 style={{
                                                                     margin: 0,
+                                                                    color: "#262626",
+                                                                    fontSize:
+                                                                        "16px",
                                                                 }}
                                                             >
                                                                 {consent.title}
                                                             </Title>
                                                             <Space>
-                                                                <Tag color="red">
+                                                                <Tag
+                                                                    color="red"
+                                                                    style={{
+                                                                        borderRadius:
+                                                                            "6px",
+                                                                        fontWeight:
+                                                                            "500",
+                                                                    }}
+                                                                >
                                                                     Required
                                                                 </Tag>
                                                                 <Button
-                                                                    type="text"
+                                                                    type="primary"
                                                                     size="small"
                                                                     icon={
                                                                         <EyeOutlined />
@@ -552,6 +778,12 @@ export default function Consent({
                                                                             consent
                                                                         )
                                                                     }
+                                                                    style={{
+                                                                        borderRadius:
+                                                                            "8px",
+                                                                        fontWeight:
+                                                                            "500",
+                                                                    }}
                                                                 >
                                                                     View
                                                                 </Button>
@@ -562,6 +794,8 @@ export default function Consent({
                                                                 type="secondary"
                                                                 style={{
                                                                     fontSize: 14,
+                                                                    lineHeight: 1.6,
+                                                                    color: "#595959",
                                                                 }}
                                                             >
                                                                 {
@@ -703,10 +937,61 @@ export default function Consent({
 
                         {/* Sidebar - Summary */}
                         <Col xs={24} lg={8}>
-                            <Card style={{ position: "sticky", top: 24 }}>
-                                <Title level={4} style={{ marginBottom: 16 }}>
-                                    Booking Summary
-                                </Title>
+                            <Card
+                                style={{
+                                    position: "sticky",
+                                    top: 24,
+                                    borderRadius: "16px",
+                                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+                                    border: "1px solid #f0f0f0",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        marginBottom: 24,
+                                        padding: "16px 0",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            width: "48px",
+                                            height: "48px",
+                                            borderRadius: "12px",
+                                            background:
+                                                "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            marginRight: "16px",
+                                        }}
+                                    >
+                                        <CheckCircleOutlined
+                                            style={{
+                                                fontSize: 24,
+                                                color: "white",
+                                            }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <Title
+                                            level={4}
+                                            style={{
+                                                margin: 0,
+                                                color: "#262626",
+                                            }}
+                                        >
+                                            Booking Summary
+                                        </Title>
+                                        <Text
+                                            type="secondary"
+                                            style={{ fontSize: 14 }}
+                                        >
+                                            Review your booking details
+                                        </Text>
+                                    </div>
+                                </div>
 
                                 {/* Service */}
                                 <div style={{ marginBottom: 16 }}>
@@ -1014,7 +1299,7 @@ export default function Consent({
                                         {requiredConsents.length > 0 &&
                                         !otpVerified
                                             ? "Verify Phone Number"
-                                            : "Continue to Confirmation"}
+                                            : "Verify & Confirm My Consent"}
                                     </Button>
                                 </div>
 
@@ -1052,6 +1337,63 @@ export default function Consent({
                             </Card>
                         </Col>
                     </Row>
+
+                    {/* Bottom Note */}
+                    <div
+                        style={{
+                            textAlign: "center",
+                            marginTop: 48,
+                            padding: "32px 24px",
+                            background:
+                                "linear-gradient(135deg, #f8f9ff 0%, #e8f4ff 100%)",
+                            borderRadius: "20px",
+                            border: "1px solid #e6f7ff",
+                            boxShadow: "0 4px 20px rgba(24, 144, 255, 0.1)",
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                maxWidth: 600,
+                                margin: "0 auto",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    width: "48px",
+                                    height: "48px",
+                                    borderRadius: "50%",
+                                    background:
+                                        "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    marginRight: "16px",
+                                    flexShrink: 0,
+                                }}
+                            >
+                                <span style={{ fontSize: 20, color: "white" }}>
+                                    📌
+                                </span>
+                            </div>
+                            <Text
+                                style={{
+                                    fontSize: 15,
+                                    color: "#262626",
+                                    fontWeight: 500,
+                                    lineHeight: 1.6,
+                                    margin: 0,
+                                }}
+                            >
+                                By verifying, you agree to receive
+                                booking-related updates and important
+                                communication on this number. This helps us
+                                serve you better.
+                            </Text>
+                        </div>
+                    </div>
 
                     {/* Consent View Modal */}
                     <Modal

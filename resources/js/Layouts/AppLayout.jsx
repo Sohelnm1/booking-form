@@ -1,60 +1,13 @@
 import React from "react";
-import { Layout, Menu } from "antd";
-import { HomeOutlined, UserOutlined, SettingOutlined } from "@ant-design/icons";
-import Logo from "../Components/Logo";
+import { Layout } from "antd";
+import BookingHeader from "../Components/BookingHeader";
 
 const { Header, Content, Footer } = Layout;
 
-export default function AppLayout({ children }) {
-    const menuItems = [
-        {
-            key: "home",
-            icon: <HomeOutlined />,
-            label: "Home",
-        },
-        {
-            key: "profile",
-            icon: <UserOutlined />,
-            label: "Profile",
-        },
-        {
-            key: "settings",
-            icon: <SettingOutlined />,
-            label: "Settings",
-        },
-    ];
-
+export default function AppLayout({ children, auth }) {
     return (
         <Layout style={{ minHeight: "100vh" }}>
-            <Header
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    background: "#fff",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                }}
-            >
-                <div
-                    style={{
-                        marginRight: "48px",
-                        display: "flex",
-                        alignItems: "center",
-                    }}
-                >
-                    <Logo
-                        variant="primary"
-                        color="color"
-                        background="white"
-                        size="medium"
-                    />
-                </div>
-                <Menu
-                    mode="horizontal"
-                    defaultSelectedKeys={["home"]}
-                    items={menuItems}
-                    style={{ flex: 1, border: "none" }}
-                />
-            </Header>
+            <BookingHeader auth={auth} />
             <Content style={{ padding: "0 50px", marginTop: 16 }}>
                 {children}
             </Content>

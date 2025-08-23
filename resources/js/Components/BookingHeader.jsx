@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { router } from "@inertiajs/react";
-import { Layout, Menu, Avatar, Button, Space, message } from "antd";
+import { Layout, Menu, Avatar, Button, Space, message, Drawer } from "antd";
 import {
     CalendarOutlined,
     BookOutlined,
     LogoutOutlined,
+    MenuOutlined,
+    UserOutlined,
+    HomeOutlined,
 } from "@ant-design/icons";
 import Logo from "./Logo";
 import CustomerLoginModal from "./CustomerLoginModal";
@@ -15,6 +18,7 @@ export default function BookingHeader({ auth }) {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
     const [isLoginModalVisible, setIsLoginModalVisible] = useState(false);
+    const [isDrawerVisible, setIsDrawerVisible] = useState(false);
 
     useEffect(() => {
         // Check if user is logged in
@@ -58,10 +62,22 @@ export default function BookingHeader({ auth }) {
 
     const menuItems = [
         {
+            key: "home",
+            icon: <HomeOutlined />,
+            label: "Home",
+            onClick: () => {
+                router.visit("/");
+                setIsDrawerVisible(false);
+            },
+        },
+        {
             key: "services",
             icon: <BookOutlined />,
-            label: "Services",
-            onClick: () => router.visit(route("booking.select-service")),
+            label: "Book a Service",
+            onClick: () => {
+                router.visit(route("booking.select-service"));
+                setIsDrawerVisible(false);
+            },
         },
         ...(isLoggedIn && currentUser
             ? [
@@ -69,7 +85,19 @@ export default function BookingHeader({ auth }) {
                       key: "bookings",
                       icon: <CalendarOutlined />,
                       label: "Your Bookings",
-                      onClick: () => router.visit(route("customer.bookings")),
+                      onClick: () => {
+                          router.visit(route("customer.bookings"));
+                          setIsDrawerVisible(false);
+                      },
+                  },
+                  {
+                      key: "profile",
+                      icon: <UserOutlined />,
+                      label: "Profile",
+                      onClick: () => {
+                          message.info("Profile settings coming soon");
+                          setIsDrawerVisible(false);
+                      },
                   },
               ]
             : []),
@@ -102,42 +130,33 @@ export default function BookingHeader({ auth }) {
                     minWidth: 0,
                 }}
             >
-                <Logo
-                    variant="primary"
-                    color="color"
-                    background="white"
-                    size="medium"
-                />
+                <div
+                    onClick={() => router.visit("/")}
+                    style={{
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                    }}
+                >
+                    <Logo
+                        variant="primary"
+                        color="color"
+                        background="white"
+                        size="medium"
+                    />
+                </div>
             </div>
 
             <div
                 style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 8,
-                    flexWrap: "wrap",
-                    flex: 1,
-                    justifyContent: "flex-end",
-                    minWidth: 0,
-                    overflow: "hidden",
+                    gap: 12,
+                    flexShrink: 0,
                 }}
             >
-                <Menu
-                    mode="horizontal"
-                    items={menuItems}
-                    selectedKeys={["services"]}
-                    style={{
-                        border: "none",
-                        background: "transparent",
-                        fontSize: "14px",
-                        minWidth: 0,
-                        flexShrink: 1,
-                        maxWidth: "100%",
-                    }}
-                />
-
                 {isLoggedIn && currentUser ? (
-                    <Space size="small" style={{ flexShrink: 0 }}>
+                    <Space size="small">
                         <Avatar
                             style={{
                                 backgroundColor: "#1890ff",
@@ -169,6 +188,19 @@ export default function BookingHeader({ auth }) {
                         <span className="visible-xs">Login</span>
                     </Button>
                 )}
+
+                <Button
+                    type="text"
+                    icon={<MenuOutlined />}
+                    onClick={() => setIsDrawerVisible(true)}
+                    size="large"
+                    style={{
+                        fontSize: "18px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                    }}
+                />
             </div>
 
             {/* Customer Login Modal */}
@@ -177,6 +209,104 @@ export default function BookingHeader({ auth }) {
                 onClose={() => setIsLoginModalVisible(false)}
                 onSuccess={handleLoginSuccess}
             />
+
+            {/* Hamburger Menu Drawer */}
+            <Drawer
+                title={
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        <Logo
+                            variant="primary"
+                            color="color"
+                            background="white"
+                            size="medium"
+                        />
+                    </div>
+                }
+                placement="right"
+                onClose={() => setIsDrawerVisible(false)}
+                open={isDrawerVisible}
+                width={280}
+                styles={{ body: { padding: 0 } }}
+                headerStyle={{
+                    borderBottom: "1px solid #f0f0f0",
+                    padding: "16px 24px",
+                }}
+            >
+                <div style={{ padding: "16px 0" }}>
+                    <Menu
+                        mode="vertical"
+                        items={menuItems}
+                        style={{
+                            border: "none",
+                            fontSize: "16px",
+                        }}
+                        selectedKeys={[]}
+                    />
+
+                    {isLoggedIn && currentUser && (
+                        <div
+                            style={{
+                                padding: "16px 24px",
+                                borderTop: "1px solid #f0f0f0",
+                                marginTop: "16px",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 12,
+                                    marginBottom: "12px",
+                                }}
+                            >
+                                <Avatar
+                                    style={{
+                                        backgroundColor: "#1890ff",
+                                    }}
+                                >
+                                    {getInitials(currentUser?.name)}
+                                </Avatar>
+                                <div>
+                                    <div
+                                        style={{
+                                            fontWeight: 600,
+                                            fontSize: "14px",
+                                        }}
+                                    >
+                                        {currentUser?.name}
+                                    </div>
+                                    <div
+                                        style={{
+                                            fontSize: "12px",
+                                            color: "#8c8c8c",
+                                        }}
+                                    >
+                                        {currentUser?.email}
+                                    </div>
+                                </div>
+                            </div>
+                            <Button
+                                type="text"
+                                icon={<LogoutOutlined />}
+                                onClick={() => {
+                                    handleLogout();
+                                    setIsDrawerVisible(false);
+                                }}
+                                size="large"
+                                style={{ width: "100%", textAlign: "left" }}
+                            >
+                                Logout
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            </Drawer>
         </Header>
     );
 }

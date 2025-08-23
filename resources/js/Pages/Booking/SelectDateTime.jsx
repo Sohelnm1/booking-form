@@ -21,6 +21,7 @@ import {
     ArrowLeftOutlined,
     ArrowRightOutlined,
     CheckOutlined,
+    CheckCircleOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 
@@ -382,10 +383,11 @@ export default function SelectDateTime({
                         size="large"
                     />
                     <Title level={2} style={{ marginTop: 24, marginBottom: 8 }}>
-                        Choose Date & Time
+                        Choose Your Date & Time ⏰
                     </Title>
                     <Text type="secondary" style={{ fontSize: 16 }}>
-                        Select your preferred appointment date and time
+                        Book your HospiPal at the time you need most — secure
+                        your slot now before it fills.
                     </Text>
                     {scheduleSettings && scheduleSettings.length > 0 && (
                         <div style={{ marginTop: 8 }}>
@@ -414,6 +416,20 @@ export default function SelectDateTime({
                     <div style={{ textAlign: "center", marginTop: 8 }}>
                         <Text type="secondary">Step 3 of 5</Text>
                     </div>
+                </div>
+
+                {/* Instruction Line */}
+                <div style={{ textAlign: "center", marginBottom: 32 }}>
+                    <Text
+                        style={{
+                            fontSize: 16,
+                            color: "#666",
+                            lineHeight: 1.5,
+                        }}
+                    >
+                        Select your preferred date and time for HospiPal
+                        support. Early booking ensures availability.
+                    </Text>
                 </div>
 
                 <Row gutter={[24, 24]}>
@@ -700,37 +716,89 @@ export default function SelectDateTime({
 
                         {/* Gender Preference Section */}
                         {bookingSettings?.enable_gender_preference && (
-                            <Card style={{ marginBottom: 24 }}>
-                                <Title level={4} style={{ marginBottom: 16 }}>
-                                    <span style={{ marginRight: 8 }}>👥</span>
-                                    {bookingSettings?.gender_preference_label ||
-                                        "Preferred HospiPal"}
-                                </Title>
-                                <div style={{ marginBottom: 16 }}>
-                                    <Text type="secondary">
+                            <Card
+                                style={{
+                                    marginBottom: 24,
+                                    borderRadius: "16px",
+                                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+                                    border: "1px solid #f0f0f0",
+                                }}
+                            >
+                                <div style={{ marginBottom: 24 }}>
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            marginBottom: 12,
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                width: 40,
+                                                height: 40,
+                                                borderRadius: "8px",
+                                                background: "#f5f5f5",
+                                                border: "1px solid #e8e8e8",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                marginRight: 12,
+                                            }}
+                                        >
+                                            <span
+                                                style={{
+                                                    fontSize: 18,
+                                                    color: "#666",
+                                                }}
+                                            >
+                                                👥
+                                            </span>
+                                        </div>
+                                        <Title
+                                            level={4}
+                                            style={{
+                                                margin: 0,
+                                                color: "#1f1f1f",
+                                            }}
+                                        >
+                                            {bookingSettings?.gender_preference_label ||
+                                                "Preferred HospiPal"}
+                                        </Title>
+                                    </div>
+                                    <Text
+                                        type="secondary"
+                                        style={{
+                                            fontSize: 14,
+                                            lineHeight: 1.5,
+                                            color: "#666",
+                                            marginLeft: 52,
+                                        }}
+                                    >
                                         {bookingSettings?.gender_preference_description ||
                                             "Select your preferred HospiPal gender. Choosing a specific gender may incur an additional fee."}
                                     </Text>
                                 </div>
 
-                                <Row gutter={[12, 12]}>
+                                <Row gutter={[16, 16]}>
                                     <Col xs={24} sm={8}>
-                                        <Button
-                                            type={
-                                                genderPreference ===
-                                                "no_preference"
-                                                    ? "primary"
-                                                    : "default"
-                                            }
+                                        <div
                                             style={{
-                                                width: "100%",
-                                                height: "100px",
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                alignItems: "center",
-                                                justifyContent: "center",
+                                                border:
+                                                    genderPreference ===
+                                                    "no_preference"
+                                                        ? "2px solid #1890ff"
+                                                        : "2px solid #f0f0f0",
+                                                borderRadius: "16px",
+                                                padding: "24px 16px",
+                                                background:
+                                                    genderPreference ===
+                                                    "no_preference"
+                                                        ? "linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%)"
+                                                        : "#fff",
+                                                cursor: "pointer",
+                                                transition: "all 0.3s ease",
                                                 position: "relative",
-                                                padding: "16px 12px",
+                                                overflow: "hidden",
                                             }}
                                             onClick={() =>
                                                 setGenderPreference(
@@ -738,141 +806,245 @@ export default function SelectDateTime({
                                                 )
                                             }
                                         >
+                                            {genderPreference ===
+                                                "no_preference" && (
+                                                <div
+                                                    style={{
+                                                        position: "absolute",
+                                                        top: 12,
+                                                        right: 12,
+                                                        width: 24,
+                                                        height: 24,
+                                                        borderRadius: "50%",
+                                                        background: "#1890ff",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent:
+                                                            "center",
+                                                        color: "white",
+                                                        fontSize: 12,
+                                                    }}
+                                                >
+                                                    ✓
+                                                </div>
+                                            )}
                                             <div
-                                                style={{
-                                                    fontSize: "22px",
-                                                    marginBottom: "8px",
-                                                    lineHeight: 1,
-                                                }}
+                                                style={{ textAlign: "center" }}
                                             >
-                                                🤝
+                                                <div
+                                                    style={{
+                                                        width: 48,
+                                                        height: 48,
+                                                        borderRadius: "8px",
+                                                        background: "#f6ffed",
+                                                        border: "1px solid #b7eb8f",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent:
+                                                            "center",
+                                                        margin: "0 auto 16px",
+                                                        fontSize: 24,
+                                                    }}
+                                                >
+                                                    🤝
+                                                </div>
+                                                <div
+                                                    style={{
+                                                        fontSize: 16,
+                                                        fontWeight: 600,
+                                                        color: "#1f1f1f",
+                                                        marginBottom: 8,
+                                                    }}
+                                                >
+                                                    No Preference
+                                                </div>
+                                                <div
+                                                    style={{
+                                                        fontSize: 13,
+                                                        color: "#52c41a",
+                                                        fontWeight: 500,
+                                                    }}
+                                                >
+                                                    Auto-assign
+                                                </div>
                                             </div>
-                                            <div
-                                                style={{
-                                                    fontSize: "14px",
-                                                    fontWeight: "600",
-                                                    marginBottom: "4px",
-                                                    textAlign: "center",
-                                                }}
-                                            >
-                                                No Preference
-                                            </div>
-                                            <div
-                                                style={{
-                                                    fontSize: "12px",
-                                                    color: "#666",
-                                                    textAlign: "center",
-                                                }}
-                                            >
-                                                Auto-assign
-                                            </div>
-                                        </Button>
+                                        </div>
                                     </Col>
                                     <Col xs={24} sm={8}>
-                                        <Button
-                                            type={
-                                                genderPreference === "male"
-                                                    ? "primary"
-                                                    : "default"
-                                            }
+                                        <div
                                             style={{
-                                                width: "100%",
-                                                height: "100px",
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                alignItems: "center",
-                                                justifyContent: "center",
+                                                border:
+                                                    genderPreference === "male"
+                                                        ? "2px solid #1890ff"
+                                                        : "2px solid #f0f0f0",
+                                                borderRadius: "16px",
+                                                padding: "24px 16px",
+                                                background:
+                                                    genderPreference === "male"
+                                                        ? "linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%)"
+                                                        : "#fff",
+                                                cursor: "pointer",
+                                                transition: "all 0.3s ease",
                                                 position: "relative",
-                                                padding: "16px 12px",
+                                                overflow: "hidden",
                                             }}
                                             onClick={() =>
                                                 setGenderPreference("male")
                                             }
                                         >
+                                            {genderPreference === "male" && (
+                                                <div
+                                                    style={{
+                                                        position: "absolute",
+                                                        top: 12,
+                                                        right: 12,
+                                                        width: 24,
+                                                        height: 24,
+                                                        borderRadius: "50%",
+                                                        background: "#1890ff",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent:
+                                                            "center",
+                                                        color: "white",
+                                                        fontSize: 12,
+                                                    }}
+                                                >
+                                                    ✓
+                                                </div>
+                                            )}
                                             <div
-                                                style={{
-                                                    fontSize: "22px",
-                                                    marginBottom: "8px",
-                                                    lineHeight: 1,
-                                                }}
+                                                style={{ textAlign: "center" }}
                                             >
-                                                👨
+                                                <div
+                                                    style={{
+                                                        width: 48,
+                                                        height: 48,
+                                                        borderRadius: "8px",
+                                                        background: "#f0f8ff",
+                                                        border: "1px solid #bae7ff",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent:
+                                                            "center",
+                                                        margin: "0 auto 16px",
+                                                        fontSize: 24,
+                                                    }}
+                                                >
+                                                    👨
+                                                </div>
+                                                <div
+                                                    style={{
+                                                        fontSize: 16,
+                                                        fontWeight: 600,
+                                                        color: "#1f1f1f",
+                                                        marginBottom: 8,
+                                                    }}
+                                                >
+                                                    Male
+                                                </div>
+                                                <div
+                                                    style={{
+                                                        fontSize: 13,
+                                                        color: "#1890ff",
+                                                        fontWeight: 500,
+                                                    }}
+                                                >
+                                                    +₹
+                                                    {bookingSettings?.male_preference_fee ||
+                                                        0}
+                                                </div>
                                             </div>
-                                            <div
-                                                style={{
-                                                    fontSize: "14px",
-                                                    fontWeight: "600",
-                                                    marginBottom: "4px",
-                                                    textAlign: "center",
-                                                }}
-                                            >
-                                                Male
-                                            </div>
-                                            <div
-                                                style={{
-                                                    fontSize: "12px",
-                                                    color: "#666",
-                                                    textAlign: "center",
-                                                }}
-                                            >
-                                                +₹
-                                                {bookingSettings?.male_preference_fee ||
-                                                    0}
-                                            </div>
-                                        </Button>
+                                        </div>
                                     </Col>
                                     <Col xs={24} sm={8}>
-                                        <Button
-                                            type={
-                                                genderPreference === "female"
-                                                    ? "primary"
-                                                    : "default"
-                                            }
+                                        <div
                                             style={{
-                                                width: "100%",
-                                                height: "100px",
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                alignItems: "center",
-                                                justifyContent: "center",
+                                                border:
+                                                    genderPreference ===
+                                                    "female"
+                                                        ? "2px solid #1890ff"
+                                                        : "2px solid #f0f0f0",
+                                                borderRadius: "16px",
+                                                padding: "24px 16px",
+                                                background:
+                                                    genderPreference ===
+                                                    "female"
+                                                        ? "linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%)"
+                                                        : "#fff",
+                                                cursor: "pointer",
+                                                transition: "all 0.3s ease",
                                                 position: "relative",
-                                                padding: "16px 12px",
+                                                overflow: "hidden",
                                             }}
                                             onClick={() =>
                                                 setGenderPreference("female")
                                             }
                                         >
+                                            {genderPreference === "female" && (
+                                                <div
+                                                    style={{
+                                                        position: "absolute",
+                                                        top: 12,
+                                                        right: 12,
+                                                        width: 24,
+                                                        height: 24,
+                                                        borderRadius: "50%",
+                                                        background: "#1890ff",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent:
+                                                            "center",
+                                                        color: "white",
+                                                        fontSize: 12,
+                                                    }}
+                                                >
+                                                    ✓
+                                                </div>
+                                            )}
                                             <div
-                                                style={{
-                                                    fontSize: "22px",
-                                                    marginBottom: "8px",
-                                                    lineHeight: 1,
-                                                }}
+                                                style={{ textAlign: "center" }}
                                             >
-                                                👩
+                                                <div
+                                                    style={{
+                                                        width: 48,
+                                                        height: 48,
+                                                        borderRadius: "8px",
+                                                        background: "#fff0f6",
+                                                        border: "1px solid #ffadd2",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent:
+                                                            "center",
+                                                        margin: "0 auto 16px",
+                                                        fontSize: 24,
+                                                    }}
+                                                >
+                                                    👩
+                                                </div>
+                                                <div
+                                                    style={{
+                                                        fontSize: 16,
+                                                        fontWeight: 600,
+                                                        color: "#1f1f1f",
+                                                        marginBottom: 8,
+                                                    }}
+                                                >
+                                                    Female
+                                                </div>
+                                                <div
+                                                    style={{
+                                                        fontSize: 13,
+                                                        color: "#eb2f96",
+                                                        fontWeight: 500,
+                                                    }}
+                                                >
+                                                    +₹
+                                                    {bookingSettings?.female_preference_fee ||
+                                                        0}
+                                                </div>
                                             </div>
-                                            <div
-                                                style={{
-                                                    fontSize: "14px",
-                                                    fontWeight: "600",
-                                                    marginBottom: "4px",
-                                                    textAlign: "center",
-                                                }}
-                                            >
-                                                Female
-                                            </div>
-                                            <div
-                                                style={{
-                                                    fontSize: "12px",
-                                                    color: "#666",
-                                                    textAlign: "center",
-                                                }}
-                                            >
-                                                +₹
-                                                {bookingSettings?.female_preference_fee ||
-                                                    0}
-                                            </div>
-                                        </Button>
+                                        </div>
                                     </Col>
                                 </Row>
                             </Card>
@@ -1120,10 +1292,55 @@ export default function SelectDateTime({
 
                     {/* Sidebar - Summary */}
                     <Col xs={24} xl={8} lg={10}>
-                        <Card style={{ position: "sticky", top: 24 }}>
-                            <Title level={4} style={{ marginBottom: 16 }}>
-                                Booking Summary
-                            </Title>
+                        <Card
+                            style={{
+                                position: "sticky",
+                                top: 24,
+                                borderRadius: "16px",
+                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+                                border: "1px solid #f0f0f0",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    marginBottom: 24,
+                                    padding: "16px 0",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        width: "48px",
+                                        height: "48px",
+                                        borderRadius: "12px",
+                                        background:
+                                            "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        marginRight: "16px",
+                                    }}
+                                >
+                                    <CheckCircleOutlined
+                                        style={{ fontSize: 24, color: "white" }}
+                                    />
+                                </div>
+                                <div>
+                                    <Title
+                                        level={4}
+                                        style={{ margin: 0, color: "#262626" }}
+                                    >
+                                        Booking Summary
+                                    </Title>
+                                    <Text
+                                        type="secondary"
+                                        style={{ fontSize: 14 }}
+                                    >
+                                        Review your booking details
+                                    </Text>
+                                </div>
+                            </div>
 
                             {/* Service */}
                             <div style={{ marginBottom: 16 }}>
@@ -1368,7 +1585,7 @@ export default function SelectDateTime({
                                     icon={<ArrowLeftOutlined />}
                                     onClick={handleBack}
                                 >
-                                    ← Back
+                                    Back
                                 </Button>
                                 <Button
                                     type="primary"
@@ -1385,12 +1602,105 @@ export default function SelectDateTime({
                                     onClick={handleContinue}
                                     disabled={!selectedDate || !selectedTime}
                                 >
-                                    Continue →
+                                    Continue
                                 </Button>
                             </div>
                         </Card>
                     </Col>
                 </Row>
+
+                {/* Trust Anchors */}
+                <div
+                    style={{
+                        textAlign: "center",
+                        marginBottom: 48,
+                        padding: "32px 0",
+                    }}
+                >
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            gap: 32,
+                            flexWrap: "wrap",
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                            }}
+                        >
+                            <CheckOutlined
+                                style={{ color: "#52c41a", fontSize: 16 }}
+                            />
+                            <Text style={{ fontSize: 14, color: "#666" }}>
+                                Flexible rescheduling available
+                            </Text>
+                        </div>
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                            }}
+                        >
+                            <CheckOutlined
+                                style={{ color: "#52c41a", fontSize: 16 }}
+                            />
+                            <Text style={{ fontSize: 14, color: "#666" }}>
+                                Reliable on-time arrival by your HospiPal
+                            </Text>
+                        </div>
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                            }}
+                        >
+                            <CheckOutlined
+                                style={{ color: "#52c41a", fontSize: 16 }}
+                            />
+                            <Text style={{ fontSize: 14, color: "#666" }}>
+                                Families trust us for critical moments
+                            </Text>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Helper Option */}
+                <div
+                    style={{
+                        textAlign: "center",
+                        marginTop: 48,
+                        padding: "24px 0",
+                    }}
+                >
+                    <div
+                        style={{
+                            padding: "20px",
+                            background:
+                                "linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%)",
+                            borderRadius: "16px",
+                            border: "1px solid #bae7ff",
+                            display: "inline-block",
+                        }}
+                    >
+                        <Text
+                            style={{
+                                fontSize: 16,
+                                color: "#1890ff",
+                                fontWeight: 500,
+                            }}
+                        >
+                            Not sure what time to book? 💬 Chat with us on
+                            WhatsApp for quick guidance.
+                        </Text>
+                    </div>
+                </div>
             </div>
         </div>
     );

@@ -23,6 +23,8 @@ import {
     ArrowRightOutlined,
     InfoCircleOutlined,
     ClockCircleOutlined,
+    CheckOutlined,
+    CheckCircleOutlined,
 } from "@ant-design/icons";
 import BookingHeader from "../../Components/BookingHeader";
 import Logo from "../../Components/Logo";
@@ -249,10 +251,11 @@ export default function SelectExtras({
                         size="large"
                     />
                     <Title level={2} style={{ marginTop: 24, marginBottom: 8 }}>
-                        Add Extras (Optional)
+                        Add HospiPal Extras ✨
                     </Title>
                     <Text type="secondary" style={{ fontSize: 16 }}>
-                        Enhance your experience with additional services
+                        Make your booking smoother, safer, and stress-free with
+                        optional support add-ons.
                     </Text>
                 </div>
 
@@ -267,6 +270,20 @@ export default function SelectExtras({
                     <div style={{ textAlign: "center", marginTop: 8 }}>
                         <Text type="secondary">Step 2 of 5</Text>
                     </div>
+                </div>
+
+                {/* Instruction Line */}
+                <div style={{ textAlign: "center", marginBottom: 32 }}>
+                    <Text
+                        style={{
+                            fontSize: 16,
+                            color: "#666",
+                            lineHeight: 1.5,
+                        }}
+                    >
+                        Select any extras you may need. You can continue without
+                        extras if not required.
+                    </Text>
                 </div>
 
                 <Row gutter={[32, 32]}>
@@ -574,10 +591,55 @@ export default function SelectExtras({
 
                     {/* Sidebar - Summary */}
                     <Col xs={24} lg={8}>
-                        <Card style={{ position: "sticky", top: 24 }}>
-                            <Title level={4} style={{ marginBottom: 16 }}>
-                                Booking Summary
-                            </Title>
+                        <Card
+                            style={{
+                                position: "sticky",
+                                top: 24,
+                                borderRadius: "16px",
+                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+                                border: "1px solid #f0f0f0",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    marginBottom: 24,
+                                    padding: "16px 0",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        width: "48px",
+                                        height: "48px",
+                                        borderRadius: "12px",
+                                        background:
+                                            "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        marginRight: "16px",
+                                    }}
+                                >
+                                    <CheckCircleOutlined
+                                        style={{ fontSize: 24, color: "white" }}
+                                    />
+                                </div>
+                                <div>
+                                    <Title
+                                        level={4}
+                                        style={{ margin: 0, color: "#262626" }}
+                                    >
+                                        Booking Summary
+                                    </Title>
+                                    <Text
+                                        type="secondary"
+                                        style={{ fontSize: 14 }}
+                                    >
+                                        Review your booking details
+                                    </Text>
+                                </div>
+                            </div>
 
                             {/* Service */}
                             <div style={{ marginBottom: 16 }}>
@@ -737,6 +799,100 @@ export default function SelectExtras({
                         </Card>
                     </Col>
                 </Row>
+
+                {/* Trust Anchors */}
+                <div
+                    style={{
+                        textAlign: "center",
+                        marginBottom: 48,
+                        padding: "32px 0",
+                    }}
+                >
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            gap: 32,
+                            flexWrap: "wrap",
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                            }}
+                        >
+                            <CheckOutlined
+                                style={{ color: "#52c41a", fontSize: 16 }}
+                            />
+                            <Text style={{ fontSize: 14, color: "#666" }}>
+                                Only available with a main HospiPal service
+                            </Text>
+                        </div>
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                            }}
+                        >
+                            <CheckOutlined
+                                style={{ color: "#52c41a", fontSize: 16 }}
+                            />
+                            <Text style={{ fontSize: 14, color: "#666" }}>
+                                Flexible, can be added before your booking
+                                starts
+                            </Text>
+                        </div>
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                            }}
+                        >
+                            <CheckOutlined
+                                style={{ color: "#52c41a", fontSize: 16 }}
+                            />
+                            <Text style={{ fontSize: 14, color: "#666" }}>
+                                Designed to give peace of mind for families
+                            </Text>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Helper Option */}
+                <div
+                    style={{
+                        textAlign: "center",
+                        marginTop: 48,
+                        padding: "24px 0",
+                    }}
+                >
+                    <div
+                        style={{
+                            padding: "20px",
+                            background:
+                                "linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%)",
+                            borderRadius: "16px",
+                            border: "1px solid #bae7ff",
+                            display: "inline-block",
+                        }}
+                    >
+                        <Text
+                            style={{
+                                fontSize: 16,
+                                color: "#1890ff",
+                                fontWeight: 500,
+                            }}
+                        >
+                            Need help with extras? 💬 Chat with us on WhatsApp
+                            anytime.
+                        </Text>
+                    </div>
+                </div>
             </div>
 
             {/* Extra Detail Modal */}
