@@ -1,6 +1,7 @@
 import React from "react";
 import { Layout } from "antd";
 import BookingHeader from "../Components/BookingHeader";
+import Logo from "../Components/Logo";
 
 const { Header, Content, Footer } = Layout;
 
