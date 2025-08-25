@@ -295,3 +295,117 @@ body {
         border: 1px solid #d9d9d9 !important;
     }
 }
+
+/* Basic responsive styles for react-responsive-carousel */
+.services-carousel {
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+.services-carousel .carousel .slider-wrapper {
+    margin: 0;
+}
+
+.services-carousel .carousel .slider {
+    margin: 0;
+}
+
+.services-carousel .carousel .slide {
+    padding: 0 8px;
+}
+
+/* Responsive adjustments for different screen sizes */
+@media (min-width: 1200px) {
+    .services-carousel .carousel .slide {
+        padding: 0 12px;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+    .services-carousel .carousel .slide {
+        padding: 0 8px;
+    }
+}
+
+@media (max-width: 767px) {
+    .services-carousel .carousel .slide {
+        padding: 0 4px;
+    }
+
+    .services-carousel .carousel .control-arrow {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .services-carousel .carousel .slide {
+        padding: 0 2px;
+    }
+}
+
+/* Center mode adjustments - only apply when centerMode is true */
+.services-carousel .carousel .slider-wrapper {
+    overflow: visible;
+}
+
+.services-carousel .carousel .slider {
+    align-items: center;
+}
+
+.services-carousel .carousel .slide {
+    transition: all 0.3s ease;
+}
+
+/* Only apply scaling when centerMode is enabled */
+.services-carousel .carousel .slide.selected {
+    transform: scale(1.02);
+    z-index: 2;
+}
+
+/* Mobile-specific overrides when centerMode is false */
+@media (max-width: 767px) {
+    .services-carousel .carousel .slide.selected {
+        transform: none;
+        z-index: 1;
+    }
+
+    .services-carousel .carousel .slider {
+        align-items: stretch;
+    }
+}
+
+/* Extras horizontal scroll styling */
+.extras-scroll-container {
+    scrollbar-width: thin;
+    scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+.extras-scroll-container::-webkit-scrollbar {
+    height: 6px;
+}
+
+.extras-scroll-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.extras-scroll-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.extras-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Hide scrollbar on mobile for cleaner look */
+@media (max-width: 768px) {
+    .extras-scroll-container {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .extras-scroll-container::-webkit-scrollbar {
+        display: none;
+    }
+}

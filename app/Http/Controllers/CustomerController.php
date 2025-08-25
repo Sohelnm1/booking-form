@@ -32,9 +32,8 @@ class CustomerController extends Controller
             ->orderBy('appointment_time', 'desc')
             ->get();
 
-        // Fetch active services for the carousel
-        $services = Service::where('name', 'like', '%HospiPal%')
-            ->where('is_active', true)
+        // Fetch ALL active services for the carousel (not just HospiPal ones)
+        $services = Service::where('is_active', true)
             ->ordered()
             ->get()
             ->map(function($service) {
@@ -44,6 +43,7 @@ class CustomerController extends Controller
                     'description' => $service->description,
                     'icon' => $service->icon ?: $this->getDefaultIcon($service->name),
                     'color' => $service->color ?: $this->getDefaultColor($service->id),
+                    'image' => $service->image, // Add the image field
                     'price' => $service->price,
                     'duration' => $service->duration,
                     'is_upcoming' => $service->is_upcoming,
@@ -52,10 +52,28 @@ class CustomerController extends Controller
                 ];
             });
 
-        // Debug: Log the services being fetched
-        \Log::info('Services fetched for dashboard:', [
+        // Fetch active extras for the extras section
+        $extras = \App\Models\Extra::where('is_active', true)
+            ->ordered()
+            ->get()
+            ->map(function($extra) {
+                return [
+                    'id' => $extra->id,
+                    'name' => $extra->name,
+                    'description' => $extra->description,
+                    'price' => $extra->price,
+                    'image' => $extra->image,
+                    'duration' => $extra->duration,
+                    'max_quantity' => $extra->max_quantity,
+                ];
+            });
+
+        // Debug: Log the services and extras being fetched
+        \Log::info('Data fetched for dashboard:', [
             'total_services' => $services->count(),
-            'services' => $services->toArray()
+            'total_extras' => $extras->count(),
+            'services' => $services->toArray(),
+            'extras' => $extras->toArray()
         ]);
 
         return Inertia::render('Customer/Dashboard', [
@@ -64,6 +82,7 @@ class CustomerController extends Controller
             ],
             'bookings' => $bookings,
             'services' => $services,
+            'extras' => $extras,
         ]);
     }
 

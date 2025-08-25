@@ -10,7 +10,6 @@ import {
     message,
     Alert,
     Divider,
-    Carousel,
 } from "antd";
 import {
     CalendarOutlined,
@@ -26,53 +25,103 @@ import {
     LeftOutlined,
     RightOutlined,
 } from "@ant-design/icons";
+import { Carousel } from "react-responsive-carousel";
+import "react-responsive-carousel/lib/styles/carousel.min.css";
 import BookingHeader from "../../Components/BookingHeader";
 import CustomerLoginModal from "../../Components/CustomerLoginModal";
 
 const { Title, Paragraph, Text } = Typography;
 
-export default function CustomerDashboard({ auth, services = [] }) {
+export default function CustomerDashboard({
+    auth,
+    services = [],
+    extras = [],
+}) {
     const [isLoginModalVisible, setIsLoginModalVisible] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
+    const [windowWidth, setWindowWidth] = useState(
+        typeof window !== "undefined" ? window.innerWidth : 1200
+    );
 
-    // Fallback services if none are found in database
-    const fallbackServices = [
-        {
-            id: 1,
-            name: "HospiPal for OPD Visits",
-            description:
-                "Escort and assist during doctor visits & diagnostics.",
-            icon: "🧑‍⚕",
-            color: "#1890ff",
-        },
-        {
-            id: 2,
-            name: "HospiPal for Elderly Care",
-            description:
-                "Respectful companion for seniors (single visit or packages).",
-            icon: "👵",
-            color: "#52c41a",
-        },
-        {
-            id: 3,
-            name: "HospiPal On-Call (Emergency)",
-            description: "Quick HospiPal when family can't reach in time.",
-            icon: "⚡",
-            color: "#faad14",
-        },
-    ];
+    // Handle window resize for responsive carousel
+    useEffect(() => {
+        const handleResize = () => {
+            setWindowWidth(window.innerWidth);
+        };
 
-    // Use services from database, fallback to static data if empty
-    const servicesData = services.length > 0 ? services : fallbackServices;
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
-    // Debug: Log the services being used
+    // Determine carousel settings based on screen size
+    const getCarouselSettings = () => {
+        if (windowWidth >= 1200) {
+            return {
+                centerMode: true,
+                centerSlidePercentage: 33.33,
+                showArrows: true,
+                showIndicators: true,
+                infiniteLoop: true,
+                autoPlay: true,
+                interval: 5000,
+            };
+        } else if (windowWidth >= 768) {
+            return {
+                centerMode: true,
+                centerSlidePercentage: 50,
+                showArrows: true,
+                showIndicators: true,
+                infiniteLoop: true,
+                autoPlay: true,
+                interval: 5000,
+            };
+        } else {
+            return {
+                centerMode: false,
+                centerSlidePercentage: 100,
+                showArrows: true,
+                showIndicators: true,
+                infiniteLoop: true,
+                autoPlay: true,
+                interval: 5000,
+            };
+        }
+    };
+
+    const carouselSettings = getCarouselSettings();
+
+    // Use services from database
+    const servicesData = services || [];
+    const extrasData = extras || [];
+
+    // Debug: Log the services and extras being used
     console.log("Services from backend:", services);
     console.log("Services being used in carousel:", servicesData);
-    console.log("First service data:", servicesData[0]);
     console.log("ServicesData length:", servicesData.length);
-    console.log("ServicesData type:", typeof servicesData);
     console.log("Is servicesData array:", Array.isArray(servicesData));
+    console.log("Carousel settings:", carouselSettings);
+    console.log("Extras from backend:", extras);
+    console.log("Extras being used:", extrasData);
+    console.log("ExtrasData length:", extrasData.length);
+
+    // Debug: Check image data
+    if (servicesData.length > 0) {
+        servicesData.forEach((service, index) => {
+            console.log(`Service ${index + 1}:`, {
+                id: service.id,
+                name: service.name,
+                description: service.description,
+                image: service.image,
+                hasImage: !!service.image,
+                imageType: typeof service.image,
+                is_active: service.is_active,
+                is_upcoming: service.is_upcoming,
+            });
+        });
+    } else {
+        console.log("No services found in servicesData");
+    }
 
     useEffect(() => {
         // Add safety check for auth prop
@@ -87,8 +136,30 @@ export default function CustomerDashboard({ auth, services = [] }) {
     };
 
     const handleChatWithUs = () => {
-        // TODO: Implement chat functionality
-        message.info("Chat feature coming soon!");
+        // Open WhatsApp chat with the specified number
+        window.open("https://wa.me/917979911483", "_blank");
+    };
+
+    const handleTermsConditions = () => {
+        console.log("Terms & Conditions clicked");
+        try {
+            const url = route("pdf.terms-conditions");
+            console.log("Generated URL:", url);
+            console.log("Ziggy routes:", window.Ziggy?.routes);
+            window.open(url, "_blank");
+        } catch (error) {
+            console.error("Error generating route:", error);
+            // Fallback to direct URL
+            window.open("/pdf/terms-conditions", "_blank");
+        }
+    };
+
+    const handlePrivacyPolicy = () => {
+        window.open(route("pdf.privacy-policy"), "_blank");
+    };
+
+    const handleBookingConsent = () => {
+        window.open(route("pdf.booking-consent"), "_blank");
     };
 
     const handleLogin = () => {
@@ -117,7 +188,7 @@ export default function CustomerDashboard({ auth, services = [] }) {
                 <div
                     style={{
                         background: "#ffffff",
-                        padding: "64px 32px",
+                        padding: windowWidth >= 768 ? "64px 32px" : "48px 24px",
                         borderRadius: "24px",
                         textAlign: "center",
                         marginBottom: 64,
@@ -147,12 +218,14 @@ export default function CustomerDashboard({ auth, services = [] }) {
                             level={1}
                             style={{
                                 color: "#1a1a1a",
-                                fontSize: "3rem",
+                                fontSize:
+                                    windowWidth >= 768 ? "3rem" : "2.2rem",
                                 fontWeight: 800,
                                 lineHeight: 1.1,
                                 maxWidth: 900,
                                 margin: "0 auto 32px auto",
                                 letterSpacing: "-0.02em",
+                                padding: windowWidth < 768 ? "0 8px" : "0",
                             }}
                             className="hero-title"
                         >
@@ -163,12 +236,13 @@ export default function CustomerDashboard({ auth, services = [] }) {
 
                         <Paragraph
                             style={{
-                                fontSize: 20,
+                                fontSize: windowWidth >= 768 ? 20 : 16,
                                 color: "#4a4a4a",
                                 maxWidth: 800,
                                 margin: "0 auto 48px auto",
                                 lineHeight: 1.7,
                                 fontWeight: 400,
+                                padding: windowWidth < 768 ? "0 16px" : "0",
                             }}
                             className="hero-subtitle"
                         >
@@ -185,8 +259,11 @@ export default function CustomerDashboard({ auth, services = [] }) {
                                 marginBottom: 40,
                                 display: "flex",
                                 justifyContent: "center",
-                                gap: "20px",
+                                gap: windowWidth >= 768 ? "20px" : "16px",
                                 flexWrap: "wrap",
+                                flexDirection:
+                                    windowWidth < 768 ? "column" : "row",
+                                alignItems: "center",
                             }}
                             className="hero-cta-container"
                         >
@@ -197,7 +274,8 @@ export default function CustomerDashboard({ auth, services = [] }) {
                                 icon={
                                     <BookOutlined
                                         style={{
-                                            fontSize: 18,
+                                            fontSize:
+                                                windowWidth >= 768 ? 18 : 16,
                                             color: "#ffffff",
                                         }}
                                     />
@@ -206,18 +284,24 @@ export default function CustomerDashboard({ auth, services = [] }) {
                                 style={{
                                     background: "#1890ff",
                                     border: "none",
-                                    height: 60,
-                                    padding: "0 48px",
-                                    fontSize: 16,
+                                    height: windowWidth >= 768 ? 60 : 48,
+                                    padding:
+                                        windowWidth >= 768
+                                            ? "0 48px"
+                                            : "0 24px",
+                                    fontSize: windowWidth >= 768 ? 16 : 14,
                                     fontWeight: 600,
-                                    borderRadius: "14px",
+                                    borderRadius: "12px",
                                     boxShadow:
                                         "0 6px 16px rgba(24, 144, 255, 0.25)",
                                     display: "inline-flex",
                                     alignItems: "center",
                                     justifyContent: "center",
-                                    gap: "10px",
-                                    minWidth: "280px",
+                                    gap: "8px",
+                                    minWidth:
+                                        windowWidth >= 768 ? "280px" : "auto",
+                                    maxWidth:
+                                        windowWidth >= 768 ? "none" : "280px",
                                     whiteSpace: "nowrap",
                                     overflow: "hidden",
                                     textOverflow: "ellipsis",
@@ -234,15 +318,21 @@ export default function CustomerDashboard({ auth, services = [] }) {
                                 icon={<MessageOutlined />}
                                 onClick={handleChatWithUs}
                                 style={{
-                                    height: 60,
-                                    padding: "0 40px",
-                                    fontSize: 16,
+                                    height: windowWidth >= 768 ? 60 : 48,
+                                    padding:
+                                        windowWidth >= 768
+                                            ? "0 40px"
+                                            : "0 24px",
+                                    fontSize: windowWidth >= 768 ? 16 : 14,
                                     fontWeight: 500,
-                                    borderRadius: "14px",
+                                    borderRadius: "12px",
                                     border: "2px solid #1890ff",
                                     color: "#1890ff",
                                     background: "#ffffff",
-                                    minWidth: "200px",
+                                    minWidth:
+                                        windowWidth >= 768 ? "200px" : "auto",
+                                    maxWidth:
+                                        windowWidth >= 768 ? "none" : "280px",
                                 }}
                                 className="hero-secondary-button"
                             >
@@ -253,56 +343,101 @@ export default function CustomerDashboard({ auth, services = [] }) {
                         {/* Trust Indicators */}
                         <div
                             style={{
-                                display: "inline-flex",
+                                display:
+                                    windowWidth >= 768 ? "inline-flex" : "flex",
+                                flexDirection:
+                                    windowWidth >= 768 ? "row" : "column",
                                 alignItems: "center",
-                                gap: 16,
-                                padding: "24px 40px",
+                                gap: windowWidth >= 768 ? 16 : 12,
+                                padding:
+                                    windowWidth >= 768
+                                        ? "24px 40px"
+                                        : "20px 24px",
                                 background:
                                     "linear-gradient(135deg, rgba(24, 144, 255, 0.08) 0%, rgba(24, 144, 255, 0.04) 100%)",
                                 borderRadius: "20px",
                                 border: "1px solid rgba(24, 144, 255, 0.12)",
-                                maxWidth: "fit-content",
+                                maxWidth:
+                                    windowWidth >= 768 ? "fit-content" : "100%",
+                                width: windowWidth < 768 ? "100%" : "auto",
                             }}
                             className="hero-trust-indicator"
                         >
-                            <CheckCircleOutlined
+                            <div
                                 style={{
-                                    color: "#52c41a",
-                                    fontSize: 24,
-                                    fontWeight: "bold",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                    flexWrap: "wrap",
+                                    justifyContent: "center",
                                 }}
-                            />
-                            <Text
-                                style={{
-                                    color: "#4a4a4a",
-                                    fontSize: 16,
-                                    fontWeight: 500,
-                                    lineHeight: 1.4,
-                                }}
-                                className="hero-trust-text"
                             >
-                                Secure global booking.
-                            </Text>
-                            <span style={{ color: "#ff4d4f", fontSize: 20 }}>
-                                📌
-                            </span>
-                            <Text
+                                <CheckCircleOutlined
+                                    style={{
+                                        color: "#52c41a",
+                                        fontSize: windowWidth >= 768 ? 24 : 20,
+                                        fontWeight: "bold",
+                                    }}
+                                />
+                                <Text
+                                    style={{
+                                        color: "#4a4a4a",
+                                        fontSize: windowWidth >= 768 ? 16 : 14,
+                                        fontWeight: 500,
+                                        lineHeight: 1.4,
+                                        textAlign:
+                                            windowWidth >= 768
+                                                ? "left"
+                                                : "center",
+                                    }}
+                                    className="hero-trust-text"
+                                >
+                                    Secure global booking.
+                                </Text>
+                            </div>
+
+                            <div
                                 style={{
-                                    color: "#4a4a4a",
-                                    fontSize: 16,
-                                    fontWeight: 500,
-                                    lineHeight: 1.4,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                    flexWrap: "wrap",
+                                    justifyContent: "center",
                                 }}
-                                className="hero-trust-text"
                             >
-                                Instant confirmation.
-                            </Text>
+                                <span
+                                    style={{
+                                        color: "#ff4d4f",
+                                        fontSize: windowWidth >= 768 ? 20 : 18,
+                                    }}
+                                >
+                                    📌
+                                </span>
+                                <Text
+                                    style={{
+                                        color: "#4a4a4a",
+                                        fontSize: windowWidth >= 768 ? 16 : 14,
+                                        fontWeight: 500,
+                                        lineHeight: 1.4,
+                                        textAlign:
+                                            windowWidth >= 768
+                                                ? "left"
+                                                : "center",
+                                    }}
+                                    className="hero-trust-text"
+                                >
+                                    Instant confirmation.
+                                </Text>
+                            </div>
+
                             <Text
                                 style={{
                                     color: "#4a4a4a",
-                                    fontSize: 16,
+                                    fontSize: windowWidth >= 768 ? 16 : 14,
                                     fontWeight: 500,
                                     lineHeight: 1.4,
+                                    textAlign:
+                                        windowWidth >= 768 ? "left" : "center",
                                 }}
                                 className="hero-trust-text"
                             >
@@ -601,66 +736,30 @@ export default function CustomerDashboard({ auth, services = [] }) {
                         }}
                     >
                         <Carousel
-                            autoplay={true}
-                            autoplaySpeed={5000}
-                            dots={true}
-                            arrows={true}
-                            infinite={true}
-                            speed={500}
-                            slidesToShow={3}
-                            slidesToScroll={3}
+                            autoPlay={carouselSettings.autoPlay}
+                            interval={carouselSettings.interval}
+                            showArrows={carouselSettings.showArrows}
+                            showStatus={false}
+                            showIndicators={carouselSettings.showIndicators}
+                            showThumbs={false}
+                            infiniteLoop={carouselSettings.infiniteLoop}
+                            stopOnHover={true}
                             swipeable={true}
                             emulateTouch={true}
-                            adaptiveHeight={true}
-                            draggable={true}
-                            fade={true}
-                            responsive={[
-                                {
-                                    breakpoint: 1200,
-                                    settings: {
-                                        slidesToShow: 2,
-                                        slidesToScroll: 2,
-                                        dots: true,
-                                        arrows: true,
-                                        swipeable: true,
-                                        emulateTouch: true,
-                                    },
-                                },
-                                {
-                                    breakpoint: 768,
-                                    settings: {
-                                        slidesToShow: 1,
-                                        slidesToScroll: 1,
-                                        dots: true,
-                                        arrows: false,
-                                        centerMode: false,
-                                        swipeable: true,
-                                        emulateTouch: true,
-                                    },
-                                },
-                                {
-                                    breakpoint: 480,
-                                    settings: {
-                                        slidesToShow: 1,
-                                        slidesToScroll: 1,
-                                        dots: true,
-                                        arrows: false,
-                                        centerMode: false,
-                                        swipeable: true,
-                                        emulateTouch: true,
-                                    },
-                                },
-                            ]}
-                            style={{
-                                padding: "0 40px",
-                            }}
+                            dynamicHeight={false}
+                            centerMode={carouselSettings.centerMode}
+                            centerSlidePercentage={
+                                carouselSettings.centerSlidePercentage
+                            }
+                            selectedItem={0}
+                            transitionTime={500}
+                            width="100%"
                             className="services-carousel"
                         >
                             {servicesData && servicesData.length > 0 ? (
                                 servicesData.map((service, index) => (
                                     <div
                                         key={service.id || index}
-                                        style={{ padding: "0 24px" }}
                                         className="service-slide"
                                     >
                                         <Card
@@ -675,7 +774,7 @@ export default function CustomerDashboard({ auth, services = [] }) {
                                                 cursor: "pointer",
                                                 transition:
                                                     "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                                                height: "420px",
+                                                height: "480px",
                                                 display: "flex",
                                                 flexDirection: "column",
                                                 boxShadow:
@@ -687,9 +786,10 @@ export default function CustomerDashboard({ auth, services = [] }) {
                                         >
                                             {/* Service Header with Gradient Background */}
                                             <div
+                                                className="service-header"
                                                 style={{
                                                     width: "100%",
-                                                    height: 180,
+                                                    height: "140px",
                                                     background: `linear-gradient(135deg, ${
                                                         service.color ||
                                                         "#1890ff"
@@ -716,40 +816,75 @@ export default function CustomerDashboard({ auth, services = [] }) {
                                                     }}
                                                 />
 
-                                                {/* Service Icon */}
-                                                <div
-                                                    style={{
-                                                        position: "absolute",
-                                                        top: "50%",
-                                                        left: "50%",
-                                                        transform:
-                                                            "translate(-50%, -50%)",
-                                                        fontSize: "64px",
-                                                        filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))",
-                                                    }}
-                                                >
-                                                    {service.icon || "🏥"}
-                                                </div>
+                                                {/* Service Image */}
+                                                {service.image &&
+                                                    service.image !== null &&
+                                                    service.image !== "" &&
+                                                    service.image !==
+                                                        undefined && (
+                                                        <img
+                                                            src={service.image}
+                                                            alt={
+                                                                service.name ||
+                                                                "Service"
+                                                            }
+                                                            style={{
+                                                                width: "100%",
+                                                                height: "100%",
+                                                                objectFit:
+                                                                    "cover",
+                                                                borderRadius:
+                                                                    "12px",
+                                                            }}
+                                                            onError={(e) => {
+                                                                console.log(
+                                                                    "Image failed to load:",
+                                                                    service.image
+                                                                );
+                                                                e.target.style.display =
+                                                                    "none";
+                                                            }}
+                                                            onLoad={(e) => {
+                                                                console.log(
+                                                                    "Image loaded successfully:",
+                                                                    service.image
+                                                                );
+                                                            }}
+                                                        />
+                                                    )}
                                             </div>
 
                                             {/* Service Content */}
                                             <div
+                                                className="service-content"
                                                 style={{
-                                                    padding: "24px",
                                                     flex: 1,
                                                     display: "flex",
                                                     flexDirection: "column",
+                                                    minHeight: 0,
+                                                    padding: "20px",
+                                                    justifyContent: "center",
                                                 }}
                                             >
                                                 {/* Service Title */}
                                                 <Title
                                                     level={4}
+                                                    className="service-title"
                                                     style={{
-                                                        marginBottom: 12,
-                                                        color: "#1f1f1f",
-                                                        fontSize: "18px",
-                                                        fontWeight: 600,
-                                                        lineHeight: 1.3,
+                                                        color: "#1a1a1a",
+                                                        fontSize: "20px",
+                                                        fontWeight: 700,
+                                                        lineHeight: 1.2,
+                                                        minHeight: "48px",
+                                                        overflow: "hidden",
+                                                        display: "-webkit-box",
+                                                        WebkitLineClamp: 2,
+                                                        WebkitBoxOrient:
+                                                            "vertical",
+                                                        marginBottom: "16px",
+                                                        textAlign: "center",
+                                                        letterSpacing:
+                                                            "-0.01em",
                                                     }}
                                                 >
                                                     {service.name || "Service"}
@@ -759,53 +894,40 @@ export default function CustomerDashboard({ auth, services = [] }) {
                                                 {(service.description ||
                                                     service.name) && (
                                                     <Text
+                                                        className="service-description"
                                                         style={{
-                                                            color: "#666",
-                                                            fontSize: "14px",
+                                                            color: "#4a4a4a",
+                                                            fontSize: "15px",
                                                             lineHeight: 1.5,
-                                                            marginBottom: 20,
+                                                            minHeight: "72px",
+                                                            overflow: "hidden",
                                                             display:
                                                                 "-webkit-box",
                                                             WebkitLineClamp: 3,
                                                             WebkitBoxOrient:
                                                                 "vertical",
-                                                            overflow: "hidden",
+                                                            marginBottom: "0px",
+                                                            textAlign: "center",
+                                                            fontWeight: 400,
+                                                            letterSpacing:
+                                                                "0.01em",
                                                         }}
                                                     >
-                                                        {service.description ||
-                                                            `Professional ${
-                                                                service.name ||
-                                                                "service"
-                                                            } for your needs.`}
+                                                        {service.description &&
+                                                        service.description.trim() !==
+                                                            ""
+                                                            ? service.description
+                                                                  .replace(
+                                                                      /<[^>]*>/g,
+                                                                      ""
+                                                                  )
+                                                                  .trim()
+                                                            : `Professional ${
+                                                                  service.name ||
+                                                                  "service"
+                                                              } support for your needs.`}
                                                     </Text>
                                                 )}
-
-                                                {/* Service Details */}
-                                                <div
-                                                    style={{
-                                                        marginTop: "auto",
-                                                        paddingTop: 16,
-                                                    }}
-                                                >
-                                                    {/* Action Button */}
-                                                    <Button
-                                                        type="primary"
-                                                        size="middle"
-                                                        style={{
-                                                            width: "100%",
-                                                            height: 40,
-                                                            fontWeight: 500,
-                                                            borderRadius: "8px",
-                                                            background:
-                                                                "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
-                                                            border: "none",
-                                                            boxShadow:
-                                                                "0 2px 8px rgba(24, 144, 255, 0.2)",
-                                                        }}
-                                                    >
-                                                        Choose Service
-                                                    </Button>
-                                                </div>
                                             </div>
                                         </Card>
                                     </div>
@@ -814,18 +936,37 @@ export default function CustomerDashboard({ auth, services = [] }) {
                                 // Fallback content if no services
                                 <div
                                     style={{
-                                        padding: "0 24px",
+                                        padding: "48px 24px",
                                         textAlign: "center",
+                                        background: "#f8f9fa",
+                                        borderRadius: "16px",
+                                        border: "1px solid #e9ecef",
                                     }}
                                 >
                                     <Text
                                         style={{
                                             color: "#666",
-                                            fontSize: "16px",
+                                            fontSize: "18px",
+                                            fontWeight: 500,
                                         }}
                                     >
-                                        Loading services...
+                                        {servicesData.length === 0
+                                            ? "No services available at the moment. Please check back later."
+                                            : "Loading services..."}
                                     </Text>
+                                    {servicesData.length === 0 && (
+                                        <Text
+                                            style={{
+                                                color: "#999",
+                                                fontSize: "14px",
+                                                marginTop: "8px",
+                                                display: "block",
+                                            }}
+                                        >
+                                            We're working on adding more
+                                            services for you.
+                                        </Text>
+                                    )}
                                 </div>
                             )}
                         </Carousel>
@@ -890,466 +1031,1061 @@ export default function CustomerDashboard({ auth, services = [] }) {
                     </div>
                 </div>
 
-                {/* Carousel and Mobile Responsive CSS */}
-                <style jsx>{`
-                    /* Global Carousel Styles */
-                    .services-carousel .slick-dots {
-                        position: relative !important;
-                        bottom: -20px !important;
-                        z-index: 10 !important;
-                    }
+                {/* Extras Section */}
+                {extrasData && extrasData.length > 0 && (
+                    <div
+                        style={{
+                            background: "#ffffff",
+                            padding: "64px 32px",
+                            borderRadius: "24px",
+                            marginBottom: 48,
+                            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.06)",
+                            border: "1px solid #f5f5f5",
+                        }}
+                        className="extras-section"
+                    >
+                        <div style={{ textAlign: "center", marginBottom: 48 }}>
+                            <Title
+                                level={2}
+                                style={{ color: "#1a1a1a", marginBottom: 16 }}
+                            >
+                                Extras
+                            </Title>
+                            <Paragraph
+                                style={{
+                                    color: "#666",
+                                    fontSize: 18,
+                                    margin: 0,
+                                }}
+                            >
+                                Enhance your HospiPal experience with these
+                                additional services.
+                            </Paragraph>
+                        </div>
 
-                    .services-carousel .slick-dots li button {
-                        width: 12px !important;
-                        height: 12px !important;
-                        border-radius: 50% !important;
-                        background: #d9d9d9 !important;
-                        border: 2px solid #ffffff !important;
-                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-                        opacity: 1 !important;
-                    }
+                        {/* Extras Horizontal Scroll Container */}
+                        <div
+                            style={{
+                                position: "relative",
+                                maxWidth: "1200px",
+                                margin: "0 auto",
+                            }}
+                        >
+                            {/* Scroll Container */}
+                            <div
+                                style={{
+                                    display: "flex",
+                                    gap: "20px",
+                                    overflowX: "auto",
+                                    padding: "0 4px",
+                                    scrollbarWidth: "thin",
+                                    scrollbarColor: "#c1c1c1 #f1f1f1",
+                                    maxWidth: "100%",
+                                    scrollBehavior: "smooth",
+                                }}
+                                className="extras-scroll-container"
+                                id="extras-scroll-container"
+                            >
+                                {extrasData.map((extra, index) => (
+                                    <Card
+                                        key={extra.id || index}
+                                        style={{
+                                            background: "#ffffff",
+                                            border: "1px solid #e8e8e8",
+                                            borderRadius: "16px",
+                                            overflow: "hidden",
+                                            cursor: "pointer",
+                                            transition:
+                                                "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                                            height: "280px",
+                                            width: "280px",
+                                            minWidth: "280px",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            boxShadow:
+                                                "0 4px 12px rgba(0, 0, 0, 0.08)",
+                                            flexShrink: 0,
+                                        }}
+                                        hoverable
+                                        className="extra-card"
+                                        bodyStyle={{ padding: 0 }}
+                                    >
+                                        {/* Extra Header with Gradient Background */}
+                                        <div
+                                            className="extra-header"
+                                            style={{
+                                                width: "100%",
+                                                height: "120px",
+                                                background: `linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%)`,
+                                                position: "relative",
+                                                overflow: "hidden",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                            }}
+                                        >
+                                            {/* Extra Image */}
+                                            {extra.image &&
+                                                extra.image !== null &&
+                                                extra.image !== "" &&
+                                                extra.image !== undefined && (
+                                                    <img
+                                                        src={extra.image}
+                                                        alt={
+                                                            extra.name ||
+                                                            "Extra"
+                                                        }
+                                                        style={{
+                                                            // width: "60px",
+                                                            // height: "60px",
+                                                            objectFit: "cover",
+                                                            borderRadius:
+                                                                "12px",
+                                                        }}
+                                                        onError={(e) => {
+                                                            console.log(
+                                                                "Extra image failed to load:",
+                                                                extra.image
+                                                            );
+                                                            e.target.style.display =
+                                                                "none";
+                                                        }}
+                                                    />
+                                                )}
 
-                    .services-carousel .slick-dots li.slick-active button {
-                        background: #1890ff !important;
-                        border: 2px solid #ffffff !important;
-                        box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3) !important;
-                    }
+                                            {/* Fallback Icon */}
+                                            {(!extra.image ||
+                                                extra.image === null ||
+                                                extra.image === "" ||
+                                                extra.image === undefined) && (
+                                                <div
+                                                    style={{
+                                                        width: "60px",
+                                                        height: "60px",
+                                                        background: "#1890ff",
+                                                        borderRadius: "12px",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent:
+                                                            "center",
+                                                        fontSize: "24px",
+                                                        color: "#ffffff",
+                                                    }}
+                                                >
+                                                    ⭐
+                                                </div>
+                                            )}
+                                        </div>
 
-                    .services-carousel .slick-prev,
-                    .services-carousel .slick-next {
-                        width: 44px !important;
-                        height: 44px !important;
-                        background: #ffffff !important;
-                        border: 2px solid #1890ff !important;
-                        border-radius: 50% !important;
-                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-                        z-index: 10 !important;
-                        opacity: 1 !important;
-                        display: flex !important;
-                        align-items: center !important;
-                        justify-content: center !important;
-                        font-family: "Ant Design Icons", Arial, sans-serif !important;
-                        position: absolute !important;
-                        top: 0 !important;
-                    }
+                                        {/* Extra Content */}
+                                        <div
+                                            className="extra-content"
+                                            style={{
+                                                flex: 1,
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                padding: "20px",
+                                                justifyContent: "space-between",
+                                            }}
+                                        >
+                                            {/* Extra Title */}
+                                            <Title
+                                                level={5}
+                                                className="extra-title"
+                                                style={{
+                                                    color: "#1a1a1a",
+                                                    fontSize: "16px",
+                                                    fontWeight: 600,
+                                                    lineHeight: 1.3,
+                                                    height: "42px",
+                                                    overflow: "hidden",
+                                                    display: "-webkit-box",
+                                                    WebkitLineClamp: 2,
+                                                    WebkitBoxOrient: "vertical",
+                                                    marginBottom: "8px",
+                                                    textAlign: "center",
+                                                }}
+                                            >
+                                                {extra.name || "Extra"}
+                                            </Title>
 
-                    .services-carousel .slick-prev:hover,
-                    .services-carousel .slick-next:hover {
-                        background: #1890ff !important;
-                        color: #ffffff !important;
-                    }
-                        .services-carousel .slick-prev{
+                                            {/* Extra Description */}
+                                            {extra.description &&
+                                                extra.description.trim() !==
+                                                    "" && (
+                                                    <Text
+                                                        className="extra-description"
+                                                        style={{
+                                                            color: "#666",
+                                                            fontSize: "13px",
+                                                            lineHeight: 1.4,
+                                                            height: "36px",
+                                                            overflow: "hidden",
+                                                            display:
+                                                                "-webkit-box",
+                                                            WebkitLineClamp: 2,
+                                                            WebkitBoxOrient:
+                                                                "vertical",
+                                                            marginBottom:
+                                                                "12px",
+                                                            textAlign: "center",
+                                                        }}
+                                                    >
+                                                        {extra.description
+                                                            .replace(
+                                                                /<[^>]*>/g,
+                                                                ""
+                                                            )
+                                                            .trim()}
+                                                    </Text>
+                                                )}
 
-                        }
-
-                    .services-carousel .slick-prev:before,
-                    .services-carousel .slick-next:before {
-                        color: #1890ff !important;
-                        font-size: 20px !important;
-                        font-weight: bold !important;
-                        opacity: 1 !important;
-                        content: "‹" !important;
-                    }
-
-                    .services-carousel .slick-next:before {
-                        content: "›" !important;
-                    }
-
-                    .services-carousel .slick-prev:hover:before,
-                    .services-carousel .slick-next:hover:before {
-                        color: #ffffff !important;
-                    }
-
-                    @media (max-width: 1200px) {
-                    @media (max-width: 1200px) {
-                        .services-carousel {
-                            padding: 0 20px !important;
-                        }
-
-                        .service-slide {
-                            padding: 0 16px !important;
-                        }
-                    }
-
-                    @media (max-width: 768px) {
-                        .hero-section {
-                            padding: 32px 16px !important;
-                            margin-bottom: 32px !important;
-                            border-radius: 16px !important;
-                        }
-
-                        .hero-title {
-                            font-size: 2rem !important;
-                            line-height: 1.2 !important;
-                            margin-bottom: 24px !important;
-                            padding: 0 8px !important;
-                        }
-
-                        .hero-subtitle {
-                            font-size: 16px !important;
-                            line-height: 1.6 !important;
-                            margin-bottom: 32px !important;
-                            padding: 0 8px !important;
-                        }
-
-                        .hero-cta-container {
-                            display: flex !important;
-                            justify-content: center !important;
-                            gap: 16px !important;
-                            flex-wrap: wrap !important;
-                        }
-
-                        .hero-primary-button {
-                            width: 100% !important;
-                            min-width: unset !important;
-                            height: 56px !important;
-                            font-size: 16px !important;
-                            padding: 0 24px !important;
-                            white-space: nowrap !important;
-                            text-align: center !important;
-                        }
-
-                        .hero-primary-button span {
-                            font-size: 16px !important;
-                            line-height: 1.2 !important;
-                        }
-
-                        .hero-secondary-button {
-                            width: 100% !important;
-                            min-width: unset !important;
-                            height: 56px !important;
-                            font-size: 15px !important;
-                            padding: 0 28px !important;
-                        }
-
-                        .hero-trust-indicator {
-                            flex-wrap: wrap !important;
-                            gap: 12px !important;
-                            padding: 20px 24px !important;
-                            text-align: center !important;
-                            justify-content: center !important;
-                        }
-
-                        .hero-trust-text {
-                            font-size: 14px !important;
-                            text-align: center !important;
-                        }
-
-                        /* Trust Anchors Mobile Styles */
-                        .trust-anchors-section {
-                            padding: 32px 16px !important;
-                            margin-bottom: 32px !important;
-                            border-radius: 16px !important;
-                        }
-
-                        .trust-anchors-grid {
-                            grid-template-columns: 1fr !important;
-                            gap: 20px !important;
-                        }
-
-                        .trust-anchor-item {
-                            padding: 20px !important;
-                            border-radius: 12px !important;
-                        }
-
-                        /* Our Services Mobile Styles */
-                        .our-services-section {
-                            padding: 48px 16px !important;
-                            margin-bottom: 32px !important;
-                            border-radius: 20px !important;
-                        }
-
-                        .services-carousel {
-                            padding: 0 10px !important;
-                        }
-
-                        .service-slide {
-                            padding: 0 8px !important;
-                        }
-
-                        .service-card {
-                            height: 400px !important;
-                            border-radius: 16px !important;
-                        }
-
-                        .service-card .ant-card-body {
-                            padding: 0 !important;
-                        }
-
-                        .service-card h4 {
-                            font-size: 16px !important;
-                            margin-bottom: 8px !important;
-                        }
-
-                        .service-card .ant-typography {
-                            font-size: 13px !important;
-                            margin-bottom: 16px !important;
-                        }
-
-                        .service-card .ant-btn {
-                            height: 36px !important;
-                            font-size: 14px !important;
-                        }
-
-                        /* CTA Button Mobile Styles */
-                        .our-services-section .ant-btn,
-                        .services-cta-button {
-                            width: 100% !important;
-                            max-width: 300px !important;
-                            height: 48px !important;
-                            font-size: 16px !important;
-                            padding: 0 20px !important;
-                            white-space: nowrap !important;
-                            text-align: center !important;
-                            line-height: 1.4 !important;
-                            min-width: unset !important;
-                            overflow: hidden !important;
-                            text-overflow: ellipsis !important;
-                        }
-
-                        /* Carousel Navigation Mobile Styles */
-                        .services-carousel .slick-dots {
-                            bottom: -30px !important;
-                            z-index: 10 !important;
-                        }
-
-                        .services-carousel .slick-dots li button {
-                            width: 10px !important;
-                            height: 10px !important;
-                            border-radius: 50% !important;
-                            background: #d9d9d9 !important;
-                            border: 2px solid #ffffff !important;
-                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-                        }
-
-                        .services-carousel .slick-dots li.slick-active button {
-                            background: #1890ff !important;
-                            border: 2px solid #ffffff !important;
-                            box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3) !important;
-                        }
-
-                        /* Carousel Arrow Styles */
-                        .services-carousel .slick-prev,
-                        .services-carousel .slick-next {
-                            width: 40px !important;
-                            height: 40px !important;
-                            background: #ffffff !important;
-                            border: 2px solid #1890ff !important;
-                            border-radius: 50% !important;
-                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-                            z-index: 10 !important;
-                            display: flex !important;
-                            align-items: center !important;
-                            justify-content: center !important;
-                            font-family: "Ant Design Icons", Arial, sans-serif !important;
-                        }
-
-                        .services-carousel .slick-prev:hover,
-                        .services-carousel .slick-next:hover {
-                            background: #1890ff !important;
-                            color: #ffffff !important;
-                        }
-
-                        .services-carousel .slick-prev:before,
-                        .services-carousel .slick-next:before {
-                            color: #1890ff !important;
-                            font-size: 18px !important;
-                            font-weight: bold !important;
-                        }
-
-                        .services-carousel .slick-prev:hover:before,
-                        .services-carousel .slick-next:hover:before {
-                            color: #ffffff !important;
-                        }
-                    }
-
-                    @media (max-width: 480px) {
-                        .hero-section {
-                            padding: 24px 12px !important;
-                        }
-
-                        .hero-title {
-                            font-size: 1.75rem !important;
-                            padding: 0 4px !important;
-                        }
-
-                        .hero-subtitle {
-                            font-size: 15px !important;
-                            padding: 0 4px !important;
-                        }
-
-                        .hero-primary-button {
-                            height: 48px !important;
-                            font-size: 14px !important;
-                            padding: 0 20px !important;
-                        }
-
-                        .hero-secondary-button {
-                            height: 44px !important;
-                            font-size: 13px !important;
-                            padding: 0 16px !important;
-                        }
-
-                        .hero-trust-indicator {
-                            padding: 12px 16px !important;
-                        }
-
-                        .hero-trust-text {
-                            font-size: 13px !important;
-                        }
-
-                        /* Trust Anchors Small Mobile Styles */
-                        .trust-anchors-section {
-                            padding: 24px 12px !important;
-                        }
-
-                        .trust-anchors-grid {
-                            gap: 16px !important;
-                        }
-
-                        .trust-anchor-item {
-                            padding: 16px !important;
-                            gap: 12px !important;
-                        }
-
-                        .trust-anchor-item > div:first-child {
-                            width: 40px !important;
-                            height: 40px !important;
-                        }
-
-                        .trust-anchor-item > div:first-child > * {
-                            font-size: 20px !important;
-                        }
-
-                        /* Our Services Small Mobile Styles */
-                        .our-services-section {
-                            padding: 32px 12px !important;
-                        }
-
-                        .services-carousel {
-                            padding: 0 8px !important;
-                        }
-
-                        .service-slide {
-                            padding: 0 6px !important;
-                        }
-
-                        .service-card {
-                            height: 380px !important;
-                            border-radius: 14px !important;
-                        }
-
-                        .service-card h4 {
-                            font-size: 15px !important;
-                            margin-bottom: 6px !important;
-                        }
-
-                        .service-card .ant-typography {
-                            font-size: 12px !important;
-                            margin-bottom: 12px !important;
-                        }
-
-                        .service-card .ant-btn {
-                            height: 32px !important;
-                            font-size: 13px !important;
-                        }
-
-                        /* CTA Button Small Mobile Styles */
-                        .our-services-section .ant-btn,
-                        .services-cta-button {
-                            width: 100% !important;
-                            max-width: 280px !important;
-                            height: 44px !important;
-                            font-size: 15px !important;
-                            padding: 0 16px !important;
-                            white-space: nowrap !important;
-                            text-align: center !important;
-                            line-height: 1.3 !important;
-                            min-width: unset !important;
-                            overflow: hidden !important;
-                            text-overflow: ellipsis !important;
-                        }
-
-                        /* Carousel Navigation Small Mobile Styles */
-                        .services-carousel .slick-dots {
-                            bottom: -25px !important;
-                            z-index: 10 !important;
-                        }
-
-                        .services-carousel .slick-dots li button {
-                            width: 8px !important;
-                            height: 8px !important;
-                            border-radius: 50% !important;
-                            background: #d9d9d9 !important;
-                            border: 2px solid #ffffff !important;
-                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-                        }
-
-                        .services-carousel .slick-dots li.slick-active button {
-                            background: #1890ff !important;
-                            border: 2px solid #ffffff !important;
-                            box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3) !important;
-                        }
-                    }
-                `}</style>
-
-                {/* Features Section */}
-                <Row gutter={[24, 24]}>
-                    <Col xs={24} md={8}>
-                        <Card>
-                            <div style={{ textAlign: "center" }}>
-                                <CalendarOutlined
-                                    style={{
-                                        fontSize: 48,
-                                        color: "#1890ff",
-                                        marginBottom: 16,
-                                    }}
-                                />
-                                <Title level={4}>Easy Booking</Title>
-                                <Paragraph>
-                                    Book your appointments in just a few clicks
-                                    with our streamlined booking process.
-                                </Paragraph>
+                                            {/* Extra Price */}
+                                            <div
+                                                style={{
+                                                    textAlign: "center",
+                                                    marginTop: "auto",
+                                                }}
+                                            >
+                                                <Text
+                                                    style={{
+                                                        color: "#1890ff",
+                                                        fontSize: "18px",
+                                                        fontWeight: 700,
+                                                        lineHeight: 1,
+                                                    }}
+                                                >
+                                                    ₹
+                                                    {parseFloat(
+                                                        extra.price
+                                                    ).toFixed(2)}
+                                                </Text>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                ))}
                             </div>
-                        </Card>
-                    </Col>
-                    <Col xs={24} md={8}>
-                        <Card>
-                            <div style={{ textAlign: "center" }}>
-                                <SafetyCertificateOutlined
-                                    style={{
-                                        fontSize: 48,
-                                        color: "#52c41a",
-                                        marginBottom: 16,
-                                    }}
-                                />
-                                <Title level={4}>Secure & Safe</Title>
-                                <Paragraph>
-                                    Your data is protected with
-                                    industry-standard security measures.
-                                </Paragraph>
+
+                            {/* Navigation Arrows */}
+                            {extrasData.length > 4 && (
+                                <>
+                                    <Button
+                                        type="text"
+                                        icon={<LeftOutlined />}
+                                        style={{
+                                            position: "absolute",
+                                            left: "-40px",
+                                            top: "50%",
+                                            transform: "translateY(-50%)",
+                                            background:
+                                                "rgba(255, 255, 255, 0.9)",
+                                            border: "1px solid #e8e8e8",
+                                            borderRadius: "50%",
+                                            width: "40px",
+                                            height: "40px",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            boxShadow:
+                                                "0 2px 8px rgba(0, 0, 0, 0.1)",
+                                            zIndex: 10,
+                                        }}
+                                        onClick={() => {
+                                            const container =
+                                                document.getElementById(
+                                                    "extras-scroll-container"
+                                                );
+                                            if (container) {
+                                                container.scrollBy({
+                                                    left: -300,
+                                                    behavior: "smooth",
+                                                });
+                                            }
+                                        }}
+                                    />
+                                    <Button
+                                        type="text"
+                                        icon={<RightOutlined />}
+                                        style={{
+                                            position: "absolute",
+                                            right: "-40px",
+                                            top: "50%",
+                                            transform: "translateY(-50%)",
+                                            background:
+                                                "rgba(255, 255, 255, 0.9)",
+                                            border: "1px solid #e8e8e8",
+                                            borderRadius: "50%",
+                                            width: "40px",
+                                            height: "40px",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            boxShadow:
+                                                "0 2px 8px rgba(0, 0, 0, 0.1)",
+                                            zIndex: 10,
+                                        }}
+                                        onClick={() => {
+                                            const container =
+                                                document.getElementById(
+                                                    "extras-scroll-container"
+                                                );
+                                            if (container) {
+                                                container.scrollBy({
+                                                    left: 300,
+                                                    behavior: "smooth",
+                                                });
+                                            }
+                                        }}
+                                    />
+                                </>
+                            )}
+                        </div>
+
+                        {/* Disclaimer */}
+                        <div
+                            style={{
+                                textAlign: "center",
+                                marginTop: 48,
+                                padding: "20px 32px",
+                                background: "rgba(255, 193, 7, 0.08)",
+                                borderRadius: "16px",
+                                border: "1px solid rgba(255, 193, 7, 0.15)",
+                                maxWidth: "800px",
+                                margin: "48px auto 0",
+                            }}
+                        >
+                            <Text
+                                style={{
+                                    color: "#856404",
+                                    fontSize: "15px",
+                                    lineHeight: 1.5,
+                                    fontWeight: 500,
+                                }}
+                            >
+                                📌 Extras are available only when a main
+                                HospiPal service is booked.
+                            </Text>
+                        </div>
+                    </div>
+                )}
+
+                {/* How It Works Section */}
+                <div
+                    style={{
+                        background: "#ffffff",
+                        padding: "64px 32px",
+                        borderRadius: "24px",
+                        marginBottom: 48,
+                        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.06)",
+                        border: "1px solid #f5f5f5",
+                    }}
+                    className="how-it-works-section"
+                >
+                    <div style={{ textAlign: "center", marginBottom: 48 }}>
+                        <Title
+                            level={2}
+                            style={{ color: "#1a1a1a", marginBottom: 16 }}
+                        >
+                            How It Works (3 Steps)
+                        </Title>
+                        <Paragraph
+                            style={{ color: "#666", fontSize: 18, margin: 0 }}
+                        >
+                            Simple and secure booking process for your peace of
+                            mind.
+                        </Paragraph>
+                    </div>
+
+                    {/* Steps Grid */}
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns:
+                                windowWidth >= 768
+                                    ? "repeat(3, 1fr)"
+                                    : "repeat(1, 1fr)",
+                            gap: "32px",
+                            maxWidth: "1000px",
+                            margin: "0 auto",
+                        }}
+                        className="steps-grid"
+                    >
+                        {/* Step 1 */}
+                        <div
+                            style={{
+                                textAlign: "center",
+                                padding: "32px 24px",
+                                background:
+                                    "linear-gradient(135deg, rgba(24, 144, 255, 0.05) 0%, rgba(24, 144, 255, 0.02) 100%)",
+                                borderRadius: "20px",
+                                border: "1px solid rgba(24, 144, 255, 0.1)",
+                                position: "relative",
+                            }}
+                            className="step-card"
+                        >
+                            <div
+                                style={{
+                                    width: "60px",
+                                    height: "60px",
+                                    background:
+                                        "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
+                                    borderRadius: "50%",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    margin: "0 auto 24px auto",
+                                    fontSize: "24px",
+                                    color: "#ffffff",
+                                    fontWeight: "bold",
+                                    boxShadow:
+                                        "0 4px 12px rgba(24, 144, 255, 0.3)",
+                                }}
+                            >
+                                1
                             </div>
-                        </Card>
-                    </Col>
-                    <Col xs={24} md={8}>
-                        <Card>
-                            <div style={{ textAlign: "center" }}>
-                                <MobileOutlined
-                                    style={{
-                                        fontSize: 48,
-                                        color: "#722ed1",
-                                        marginBottom: 16,
-                                    }}
-                                />
-                                <Title level={4}>Mobile Friendly</Title>
-                                <Paragraph>
-                                    Access our platform from any device with our
-                                    responsive design.
-                                </Paragraph>
+                            <Title
+                                level={4}
+                                style={{
+                                    color: "#1a1a1a",
+                                    fontSize: "18px",
+                                    fontWeight: 600,
+                                    marginBottom: "12px",
+                                }}
+                            >
+                                Tap Book a HospiPal
+                            </Title>
+                            <Text
+                                style={{
+                                    color: "#666",
+                                    fontSize: "15px",
+                                    lineHeight: 1.5,
+                                }}
+                            >
+                                Start your journey with a simple tap on our
+                                booking button.
+                            </Text>
+                        </div>
+
+                        {/* Step 2 */}
+                        <div
+                            style={{
+                                textAlign: "center",
+                                padding: "32px 24px",
+                                background:
+                                    "linear-gradient(135deg, rgba(82, 196, 26, 0.05) 0%, rgba(82, 196, 26, 0.02) 100%)",
+                                borderRadius: "20px",
+                                border: "1px solid rgba(82, 196, 26, 0.1)",
+                                position: "relative",
+                            }}
+                            className="step-card"
+                        >
+                            <div
+                                style={{
+                                    width: "60px",
+                                    height: "60px",
+                                    background:
+                                        "linear-gradient(135deg, #52c41a 0%, #389e0d 100%)",
+                                    borderRadius: "50%",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    margin: "0 auto 24px auto",
+                                    fontSize: "24px",
+                                    color: "#ffffff",
+                                    fontWeight: "bold",
+                                    boxShadow:
+                                        "0 4px 12px rgba(82, 196, 26, 0.3)",
+                                }}
+                            >
+                                2
                             </div>
-                        </Card>
-                    </Col>
-                </Row>
+                            <Title
+                                level={4}
+                                style={{
+                                    color: "#1a1a1a",
+                                    fontSize: "18px",
+                                    fontWeight: 600,
+                                    marginBottom: "12px",
+                                }}
+                            >
+                                Choose Service → Enter Details
+                            </Title>
+                            <Text
+                                style={{
+                                    color: "#666",
+                                    fontSize: "15px",
+                                    lineHeight: 1.5,
+                                }}
+                            >
+                                Select your service and provide hospital &
+                                patient information.
+                            </Text>
+                        </div>
+
+                        {/* Step 3 */}
+                        <div
+                            style={{
+                                textAlign: "center",
+                                padding: "32px 24px",
+                                background:
+                                    "linear-gradient(135deg, rgba(250, 173, 20, 0.05) 0%, rgba(250, 173, 20, 0.02) 100%)",
+                                borderRadius: "20px",
+                                border: "1px solid rgba(250, 173, 20, 0.1)",
+                                position: "relative",
+                            }}
+                            className="step-card"
+                        >
+                            <div
+                                style={{
+                                    width: "60px",
+                                    height: "60px",
+                                    background:
+                                        "linear-gradient(135deg, #faad14 0%, #d48806 100%)",
+                                    borderRadius: "50%",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    margin: "0 auto 24px auto",
+                                    fontSize: "24px",
+                                    color: "#ffffff",
+                                    fontWeight: "bold",
+                                    boxShadow:
+                                        "0 4px 12px rgba(250, 173, 20, 0.3)",
+                                }}
+                            >
+                                3
+                            </div>
+                            <Title
+                                level={4}
+                                style={{
+                                    color: "#1a1a1a",
+                                    fontSize: "18px",
+                                    fontWeight: 600,
+                                    marginBottom: "12px",
+                                }}
+                            >
+                                Pay Securely → Get Confirmation
+                            </Title>
+                            <Text
+                                style={{
+                                    color: "#666",
+                                    fontSize: "15px",
+                                    lineHeight: 1.5,
+                                }}
+                            >
+                                Complete secure payment and receive booking ID
+                                with HospiPal assignment.
+                            </Text>
+                        </div>
+                    </div>
+
+                    {/* Communication Notice */}
+                    <div
+                        style={{
+                            textAlign: "center",
+                            marginTop: 48,
+                            padding: "24px 32px",
+                            background: "rgba(24, 144, 255, 0.08)",
+                            borderRadius: "16px",
+                            border: "1px solid rgba(24, 144, 255, 0.15)",
+                            maxWidth: "800px",
+                            margin: "48px auto 0",
+                        }}
+                    >
+                        <Text
+                            style={{
+                                color: "#4a4a4a",
+                                fontSize: "15px",
+                                lineHeight: 1.5,
+                                fontWeight: 500,
+                            }}
+                        >
+                            📌 You'll receive booking confirmations and updates
+                            through our secure communication channels.
+                        </Text>
+                    </div>
+                </div>
+
+                {/* Why Families Trust HospiPal Section */}
+                <div
+                    style={{
+                        background: "#f8f9fa",
+                        padding: "64px 32px",
+                        borderRadius: "24px",
+                        marginBottom: 48,
+                        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.06)",
+                        border: "1px solid #e9ecef",
+                    }}
+                    className="trust-section"
+                >
+                    <div style={{ textAlign: "center", marginBottom: 48 }}>
+                        <Title
+                            level={2}
+                            style={{ color: "#1a1a1a", marginBottom: 16 }}
+                        >
+                            Why Families Trust HospiPal
+                        </Title>
+                        <Paragraph
+                            style={{ color: "#666", fontSize: 18, margin: 0 }}
+                        >
+                            Providing peace of mind when it matters most.
+                        </Paragraph>
+                    </div>
+
+                    {/* Trust Points Grid */}
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns:
+                                windowWidth >= 1200
+                                    ? "repeat(2, 1fr)"
+                                    : windowWidth >= 768
+                                    ? "repeat(2, 1fr)"
+                                    : "repeat(1, 1fr)",
+                            gap: "24px",
+                            maxWidth: "1000px",
+                            margin: "0 auto",
+                        }}
+                        className="trust-points-grid"
+                    >
+                        {/* Trust Point 1 */}
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "flex-start",
+                                gap: "16px",
+                                padding: "24px",
+                                background: "#ffffff",
+                                borderRadius: "16px",
+                                border: "1px solid #e8e8e8",
+                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
+                            }}
+                            className="trust-point"
+                        >
+                            <div
+                                style={{
+                                    width: "48px",
+                                    height: "48px",
+                                    background:
+                                        "linear-gradient(135deg, #52c41a 0%, #389e0d 100%)",
+                                    borderRadius: "12px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    flexShrink: 0,
+                                    fontSize: "20px",
+                                    color: "#ffffff",
+                                }}
+                            >
+                                🛡️
+                            </div>
+                            <div>
+                                <Text
+                                    style={{
+                                        fontSize: "16px",
+                                        fontWeight: 600,
+                                        color: "#1a1a1a",
+                                        lineHeight: 1.4,
+                                        marginBottom: "4px",
+                                    }}
+                                >
+                                    Patients are never left alone
+                                </Text>
+                                <Text
+                                    style={{
+                                        fontSize: "14px",
+                                        color: "#666",
+                                        lineHeight: 1.5,
+                                    }}
+                                >
+                                    Whether family is present or away, we ensure
+                                    continuous support.
+                                </Text>
+                            </div>
+                        </div>
+
+                        {/* Trust Point 2 */}
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "flex-start",
+                                gap: "16px",
+                                padding: "24px",
+                                background: "#ffffff",
+                                borderRadius: "16px",
+                                border: "1px solid #e8e8e8",
+                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
+                            }}
+                            className="trust-point"
+                        >
+                            <div
+                                style={{
+                                    width: "48px",
+                                    height: "48px",
+                                    background:
+                                        "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
+                                    borderRadius: "12px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    flexShrink: 0,
+                                    fontSize: "20px",
+                                    color: "#ffffff",
+                                }}
+                            >
+                                🤝
+                            </div>
+                            <div>
+                                <Text
+                                    style={{
+                                        fontSize: "16px",
+                                        fontWeight: 600,
+                                        color: "#1a1a1a",
+                                        lineHeight: 1.4,
+                                        marginBottom: "4px",
+                                    }}
+                                >
+                                    Extra help for families at hospital
+                                </Text>
+                                <Text
+                                    style={{
+                                        fontSize: "14px",
+                                        color: "#666",
+                                        lineHeight: 1.5,
+                                    }}
+                                >
+                                    Additional support for families already
+                                    present at the hospital.
+                                </Text>
+                            </div>
+                        </div>
+
+                        {/* Trust Point 3 */}
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "flex-start",
+                                gap: "16px",
+                                padding: "24px",
+                                background: "#ffffff",
+                                borderRadius: "16px",
+                                border: "1px solid #e8e8e8",
+                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
+                            }}
+                            className="trust-point"
+                        >
+                            <div
+                                style={{
+                                    width: "48px",
+                                    height: "48px",
+                                    background:
+                                        "linear-gradient(135deg, #faad14 0%, #d48806 100%)",
+                                    borderRadius: "12px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    flexShrink: 0,
+                                    fontSize: "20px",
+                                    color: "#ffffff",
+                                }}
+                            >
+                                💙
+                            </div>
+                            <div>
+                                <Text
+                                    style={{
+                                        fontSize: "16px",
+                                        fontWeight: 600,
+                                        color: "#1a1a1a",
+                                        lineHeight: 1.4,
+                                        marginBottom: "4px",
+                                    }}
+                                >
+                                    Relief from caregiver burnout
+                                </Text>
+                                <Text
+                                    style={{
+                                        fontSize: "14px",
+                                        color: "#666",
+                                        lineHeight: 1.5,
+                                    }}
+                                >
+                                    Prevent compassion fatigue and provide
+                                    much-needed respite.
+                                </Text>
+                            </div>
+                        </div>
+
+                        {/* Trust Point 4 */}
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "flex-start",
+                                gap: "16px",
+                                padding: "24px",
+                                background: "#ffffff",
+                                borderRadius: "16px",
+                                border: "1px solid #e8e8e8",
+                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
+                            }}
+                            className="trust-point"
+                        >
+                            <div
+                                style={{
+                                    width: "48px",
+                                    height: "48px",
+                                    background:
+                                        "linear-gradient(135deg, #722ed1 0%, #531dab 100%)",
+                                    borderRadius: "12px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    flexShrink: 0,
+                                    fontSize: "20px",
+                                    color: "#ffffff",
+                                }}
+                            >
+                                📋
+                            </div>
+                            <div>
+                                <Text
+                                    style={{
+                                        fontSize: "16px",
+                                        fontWeight: 600,
+                                        color: "#1a1a1a",
+                                        lineHeight: 1.4,
+                                        marginBottom: "4px",
+                                    }}
+                                >
+                                    Clear scope: non-medical support only
+                                </Text>
+                                <Text
+                                    style={{
+                                        fontSize: "14px",
+                                        color: "#666",
+                                        lineHeight: 1.5,
+                                    }}
+                                >
+                                    We provide companion support only, medical
+                                    care remains with hospital staff.
+                                </Text>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer Section */}
+                <footer
+                    style={{
+                        background: "#1a1a1a",
+                        padding: "32px 24px 24px",
+                        marginTop: "48px",
+                        color: "#ffffff",
+                        width: "100vw",
+                        marginLeft: "calc(-50vw + 50%)",
+                        marginRight: "calc(-50vw + 50%)",
+                        borderRadius: "24px 24px 0 0",
+                        fontFamily:
+                            "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                    }}
+                    className="footer-section"
+                >
+                    <div
+                        style={{
+                            maxWidth: "1000px",
+                            margin: "0 auto",
+                            textAlign: "center",
+                        }}
+                    >
+                        {/* Footer Links */}
+                        <div
+                            style={{
+                                marginBottom: "24px",
+                                paddingBottom: "20px",
+                                borderBottom:
+                                    "1px solid rgba(255, 255, 255, 0.12)",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                    gap: "20px",
+                                    flexWrap: "wrap",
+                                }}
+                            >
+                                <Text
+                                    style={{
+                                        color: "rgba(255, 255, 255, 0.85)",
+                                        fontSize: "14px",
+                                        cursor: "pointer",
+                                        transition: "color 0.2s ease",
+                                        fontWeight: 500,
+                                        letterSpacing: "0.01em",
+                                    }}
+                                    className="footer-link"
+                                    onMouseEnter={(e) =>
+                                        (e.target.style.color = "#ffffff")
+                                    }
+                                    onMouseLeave={(e) =>
+                                        (e.target.style.color =
+                                            "rgba(255, 255, 255, 0.85)")
+                                    }
+                                >
+                                    Terms & Conditions
+                                </Text>
+                                <Text
+                                    style={{
+                                        color: "rgba(255, 255, 255, 0.4)",
+                                        fontSize: "14px",
+                                        fontWeight: 300,
+                                    }}
+                                >
+                                    |
+                                </Text>
+                                <Text
+                                    style={{
+                                        color: "rgba(255, 255, 255, 0.85)",
+                                        fontSize: "14px",
+                                        cursor: "pointer",
+                                        transition: "color 0.2s ease",
+                                        fontWeight: 500,
+                                        letterSpacing: "0.01em",
+                                    }}
+                                    className="footer-link"
+                                    onClick={handlePrivacyPolicy}
+                                    onMouseEnter={(e) =>
+                                        (e.target.style.color = "#ffffff")
+                                    }
+                                    onMouseLeave={(e) =>
+                                        (e.target.style.color =
+                                            "rgba(255, 255, 255, 0.85)")
+                                    }
+                                >
+                                    Privacy Policy
+                                </Text>
+                                <Text
+                                    style={{
+                                        color: "rgba(255, 255, 255, 0.4)",
+                                        fontSize: "14px",
+                                        fontWeight: 300,
+                                    }}
+                                >
+                                    |
+                                </Text>
+                                <Text
+                                    style={{
+                                        color: "rgba(255, 255, 255, 0.85)",
+                                        fontSize: "14px",
+                                        cursor: "pointer",
+                                        transition: "color 0.2s ease",
+                                        fontWeight: 500,
+                                        letterSpacing: "0.01em",
+                                    }}
+                                    className="footer-link"
+                                    onClick={handleBookingConsent}
+                                    onMouseEnter={(e) =>
+                                        (e.target.style.color = "#ffffff")
+                                    }
+                                    onMouseLeave={(e) =>
+                                        (e.target.style.color =
+                                            "rgba(255, 255, 255, 0.85)")
+                                    }
+                                >
+                                    Booking Consent
+                                </Text>
+                            </div>
+                        </div>
+
+                        {/* Contact Information */}
+                        <div
+                            style={{
+                                marginBottom: "24px",
+                                paddingBottom: "20px",
+                                borderBottom:
+                                    "1px solid rgba(255, 255, 255, 0.12)",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                    gap: "28px",
+                                    flexWrap: "wrap",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "6px",
+                                    }}
+                                >
+                                    <Text
+                                        style={{
+                                            color: "rgba(255, 255, 255, 0.85)",
+                                            fontSize: "15px",
+                                        }}
+                                    >
+                                        📞
+                                    </Text>
+                                    <Text
+                                        style={{
+                                            color: "rgba(255, 255, 255, 0.85)",
+                                            fontSize: "14px",
+                                            fontWeight: 500,
+                                            letterSpacing: "0.02em",
+                                        }}
+                                    >
+                                        99872 49625
+                                    </Text>
+                                </div>
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "6px",
+                                    }}
+                                >
+                                    <Text
+                                        style={{
+                                            color: "rgba(255, 255, 255, 0.85)",
+                                            fontSize: "15px",
+                                        }}
+                                    >
+                                        📧
+                                    </Text>
+                                    <Text
+                                        style={{
+                                            color: "rgba(255, 255, 255, 0.85)",
+                                            fontSize: "14px",
+                                            fontWeight: 500,
+                                            letterSpacing: "0.02em",
+                                        }}
+                                    >
+                                        support@hospipalhealth.com
+                                    </Text>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Copyright */}
+                        <div>
+                            <Text
+                                style={{
+                                    color: "rgba(255, 255, 255, 0.5)",
+                                    fontSize: "13px",
+                                    fontWeight: 400,
+                                    letterSpacing: "0.01em",
+                                }}
+                            >
+                                © HospiPal Health LLP
+                            </Text>
+                        </div>
+                    </div>
+                </footer>
 
                 {/* Customer Login Modal */}
                 <CustomerLoginModal

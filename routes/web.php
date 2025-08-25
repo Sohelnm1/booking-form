@@ -183,4 +183,31 @@ Route::put('/admin/extras/{id}/update-sort-order', [AdminController::class, 'upd
     Route::get('/admin/invoices/search', [InvoiceController::class, 'search'])->name('admin.invoices.search');
 });
 
+// Public PDF download routes
+Route::get('/pdf/terms-conditions', [App\Http\Controllers\PdfController::class, 'termsConditions'])->name('pdf.terms-conditions');
+Route::get('/pdf/privacy-policy', [App\Http\Controllers\PdfController::class, 'privacyPolicy'])->name('pdf.privacy-policy');
+Route::get('/pdf/booking-consent', [App\Http\Controllers\PdfController::class, 'bookingConsent'])->name('pdf.booking-consent');
+
+// Test route for debugging
+Route::get('/test-pdf', function() {
+    return response()->json(['message' => 'PDF route test successful']);
+});
+
+// Simple PDF test route
+Route::get('/test-pdf-simple', function() {
+    try {
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdfs.legal-document', [
+            'title' => 'Test Document',
+            'content' => 'This is a test PDF document.',
+            'version' => '1.0',
+            'last_updated' => now(),
+            'company' => 'HospiPal Health LLP',
+            'document_type' => 'Test'
+        ]);
+        return $pdf->download('test.pdf');
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+});
+
 
