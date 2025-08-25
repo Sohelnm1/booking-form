@@ -8,6 +8,9 @@ import {
     MenuOutlined,
     UserOutlined,
     HomeOutlined,
+    QuestionCircleOutlined,
+    GiftOutlined,
+    CustomerServiceOutlined,
 } from "@ant-design/icons";
 import Logo from "./Logo";
 import CustomerLoginModal from "./CustomerLoginModal";
@@ -71,11 +74,47 @@ export default function BookingHeader({ auth }) {
             },
         },
         {
-            key: "services",
+            key: "book-hospipal",
             icon: <BookOutlined />,
-            label: "Book a Service",
+            label: "Book a HospiPal",
             onClick: () => {
                 router.visit(route("booking.select-service"));
+                setIsDrawerVisible(false);
+            },
+        },
+        {
+            key: "services",
+            icon: <BookOutlined />,
+            label: "Services",
+            onClick: () => {
+                router.visit(route("booking.select-service"));
+                setIsDrawerVisible(false);
+            },
+        },
+        {
+            key: "extras",
+            icon: <GiftOutlined />,
+            label: "Extras",
+            onClick: () => {
+                message.info("Extras page coming soon");
+                setIsDrawerVisible(false);
+            },
+        },
+        {
+            key: "how-it-works",
+            icon: <QuestionCircleOutlined />,
+            label: "How It Works",
+            onClick: () => {
+                message.info("How It Works page coming soon");
+                setIsDrawerVisible(false);
+            },
+        },
+        {
+            key: "support",
+            icon: <CustomerServiceOutlined />,
+            label: "Support",
+            onClick: () => {
+                window.open("https://wa.me/917979911483", "_blank");
                 setIsDrawerVisible(false);
             },
         },
@@ -84,7 +123,7 @@ export default function BookingHeader({ auth }) {
                   {
                       key: "bookings",
                       icon: <CalendarOutlined />,
-                      label: "Your Bookings",
+                      label: "My Bookings",
                       onClick: () => {
                           router.visit(route("customer.bookings"));
                           setIsDrawerVisible(false);
@@ -155,6 +194,26 @@ export default function BookingHeader({ auth }) {
                     flexShrink: 0,
                 }}
             >
+                {/* Primary CTA - Always Visible */}
+                <Button
+                    type="primary"
+                    size="middle"
+                    icon={<BookOutlined />}
+                    onClick={() =>
+                        router.visit(route("booking.select-service"))
+                    }
+                    style={{
+                        background:
+                            "linear-gradient(135deg, #52c41a 0%, #389e0d 100%)",
+                        border: "none",
+                        fontWeight: 600,
+                        borderRadius: "6px",
+                    }}
+                >
+                    <span className="hidden-xs">Book a HospiPal</span>
+                    <span className="visible-xs">Book</span>
+                </Button>
+
                 {isLoggedIn && currentUser ? (
                     <Space size="small">
                         <Avatar
@@ -179,7 +238,7 @@ export default function BookingHeader({ auth }) {
                     </Space>
                 ) : (
                     <Button
-                        type="primary"
+                        type="text"
                         onClick={handleLogin}
                         size="middle"
                         className="header-signin-btn"

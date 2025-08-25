@@ -8,73 +8,108 @@ use App\Models\Service;
 
 class ServiceSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
-        // Clear existing services (only if no bookings exist)
-        if (Service::count() === 0) {
-            // Only truncate if no services exist
-        }
-
-        // Services data
         $services = [
             [
-                'name' => 'Haircut & Styling',
-                'description' => 'Professional haircut and styling service with premium products',
+                'name' => 'HospiPal for OPD Visits',
+                'description' => 'Escort and assist during doctor visits & diagnostics.',
                 'price' => 500.00,
-                'duration' => 60,
-                'category' => 'Hair Services',
+                'duration' => 120, // 2 hours
+                'icon' => '🧑‍⚕',
                 'color' => '#1890ff',
                 'is_active' => true,
                 'sort_order' => 1,
+                'is_upcoming' => false,
             ],
             [
-                'name' => 'Hair Coloring',
-                'description' => 'Professional hair coloring service with premium products and expert consultation',
-                'price' => 1500.00,
-                'duration' => 120,
-                'category' => 'Hair Services',
-                'color' => '#722ed1',
-                'is_active' => true,
-                'sort_order' => 2,
-            ],
-            [
-                'name' => 'Facial Treatment',
-                'description' => 'Relaxing facial treatment with natural products and skin analysis',
+                'name' => 'HospiPal for Elderly Care',
+                'description' => 'Respectful companion for seniors (single visit or packages).',
                 'price' => 800.00,
-                'duration' => 90,
-                'category' => 'Skin Care',
+                'duration' => 240, // 4 hours
+                'icon' => '👵',
                 'color' => '#52c41a',
                 'is_active' => true,
-                'sort_order' => 3,
+                'sort_order' => 2,
+                'is_upcoming' => false,
             ],
             [
-                'name' => 'Manicure & Pedicure',
-                'description' => 'Complete nail care service with polish and design options',
-                'price' => 400.00,
-                'duration' => 45,
-                'category' => 'Nail Services',
-                'color' => '#fa8c16',
+                'name' => 'HospiPal On-Call (Emergency)',
+                'description' => 'Quick HospiPal when family can\'t reach in time.',
+                'price' => 1200.00,
+                'duration' => 180, // 3 hours
+                'icon' => '⚡',
+                'color' => '#faad14',
+                'is_active' => true,
+                'sort_order' => 3,
+                'is_upcoming' => false,
+            ],
+            [
+                'name' => 'HospiPal for Discharge Support',
+                'description' => 'Smooth exit with paperwork, billing & pharmacy help.',
+                'price' => 600.00,
+                'duration' => 150, // 2.5 hours
+                'icon' => '📋',
+                'color' => '#722ed1',
                 'is_active' => true,
                 'sort_order' => 4,
+                'is_upcoming' => false,
             ],
             [
-                'name' => 'Relaxing Massage',
-                'description' => 'Therapeutic massage for stress relief and muscle relaxation',
-                'price' => 1200.00,
-                'duration' => 60,
-                'category' => 'Massage',
-                'color' => '#eb2f96',
+                'name' => 'HospiPal for Admission Support',
+                'description' => 'Stay support during admission (up to 4 / 8 / 12 hrs).',
+                'price' => 1000.00,
+                'duration' => 480, // 8 hours
+                'icon' => '🛏',
+                'color' => '#13c2c2',
                 'is_active' => true,
                 'sort_order' => 5,
+                'is_upcoming' => false,
+            ],
+            [
+                'name' => 'HospiPal for Overnight Stay',
+                'description' => 'Trusted companion for patients through the night.',
+                'price' => 1500.00,
+                'duration' => 720, // 12 hours
+                'icon' => '🌙',
+                'color' => '#eb2f96',
+                'is_active' => true,
+                'sort_order' => 6,
+                'is_upcoming' => false,
+            ],
+            [
+                'name' => 'HospiPal for Hospital Errands',
+                'description' => 'Reports, bills & document runs handled for you.',
+                'price' => 400.00,
+                'duration' => 90, // 1.5 hours
+                'icon' => '📑',
+                'color' => '#fa8c16',
+                'is_active' => true,
+                'sort_order' => 7,
+                'is_upcoming' => false,
+            ],
+            [
+                'name' => 'HospiPal for Recovery (Coming Soon)',
+                'description' => 'Non-medical recovery support at home or hotel.',
+                'price' => 0.00,
+                'duration' => 0,
+                'icon' => '💡',
+                'color' => '#a0d911',
+                'is_active' => true,
+                'sort_order' => 8,
+                'is_upcoming' => true,
+                'coming_soon_description' => 'This service will be available soon for post-hospital recovery support.',
             ],
         ];
 
-        foreach ($services as $service) {
-            // Check if service already exists
-            $existingService = Service::where('name', $service['name'])->first();
-            if (!$existingService) {
-                Service::create($service);
-            }
+        foreach ($services as $serviceData) {
+            Service::updateOrCreate(
+                ['name' => $serviceData['name']],
+                $serviceData
+            );
         }
     }
 }

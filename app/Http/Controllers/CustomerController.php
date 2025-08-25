@@ -10,6 +10,7 @@ use App\Models\BookingPolicySetting;
 use App\Models\ScheduleSetting;
 use App\Models\ServicePricingTier;
 use Carbon\Carbon;
+use App\Models\Service; // Added this import
 
 class CustomerController extends Controller
 {
@@ -31,11 +32,38 @@ class CustomerController extends Controller
             ->orderBy('appointment_time', 'desc')
             ->get();
 
+        // Fetch active services for the carousel
+        $services = Service::where('name', 'like', '%HospiPal%')
+            ->where('is_active', true)
+            ->ordered()
+            ->get()
+            ->map(function($service) {
+                return [
+                    'id' => $service->id,
+                    'name' => $service->name,
+                    'description' => $service->description,
+                    'icon' => $service->icon ?: $this->getDefaultIcon($service->name),
+                    'color' => $service->color ?: $this->getDefaultColor($service->id),
+                    'price' => $service->price,
+                    'duration' => $service->duration,
+                    'is_upcoming' => $service->is_upcoming,
+                    'has_flexible_duration' => $service->has_flexible_duration,
+                    'has_tba_pricing' => $service->has_tba_pricing,
+                ];
+            });
+
+        // Debug: Log the services being fetched
+        \Log::info('Services fetched for dashboard:', [
+            'total_services' => $services->count(),
+            'services' => $services->toArray()
+        ]);
+
         return Inertia::render('Customer/Dashboard', [
             'auth' => [
                 'user' => $user,
             ],
             'bookings' => $bookings,
+            'services' => $services,
         ]);
     }
 
@@ -674,5 +702,49 @@ class CustomerController extends Controller
             default:
                 return $booking->total_amount;
         }
+    }
+
+    /**
+     * Get default icon based on service name
+     */
+    private function getDefaultIcon($serviceName)
+    {
+        $iconMap = [
+            'OPD' => '🧑‍⚕',
+            'Elderly' => '👵',
+            'Emergency' => '⚡',
+            'Discharge' => '📋',
+            'Admission' => '🛏',
+            'Overnight' => '🌙',
+            'Errands' => '📑',
+            'Recovery' => '💡',
+        ];
+
+        foreach ($iconMap as $keyword => $icon) {
+            if (stripos($serviceName, $keyword) !== false) {
+                return $icon;
+            }
+        }
+
+        return '🏥'; // Default icon
+    }
+
+    /**
+     * Get default color based on service ID
+     */
+    private function getDefaultColor($serviceId)
+    {
+        $colors = [
+            '#1890ff', // Blue
+            '#52c41a', // Green
+            '#faad14', // Orange
+            '#722ed1', // Purple
+            '#13c2c2', // Cyan
+            '#eb2f96', // Pink
+            '#fa8c16', // Orange
+            '#a0d911', // Lime
+        ];
+
+        return $colors[($serviceId - 1) % count($colors)];
     }
 } 
