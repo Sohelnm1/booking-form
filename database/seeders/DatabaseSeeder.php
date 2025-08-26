@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             ConsentSeeder::class,
             CustomerSeeder::class,
             BookingPolicySeeder::class,
+            DynamicSlotSeeder::class,
         ]);
     }
 }

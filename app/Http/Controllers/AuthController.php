@@ -212,12 +212,42 @@ class AuthController extends Controller
                 ];
             });
 
+        // Fetch active dynamic slots for the dashboard
+        $dynamicSlots = \App\Models\DynamicSlot::where('is_active', true)
+            ->where(function($query) {
+                $query->where('show_on_mobile', true)
+                      ->orWhere('show_on_desktop', true);
+            })
+            ->orderBy('priority', 'desc')
+            ->orderBy('sort_order', 'asc')
+            ->get()
+            ->map(function($slot) {
+                return [
+                    'id' => $slot->id,
+                    'title' => $slot->title,
+                    'content' => $slot->content,
+                    'type' => $slot->type,
+                    'icon' => $slot->icon,
+                    'background_color' => $slot->background_color,
+                    'text_color' => $slot->text_color,
+                    'action_url' => $slot->action_url,
+                    'action_text' => $slot->action_text,
+                    'display_duration' => $slot->display_duration,
+                    'priority' => $slot->priority,
+                    'show_on_mobile' => $slot->show_on_mobile,
+                    'show_on_desktop' => $slot->show_on_desktop,
+                    'is_active' => $slot->is_active,
+                ];
+            });
+
         // Debug: Log the services and extras being fetched
         \Log::info('Data fetched for public dashboard:', [
             'total_services' => $services->count(),
             'total_extras' => $extras->count(),
+            'total_dynamic_slots' => $dynamicSlots->count(),
             'services' => $services->toArray(),
-            'extras' => $extras->toArray()
+            'extras' => $extras->toArray(),
+            'dynamic_slots' => $dynamicSlots->toArray()
         ]);
 
         return Inertia::render('Customer/Dashboard', [
@@ -226,6 +256,7 @@ class AuthController extends Controller
             ],
             'services' => $services,
             'extras' => $extras,
+            'dynamicSlots' => $dynamicSlots,
         ]);
     }
 

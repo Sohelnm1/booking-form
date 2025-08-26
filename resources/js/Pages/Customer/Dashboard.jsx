@@ -24,11 +24,15 @@ import {
     CheckCircleOutlined,
     LeftOutlined,
     RightOutlined,
+    BankOutlined,
+    TrophyOutlined,
+    StarOutlined,
 } from "@ant-design/icons";
 import { Carousel } from "react-responsive-carousel";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 import BookingHeader from "../../Components/BookingHeader";
 import CustomerLoginModal from "../../Components/CustomerLoginModal";
+import DynamicSlot from "../../Components/DynamicSlot";
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -36,6 +40,7 @@ export default function CustomerDashboard({
     auth,
     services = [],
     extras = [],
+    dynamicSlots = [],
 }) {
     const [isLoginModalVisible, setIsLoginModalVisible] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -43,6 +48,7 @@ export default function CustomerDashboard({
     const [windowWidth, setWindowWidth] = useState(
         typeof window !== "undefined" ? window.innerWidth : 1200
     );
+    const [activeExtraCard, setActiveExtraCard] = useState(0); // Track which extra card is active
 
     // Handle window resize for responsive carousel
     useEffect(() => {
@@ -61,7 +67,7 @@ export default function CustomerDashboard({
                 centerMode: true,
                 centerSlidePercentage: 33.33,
                 showArrows: true,
-                showIndicators: true,
+                showIndicators: false,
                 infiniteLoop: true,
                 autoPlay: true,
                 interval: 5000,
@@ -71,7 +77,7 @@ export default function CustomerDashboard({
                 centerMode: true,
                 centerSlidePercentage: 50,
                 showArrows: true,
-                showIndicators: true,
+                showIndicators: false,
                 infiniteLoop: true,
                 autoPlay: true,
                 interval: 5000,
@@ -81,7 +87,7 @@ export default function CustomerDashboard({
                 centerMode: false,
                 centerSlidePercentage: 100,
                 showArrows: true,
-                showIndicators: true,
+                showIndicators: false,
                 infiniteLoop: true,
                 autoPlay: true,
                 interval: 5000,
@@ -90,6 +96,19 @@ export default function CustomerDashboard({
     };
 
     const carouselSettings = getCarouselSettings();
+
+    // Helper function to truncate text
+    const truncateText = (text, maxLength = 80) => {
+        if (!text) return "";
+        const cleanText = text.replace(/<[^>]*>/g, "").trim();
+        if (cleanText.length <= maxLength) return cleanText;
+        return cleanText.substring(0, maxLength) + "...";
+    };
+
+    // Handle extra card click
+    const handleExtraCardClick = (index) => {
+        setActiveExtraCard(index);
+    };
 
     // Use services from database
     const servicesData = services || [];
@@ -305,8 +324,23 @@ export default function CustomerDashboard({
                                     whiteSpace: "nowrap",
                                     overflow: "hidden",
                                     textOverflow: "ellipsis",
+                                    transition:
+                                        "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                                 }}
                                 className="hero-primary-button"
+                                onMouseEnter={(e) => {
+                                    e.target.style.transform =
+                                        "translateY(-2px)";
+                                    e.target.style.boxShadow =
+                                        "0 8px 24px rgba(24, 144, 255, 0.35)";
+                                    e.target.style.background = "#40a9ff";
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.transform = "translateY(0)";
+                                    e.target.style.boxShadow =
+                                        "0 6px 16px rgba(24, 144, 255, 0.25)";
+                                    e.target.style.background = "#1890ff";
+                                }}
                             >
                                 Book a HospiPal
                             </Button>
@@ -333,8 +367,28 @@ export default function CustomerDashboard({
                                         windowWidth >= 768 ? "200px" : "auto",
                                     maxWidth:
                                         windowWidth >= 768 ? "none" : "280px",
+                                    transition:
+                                        "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                                    boxShadow:
+                                        "0 2px 8px rgba(24, 144, 255, 0.1)",
                                 }}
                                 className="hero-secondary-button"
+                                onMouseEnter={(e) => {
+                                    e.target.style.transform =
+                                        "translateY(-2px)";
+                                    e.target.style.boxShadow =
+                                        "0 4px 12px rgba(24, 144, 255, 0.2)";
+                                    e.target.style.background =
+                                        "rgba(24, 144, 255, 0.05)";
+                                    e.target.style.borderColor = "#40a9ff";
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.transform = "translateY(0)";
+                                    e.target.style.boxShadow =
+                                        "0 2px 8px rgba(24, 144, 255, 0.1)";
+                                    e.target.style.background = "#ffffff";
+                                    e.target.style.borderColor = "#1890ff";
+                                }}
                             >
                                 💬 Chat with Us
                             </Button>
@@ -360,8 +414,28 @@ export default function CustomerDashboard({
                                 maxWidth:
                                     windowWidth >= 768 ? "fit-content" : "100%",
                                 width: windowWidth < 768 ? "100%" : "auto",
+                                transition:
+                                    "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                                cursor: "pointer",
                             }}
                             className="hero-trust-indicator"
+                            onMouseEnter={(e) => {
+                                e.target.style.transform = "translateY(-1px)";
+                                e.target.style.boxShadow =
+                                    "0 4px 16px rgba(24, 144, 255, 0.15)";
+                                e.target.style.background =
+                                    "linear-gradient(135deg, rgba(24, 144, 255, 0.12) 0%, rgba(24, 144, 255, 0.06) 100%)";
+                                e.target.style.borderColor =
+                                    "rgba(24, 144, 255, 0.2)";
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.transform = "translateY(0)";
+                                e.target.style.boxShadow = "none";
+                                e.target.style.background =
+                                    "linear-gradient(135deg, rgba(24, 144, 255, 0.08) 0%, rgba(24, 144, 255, 0.04) 100%)";
+                                e.target.style.borderColor =
+                                    "rgba(24, 144, 255, 0.12)";
+                            }}
                         >
                             <div
                                 style={{
@@ -370,6 +444,18 @@ export default function CustomerDashboard({
                                     gap: 8,
                                     flexWrap: "wrap",
                                     justifyContent: "center",
+                                    padding: "8px 12px",
+                                    borderRadius: "8px",
+                                    transition: "all 0.2s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.background =
+                                        "rgba(82, 196, 26, 0.08)";
+                                    e.target.style.transform = "scale(1.02)";
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.background = "transparent";
+                                    e.target.style.transform = "scale(1)";
                                 }}
                             >
                                 <CheckCircleOutlined
@@ -377,6 +463,7 @@ export default function CustomerDashboard({
                                         color: "#52c41a",
                                         fontSize: windowWidth >= 768 ? 24 : 20,
                                         fontWeight: "bold",
+                                        transition: "all 0.2s ease",
                                     }}
                                 />
                                 <Text
@@ -389,6 +476,7 @@ export default function CustomerDashboard({
                                             windowWidth >= 768
                                                 ? "left"
                                                 : "center",
+                                        transition: "all 0.2s ease",
                                     }}
                                     className="hero-trust-text"
                                 >
@@ -403,12 +491,25 @@ export default function CustomerDashboard({
                                     gap: 8,
                                     flexWrap: "wrap",
                                     justifyContent: "center",
+                                    padding: "8px 12px",
+                                    borderRadius: "8px",
+                                    transition: "all 0.2s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.background =
+                                        "rgba(255, 77, 79, 0.08)";
+                                    e.target.style.transform = "scale(1.02)";
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.background = "transparent";
+                                    e.target.style.transform = "scale(1)";
                                 }}
                             >
                                 <span
                                     style={{
                                         color: "#ff4d4f",
                                         fontSize: windowWidth >= 768 ? 20 : 18,
+                                        transition: "all 0.2s ease",
                                     }}
                                 >
                                     📌
@@ -423,6 +524,7 @@ export default function CustomerDashboard({
                                             windowWidth >= 768
                                                 ? "left"
                                                 : "center",
+                                        transition: "all 0.2s ease",
                                     }}
                                     className="hero-trust-text"
                                 >
@@ -430,22 +532,62 @@ export default function CustomerDashboard({
                                 </Text>
                             </div>
 
-                            <Text
+                            <div
                                 style={{
-                                    color: "#4a4a4a",
-                                    fontSize: windowWidth >= 768 ? 16 : 14,
-                                    fontWeight: 500,
-                                    lineHeight: 1.4,
-                                    textAlign:
-                                        windowWidth >= 768 ? "left" : "center",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                    flexWrap: "wrap",
+                                    justifyContent: "center",
+                                    padding: "8px 12px",
+                                    borderRadius: "8px",
+                                    transition: "all 0.2s ease",
                                 }}
-                                className="hero-trust-text"
+                                onMouseEnter={(e) => {
+                                    e.target.style.background =
+                                        "rgba(24, 144, 255, 0.08)";
+                                    e.target.style.transform = "scale(1.02)";
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.background = "transparent";
+                                    e.target.style.transform = "scale(1)";
+                                }}
                             >
-                                Local support delivered by HospiPals.
-                            </Text>
+                                <span
+                                    style={{
+                                        color: "#1890ff",
+                                        fontSize: windowWidth >= 768 ? 20 : 18,
+                                        transition: "all 0.2s ease",
+                                    }}
+                                >
+                                    🏥
+                                </span>
+                                <Text
+                                    style={{
+                                        color: "#4a4a4a",
+                                        fontSize: windowWidth >= 768 ? 16 : 14,
+                                        fontWeight: 500,
+                                        lineHeight: 1.4,
+                                        textAlign:
+                                            windowWidth >= 768
+                                                ? "left"
+                                                : "center",
+                                        transition: "all 0.2s ease",
+                                    }}
+                                    className="hero-trust-text"
+                                >
+                                    Local support delivered by HospiPals.
+                                </Text>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                {/* Dynamic Slots Section */}
+                <DynamicSlot
+                    dynamicSlots={dynamicSlots}
+                    windowWidth={windowWidth}
+                />
 
                 {/* Quick Trust Anchors Section */}
                 <div
@@ -477,10 +619,11 @@ export default function CustomerDashboard({
                                 alignItems: "center",
                                 gap: "16px",
                                 padding: "24px",
-                                background:
-                                    "linear-gradient(135deg, rgba(82, 196, 26, 0.05) 0%, rgba(82, 196, 26, 0.02) 100%)",
+                                background: "rgba(255, 255, 255, 0.8)",
+                                backdropFilter: "blur(10px)",
                                 borderRadius: "16px",
-                                border: "1px solid rgba(82, 196, 26, 0.1)",
+                                border: "1px solid rgba(24, 144, 255, 0.2)",
+                                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
                             }}
                             className="trust-anchor-item"
                         >
@@ -488,7 +631,7 @@ export default function CustomerDashboard({
                                 style={{
                                     width: "48px",
                                     height: "48px",
-                                    background: "#52c41a",
+                                    background: "rgba(24, 144, 255, 0.1)",
                                     borderRadius: "12px",
                                     display: "flex",
                                     alignItems: "center",
@@ -499,7 +642,7 @@ export default function CustomerDashboard({
                                 <SafetyCertificateOutlined
                                     style={{
                                         fontSize: 24,
-                                        color: "#ffffff",
+                                        color: "#1890ff",
                                     }}
                                 />
                             </div>
@@ -535,10 +678,11 @@ export default function CustomerDashboard({
                                 alignItems: "center",
                                 gap: "16px",
                                 padding: "24px",
-                                background:
-                                    "linear-gradient(135deg, rgba(24, 144, 255, 0.05) 0%, rgba(24, 144, 255, 0.02) 100%)",
+                                background: "rgba(255, 255, 255, 0.8)",
+                                backdropFilter: "blur(10px)",
                                 borderRadius: "16px",
-                                border: "1px solid rgba(24, 144, 255, 0.1)",
+                                border: "1px solid rgba(24, 144, 255, 0.2)",
+                                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
                             }}
                             className="trust-anchor-item"
                         >
@@ -546,7 +690,7 @@ export default function CustomerDashboard({
                                 style={{
                                     width: "48px",
                                     height: "48px",
-                                    background: "#1890ff",
+                                    background: "rgba(24, 144, 255, 0.1)",
                                     borderRadius: "12px",
                                     display: "flex",
                                     alignItems: "center",
@@ -557,7 +701,7 @@ export default function CustomerDashboard({
                                 <BookOutlined
                                     style={{
                                         fontSize: 24,
-                                        color: "#ffffff",
+                                        color: "#1890ff",
                                     }}
                                 />
                             </div>
@@ -592,10 +736,11 @@ export default function CustomerDashboard({
                                 alignItems: "center",
                                 gap: "16px",
                                 padding: "24px",
-                                background:
-                                    "linear-gradient(135deg, rgba(250, 173, 20, 0.05) 0%, rgba(250, 173, 20, 0.02) 100%)",
+                                background: "rgba(255, 255, 255, 0.8)",
+                                backdropFilter: "blur(10px)",
                                 borderRadius: "16px",
-                                border: "1px solid rgba(250, 173, 20, 0.1)",
+                                border: "1px solid rgba(24, 144, 255, 0.2)",
+                                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
                             }}
                             className="trust-anchor-item"
                         >
@@ -603,7 +748,7 @@ export default function CustomerDashboard({
                                 style={{
                                     width: "48px",
                                     height: "48px",
-                                    background: "#faad14",
+                                    background: "rgba(24, 144, 255, 0.1)",
                                     borderRadius: "12px",
                                     display: "flex",
                                     alignItems: "center",
@@ -614,7 +759,7 @@ export default function CustomerDashboard({
                                 <CalendarOutlined
                                     style={{
                                         fontSize: 24,
-                                        color: "#ffffff",
+                                        color: "#1890ff",
                                     }}
                                 />
                             </div>
@@ -649,10 +794,11 @@ export default function CustomerDashboard({
                                 alignItems: "center",
                                 gap: "16px",
                                 padding: "24px",
-                                background:
-                                    "linear-gradient(135deg, rgba(114, 46, 209, 0.05) 0%, rgba(114, 46, 209, 0.02) 100%)",
+                                background: "rgba(255, 255, 255, 0.8)",
+                                backdropFilter: "blur(10px)",
                                 borderRadius: "16px",
-                                border: "1px solid rgba(114, 46, 209, 0.1)",
+                                border: "1px solid rgba(24, 144, 255, 0.2)",
+                                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
                             }}
                             className="trust-anchor-item"
                         >
@@ -660,7 +806,7 @@ export default function CustomerDashboard({
                                 style={{
                                     width: "48px",
                                     height: "48px",
-                                    background: "#722ed1",
+                                    background: "rgba(24, 144, 255, 0.1)",
                                     borderRadius: "12px",
                                     display: "flex",
                                     alignItems: "center",
@@ -671,7 +817,7 @@ export default function CustomerDashboard({
                                 <GlobalOutlined
                                     style={{
                                         fontSize: 24,
-                                        color: "#ffffff",
+                                        color: "#1890ff",
                                     }}
                                 />
                             </div>
@@ -714,12 +860,29 @@ export default function CustomerDashboard({
                     className="our-services-section"
                 >
                     <div style={{ textAlign: "center", marginBottom: 48 }}>
-                        <Title
-                            level={2}
-                            style={{ color: "#1a1a1a", marginBottom: 16 }}
+                        {/* OUR KEY BENEFITS Label */}
+                        <div
+                            style={{
+                                display: "inline-block",
+                                padding: "8px 16px",
+                                background: "transparent",
+                                border: "1px solid #d9d9d9",
+                                borderRadius: "20px",
+                                marginBottom: "16px",
+                            }}
                         >
-                            Our Services
-                        </Title>
+                            <Text
+                                style={{
+                                    color: "#1a1a1a",
+                                    fontSize: "12px",
+                                    fontWeight: 600,
+                                    textTransform: "uppercase",
+                                    letterSpacing: "1px",
+                                }}
+                            >
+                                OUR SERVICES
+                            </Text>
+                        </div>
                         <Paragraph
                             style={{ color: "#666", fontSize: 18, margin: 0 }}
                         >
@@ -732,7 +895,7 @@ export default function CustomerDashboard({
                             position: "relative",
                             maxWidth: "1200px",
                             margin: "0 auto",
-                            minHeight: "500px",
+                            // minHeight: "320px",
                         }}
                     >
                         <Carousel
@@ -767,91 +930,83 @@ export default function CustomerDashboard({
                                                 handleServiceClick(service)
                                             }
                                             style={{
-                                                background: "#ffffff",
-                                                border: "1px solid #e8e8e8",
+                                                background:
+                                                    index === 0
+                                                        ? "#1890ff"
+                                                        : "#ffffff",
+                                                border:
+                                                    index === 0
+                                                        ? "2px dashed #40a9ff"
+                                                        : "2px dashed #d9d9d9",
                                                 borderRadius: "16px",
                                                 overflow: "hidden",
                                                 cursor: "pointer",
                                                 transition:
                                                     "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                                                height: "480px",
+                                                height: "280px",
                                                 display: "flex",
                                                 flexDirection: "column",
                                                 boxShadow:
-                                                    "0 4px 12px rgba(0, 0, 0, 0.08)",
+                                                    index === 0
+                                                        ? "0 8px 24px rgba(24, 144, 255, 0.2)"
+                                                        : "0 4px 12px rgba(0, 0, 0, 0.06)",
+                                                position: "relative",
                                             }}
                                             hoverable
                                             className="service-card"
-                                            bodyStyle={{ padding: 0 }}
+                                            bodyStyle={{
+                                                padding: "24px",
+                                                height: "100%",
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                justifyContent: "space-between",
+                                            }}
                                         >
-                                            {/* Service Header with Gradient Background */}
+                                            {/* Service Icon */}
                                             <div
-                                                className="service-header"
                                                 style={{
-                                                    width: "100%",
-                                                    height: "140px",
-                                                    background: `linear-gradient(135deg, ${
-                                                        service.color ||
-                                                        "#1890ff"
-                                                    } 0%, ${
-                                                        service.color
-                                                            ? service.color +
-                                                              "80"
-                                                            : "#1890ff80"
-                                                    } 100%)`,
-                                                    position: "relative",
-                                                    overflow: "hidden",
+                                                    display: "flex",
+                                                    justifyContent:
+                                                        "flex-start",
+                                                    marginBottom: "16px",
                                                 }}
                                             >
-                                                {/* Overlay Pattern */}
                                                 <div
                                                     style={{
-                                                        position: "absolute",
-                                                        top: 0,
-                                                        left: 0,
-                                                        right: 0,
-                                                        bottom: 0,
+                                                        width: "48px",
+                                                        height: "48px",
+                                                        borderRadius: "12px",
                                                         background:
-                                                            "radial-gradient(circle at 30% 20%, rgba(255,255,255,0.1) 0%, transparent 50%)",
+                                                            index === 0
+                                                                ? "rgba(255, 255, 255, 0.2)"
+                                                                : "rgba(24, 144, 255, 0.1)",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent:
+                                                            "center",
+                                                        color:
+                                                            index === 0
+                                                                ? "#ffffff"
+                                                                : "#1890ff",
+                                                        fontSize: "24px",
                                                     }}
-                                                />
-
-                                                {/* Service Image */}
-                                                {service.image &&
-                                                    service.image !== null &&
-                                                    service.image !== "" &&
-                                                    service.image !==
-                                                        undefined && (
-                                                        <img
-                                                            src={service.image}
-                                                            alt={
-                                                                service.name ||
-                                                                "Service"
-                                                            }
-                                                            style={{
-                                                                width: "100%",
-                                                                height: "100%",
-                                                                objectFit:
-                                                                    "cover",
-                                                                borderRadius:
-                                                                    "12px",
-                                                            }}
-                                                            onError={(e) => {
-                                                                console.log(
-                                                                    "Image failed to load:",
-                                                                    service.image
-                                                                );
-                                                                e.target.style.display =
-                                                                    "none";
-                                                            }}
-                                                            onLoad={(e) => {
-                                                                console.log(
-                                                                    "Image loaded successfully:",
-                                                                    service.image
-                                                                );
-                                                            }}
-                                                        />
+                                                >
+                                                    {index === 0 && (
+                                                        <UserOutlined />
                                                     )}
+                                                    {index === 1 && (
+                                                        <BankOutlined />
+                                                    )}
+                                                    {index === 2 && (
+                                                        <CheckCircleOutlined />
+                                                    )}
+                                                    {index === 3 && (
+                                                        <TrophyOutlined />
+                                                    )}
+                                                    {index > 3 && (
+                                                        <StarOutlined />
+                                                    )}
+                                                </div>
                                             </div>
 
                                             {/* Service Content */}
@@ -861,9 +1016,8 @@ export default function CustomerDashboard({
                                                     flex: 1,
                                                     display: "flex",
                                                     flexDirection: "column",
-                                                    minHeight: 0,
-                                                    padding: "20px",
-                                                    justifyContent: "center",
+                                                    justifyContent:
+                                                        "space-between",
                                                 }}
                                             >
                                                 {/* Service Title */}
@@ -871,49 +1025,55 @@ export default function CustomerDashboard({
                                                     level={4}
                                                     className="service-title"
                                                     style={{
-                                                        color: "#1a1a1a",
-                                                        fontSize: "20px",
+                                                        color:
+                                                            index === 0
+                                                                ? "#ffffff"
+                                                                : "#1a1a1a",
+                                                        fontSize: "18px",
                                                         fontWeight: 700,
-                                                        lineHeight: 1.2,
-                                                        minHeight: "48px",
-                                                        overflow: "hidden",
-                                                        display: "-webkit-box",
-                                                        WebkitLineClamp: 2,
-                                                        WebkitBoxOrient:
-                                                            "vertical",
-                                                        marginBottom: "16px",
-                                                        textAlign: "center",
+                                                        lineHeight: 1.3,
+                                                        marginBottom: "12px",
+                                                        textAlign: "left",
                                                         letterSpacing:
                                                             "-0.01em",
+                                                        overflow: "hidden",
+                                                        textOverflow:
+                                                            "ellipsis",
+                                                        whiteSpace: "nowrap",
+                                                        maxWidth: "100%",
                                                     }}
+                                                    title={
+                                                        service.name ||
+                                                        "Service"
+                                                    }
                                                 >
                                                     {service.name || "Service"}
                                                 </Title>
 
                                                 {/* Service Description */}
-                                                {(service.description ||
-                                                    service.name) && (
-                                                    <Text
-                                                        className="service-description"
-                                                        style={{
-                                                            color: "#4a4a4a",
-                                                            fontSize: "15px",
-                                                            lineHeight: 1.5,
-                                                            minHeight: "72px",
-                                                            overflow: "hidden",
-                                                            display:
-                                                                "-webkit-box",
-                                                            WebkitLineClamp: 3,
-                                                            WebkitBoxOrient:
-                                                                "vertical",
-                                                            marginBottom: "0px",
-                                                            textAlign: "center",
-                                                            fontWeight: 400,
-                                                            letterSpacing:
-                                                                "0.01em",
-                                                        }}
-                                                    >
-                                                        {service.description &&
+                                                <Text
+                                                    className="service-description"
+                                                    style={{
+                                                        color:
+                                                            index === 0
+                                                                ? "rgba(255, 255, 255, 0.9)"
+                                                                : "#4a4a4a",
+                                                        fontSize: "14px",
+                                                        lineHeight: 1.5,
+                                                        textAlign: "left",
+                                                        fontWeight: 400,
+                                                        letterSpacing: "0.01em",
+                                                        overflow: "hidden",
+                                                        display: "-webkit-box",
+                                                        WebkitLineClamp: 2,
+                                                        WebkitBoxOrient:
+                                                            "vertical",
+                                                        textOverflow:
+                                                            "ellipsis",
+                                                        maxHeight: "42px",
+                                                    }}
+                                                    title={
+                                                        service.description &&
                                                         service.description.trim() !==
                                                             ""
                                                             ? service.description
@@ -925,9 +1085,26 @@ export default function CustomerDashboard({
                                                             : `Professional ${
                                                                   service.name ||
                                                                   "service"
-                                                              } support for your needs.`}
-                                                    </Text>
-                                                )}
+                                                              } support for your needs.`
+                                                    }
+                                                >
+                                                    {truncateText(
+                                                        service.description &&
+                                                            service.description.trim() !==
+                                                                ""
+                                                            ? service.description
+                                                                  .replace(
+                                                                      /<[^>]*>/g,
+                                                                      ""
+                                                                  )
+                                                                  .trim()
+                                                            : `Professional ${
+                                                                  service.name ||
+                                                                  "service"
+                                                              } support for your needs.`,
+                                                        80
+                                                    )}
+                                                </Text>
                                             </div>
                                         </Card>
                                     </div>
@@ -975,59 +1152,115 @@ export default function CustomerDashboard({
                     {/* Disclaimer */}
                     <div
                         style={{
-                            textAlign: "center",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
                             marginTop: 48,
                             padding: "24px 32px",
-                            background: "rgba(24, 144, 255, 0.08)",
+                            background: "rgba(255, 255, 255, 0.8)",
+                            backdropFilter: "blur(10px)",
                             borderRadius: "16px",
-                            border: "1px solid rgba(24, 144, 255, 0.15)",
+                            border: "1px solid rgba(24, 144, 255, 0.2)",
                             maxWidth: "800px",
                             margin: "48px auto 0",
+                            boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
                         }}
                     >
-                        <Text
+                        <div
                             style={{
-                                color: "#4a4a4a",
-                                fontSize: "15px",
-                                lineHeight: 1.5,
-                                fontWeight: 500,
+                                width: "48px",
+                                height: "48px",
+                                borderRadius: "50%",
+                                background:
+                                    "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                marginRight: "16px",
+                                flexShrink: 0,
+                                boxShadow: "0 4px 12px rgba(24, 144, 255, 0.3)",
                             }}
                         >
-                            📌 HospiPals provide non-medical companion support
+                            <span style={{ fontSize: 20, color: "white" }}>
+                                📌
+                            </span>
+                        </div>
+                        <Text
+                            style={{
+                                color: "#1a1a1a",
+                                fontSize: "15px",
+                                lineHeight: 1.6,
+                                fontWeight: 500,
+                                margin: 0,
+                            }}
+                        >
+                            HospiPals provide non-medical companion support
                             only. All medical/nursing care is handled by
                             hospital staff.
                         </Text>
                     </div>
 
                     {/* Final CTA */}
-                    <div style={{ textAlign: "center", marginTop: 40 }}>
+                    <div style={{ textAlign: "center", marginTop: 48 }}>
                         <Button
                             type="primary"
-                            size="large"
-                            icon={<BookOutlined />}
+                            size="middle"
+                            icon={<BookOutlined style={{ fontSize: 14 }} />}
                             onClick={handleBookAppointment}
                             style={{
                                 background:
                                     "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
                                 border: "none",
-                                height: 56,
-                                padding: "0 32px",
-                                fontSize: "16px",
-                                fontWeight: 600,
-                                borderRadius: "14px",
-                                boxShadow:
-                                    "0 8px 24px rgba(24, 144, 255, 0.25)",
-                                minWidth: "280px",
-                                maxWidth: "400px",
+                                height: 44,
+                                padding: "0 28px",
+                                fontSize: "15px",
+                                fontWeight: 500,
+                                borderRadius: "10px",
+                                boxShadow: "0 6px 20px rgba(24, 144, 255, 0.2)",
+                                minWidth: "240px",
+                                maxWidth: "280px",
                                 width: "auto",
                                 whiteSpace: "nowrap",
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: "8px",
+                                transition:
+                                    "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                                position: "relative",
+                                overflow: "hidden",
                             }}
                             className="services-cta-button"
+                            onMouseEnter={(e) => {
+                                e.target.style.transform = "translateY(-1px)";
+                                e.target.style.boxShadow =
+                                    "0 8px 24px rgba(24, 144, 255, 0.3)";
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.transform = "translateY(0)";
+                                e.target.style.boxShadow =
+                                    "0 6px 20px rgba(24, 144, 255, 0.2)";
+                            }}
                         >
                             Book a HospiPal
                         </Button>
+
+                        {/* Button Description */}
+                        <div style={{ marginTop: 16 }}>
+                            <Text
+                                style={{
+                                    color: "#666",
+                                    fontSize: "14px",
+                                    lineHeight: 1.5,
+                                    fontWeight: 400,
+                                }}
+                            >
+                                Quick booking • Secure payment • Instant
+                                confirmation
+                            </Text>
+                        </div>
                     </div>
                 </div>
 
@@ -1045,12 +1278,44 @@ export default function CustomerDashboard({
                         className="extras-section"
                     >
                         <div style={{ textAlign: "center", marginBottom: 48 }}>
+                            {/* EXTRAS Label */}
+                            <div
+                                style={{
+                                    display: "inline-block",
+                                    padding: "8px 16px",
+                                    background: "transparent",
+                                    border: "1px solid #d9d9d9",
+                                    borderRadius: "20px",
+                                    marginBottom: "16px",
+                                }}
+                            >
+                                <Text
+                                    style={{
+                                        color: "#1a1a1a",
+                                        fontSize: "12px",
+                                        fontWeight: 600,
+                                        textTransform: "uppercase",
+                                        letterSpacing: "1px",
+                                    }}
+                                >
+                                    EXTRAS
+                                </Text>
+                            </div>
+
                             <Title
                                 level={2}
-                                style={{ color: "#1a1a1a", marginBottom: 16 }}
+                                style={{
+                                    color: "#1a1a1a",
+                                    marginBottom: 16,
+                                    fontSize:
+                                        windowWidth >= 768 ? "2.5rem" : "2rem",
+                                    fontWeight: 700,
+                                    lineHeight: 1.2,
+                                }}
                             >
-                                Extras
+                                Enhance your HospiPal experience
                             </Title>
+
                             <Paragraph
                                 style={{
                                     color: "#666",
@@ -1058,8 +1323,8 @@ export default function CustomerDashboard({
                                     margin: 0,
                                 }}
                             >
-                                Enhance your HospiPal experience with these
-                                additional services.
+                                Additional services to make your booking
+                                smoother, safer, and stress-free.
                             </Paragraph>
                         </div>
 
@@ -1089,9 +1354,10 @@ export default function CustomerDashboard({
                                 {extrasData.map((extra, index) => (
                                     <Card
                                         key={extra.id || index}
+                                        onClick={() =>
+                                            handleExtraCardClick(index)
+                                        }
                                         style={{
-                                            background: "#ffffff",
-                                            border: "1px solid #e8e8e8",
                                             borderRadius: "16px",
                                             overflow: "hidden",
                                             cursor: "pointer",
@@ -1103,78 +1369,57 @@ export default function CustomerDashboard({
                                             display: "flex",
                                             flexDirection: "column",
                                             boxShadow:
-                                                "0 4px 12px rgba(0, 0, 0, 0.08)",
+                                                activeExtraCard === index
+                                                    ? "0 8px 24px rgba(24, 144, 255, 0.15)"
+                                                    : "0 4px 12px rgba(0, 0, 0, 0.06)",
                                             flexShrink: 0,
+                                            position: "relative",
                                         }}
                                         hoverable
-                                        className="extra-card"
-                                        bodyStyle={{ padding: 0 }}
+                                        className={`extra-card ${
+                                            activeExtraCard === index
+                                                ? "active-extra"
+                                                : ""
+                                        }`}
+                                        bodyStyle={{
+                                            padding: "24px",
+                                            height: "100%",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            justifyContent: "space-between",
+                                        }}
                                     >
-                                        {/* Extra Header with Gradient Background */}
+                                        {/* Extra Icon */}
                                         <div
-                                            className="extra-header"
                                             style={{
-                                                width: "100%",
-                                                height: "120px",
-                                                background: `linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%)`,
-                                                position: "relative",
-                                                overflow: "hidden",
                                                 display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
+                                                justifyContent: "flex-start",
+                                                marginBottom: "16px",
                                             }}
                                         >
-                                            {/* Extra Image */}
-                                            {extra.image &&
-                                                extra.image !== null &&
-                                                extra.image !== "" &&
-                                                extra.image !== undefined && (
-                                                    <img
-                                                        src={extra.image}
-                                                        alt={
-                                                            extra.name ||
-                                                            "Extra"
-                                                        }
-                                                        style={{
-                                                            // width: "60px",
-                                                            // height: "60px",
-                                                            objectFit: "cover",
-                                                            borderRadius:
-                                                                "12px",
-                                                        }}
-                                                        onError={(e) => {
-                                                            console.log(
-                                                                "Extra image failed to load:",
-                                                                extra.image
-                                                            );
-                                                            e.target.style.display =
-                                                                "none";
-                                                        }}
-                                                    />
-                                                )}
-
-                                            {/* Fallback Icon */}
-                                            {(!extra.image ||
-                                                extra.image === null ||
-                                                extra.image === "" ||
-                                                extra.image === undefined) && (
-                                                <div
-                                                    style={{
-                                                        width: "60px",
-                                                        height: "60px",
-                                                        background: "#1890ff",
-                                                        borderRadius: "12px",
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        justifyContent:
-                                                            "center",
-                                                        fontSize: "24px",
-                                                        color: "#ffffff",
-                                                    }}
-                                                >
-                                                    ⭐
-                                                </div>
-                                            )}
+                                            <div
+                                                style={{
+                                                    width: "48px",
+                                                    height: "48px",
+                                                    borderRadius: "12px",
+                                                    background:
+                                                        activeExtraCard ===
+                                                        index
+                                                            ? "rgba(24, 144, 255, 0.15)"
+                                                            : "rgba(24, 144, 255, 0.1)",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    color:
+                                                        activeExtraCard ===
+                                                        index
+                                                            ? "#1890ff"
+                                                            : "#1890ff",
+                                                    fontSize: "24px",
+                                                }}
+                                            >
+                                                ⭐
+                                            </div>
                                         </div>
 
                                         {/* Extra Content */}
@@ -1184,7 +1429,6 @@ export default function CustomerDashboard({
                                                 flex: 1,
                                                 display: "flex",
                                                 flexDirection: "column",
-                                                padding: "20px",
                                                 justifyContent: "space-between",
                                             }}
                                         >
@@ -1194,17 +1438,18 @@ export default function CustomerDashboard({
                                                 className="extra-title"
                                                 style={{
                                                     color: "#1a1a1a",
-                                                    fontSize: "16px",
-                                                    fontWeight: 600,
+                                                    fontSize: "18px",
+                                                    fontWeight: 700,
                                                     lineHeight: 1.3,
-                                                    height: "42px",
+                                                    marginBottom: "12px",
+                                                    textAlign: "left",
+                                                    letterSpacing: "-0.01em",
                                                     overflow: "hidden",
-                                                    display: "-webkit-box",
-                                                    WebkitLineClamp: 2,
-                                                    WebkitBoxOrient: "vertical",
-                                                    marginBottom: "8px",
-                                                    textAlign: "center",
+                                                    textOverflow: "ellipsis",
+                                                    whiteSpace: "nowrap",
+                                                    maxWidth: "100%",
                                                 }}
+                                                title={extra.name || "Extra"}
                                             >
                                                 {extra.name || "Extra"}
                                             </Title>
@@ -1216,41 +1461,49 @@ export default function CustomerDashboard({
                                                     <Text
                                                         className="extra-description"
                                                         style={{
-                                                            color: "#666",
-                                                            fontSize: "13px",
-                                                            lineHeight: 1.4,
-                                                            height: "36px",
+                                                            color: "#4a4a4a",
+                                                            fontSize: "14px",
+                                                            lineHeight: 1.5,
+                                                            textAlign: "left",
+                                                            fontWeight: 400,
+                                                            letterSpacing:
+                                                                "0.01em",
+                                                            marginBottom:
+                                                                "16px",
                                                             overflow: "hidden",
                                                             display:
                                                                 "-webkit-box",
                                                             WebkitLineClamp: 2,
                                                             WebkitBoxOrient:
                                                                 "vertical",
-                                                            marginBottom:
-                                                                "12px",
-                                                            textAlign: "center",
+                                                            textOverflow:
+                                                                "ellipsis",
+                                                            maxHeight: "42px",
                                                         }}
-                                                    >
-                                                        {extra.description
+                                                        title={extra.description
                                                             .replace(
                                                                 /<[^>]*>/g,
                                                                 ""
                                                             )
                                                             .trim()}
+                                                    >
+                                                        {truncateText(
+                                                            extra.description,
+                                                            80
+                                                        )}
                                                     </Text>
                                                 )}
 
                                             {/* Extra Price */}
                                             <div
                                                 style={{
-                                                    textAlign: "center",
-                                                    marginTop: "auto",
+                                                    textAlign: "left",
                                                 }}
                                             >
                                                 <Text
                                                     style={{
                                                         color: "#1890ff",
-                                                        fontSize: "18px",
+                                                        fontSize: "20px",
                                                         fontWeight: 700,
                                                         lineHeight: 1,
                                                     }}
@@ -1382,17 +1635,48 @@ export default function CustomerDashboard({
                     className="how-it-works-section"
                 >
                     <div style={{ textAlign: "center", marginBottom: 48 }}>
+                        {/* HOW IT WORKS Label */}
+                        <div
+                            style={{
+                                display: "inline-block",
+                                padding: "8px 16px",
+                                background: "transparent",
+                                border: "1px solid #d9d9d9",
+                                borderRadius: "20px",
+                                marginBottom: "16px",
+                            }}
+                        >
+                            <Text
+                                style={{
+                                    color: "#1a1a1a",
+                                    fontSize: "12px",
+                                    fontWeight: 600,
+                                    textTransform: "uppercase",
+                                    letterSpacing: "1px",
+                                }}
+                            >
+                                HOW IT WORKS
+                            </Text>
+                        </div>
+
                         <Title
                             level={2}
-                            style={{ color: "#1a1a1a", marginBottom: 16 }}
+                            style={{
+                                color: "#1a1a1a",
+                                marginBottom: 16,
+                                fontSize:
+                                    windowWidth >= 768 ? "2.5rem" : "2rem",
+                                fontWeight: 700,
+                                lineHeight: 1.2,
+                            }}
                         >
-                            How It Works (3 Steps)
+                            Simple 3-step booking process
                         </Title>
+
                         <Paragraph
                             style={{ color: "#666", fontSize: 18, margin: 0 }}
                         >
-                            Simple and secure booking process for your peace of
-                            mind.
+                            Quick and secure booking for your peace of mind.
                         </Paragraph>
                     </div>
 
@@ -1415,11 +1699,12 @@ export default function CustomerDashboard({
                             style={{
                                 textAlign: "center",
                                 padding: "32px 24px",
-                                background:
-                                    "linear-gradient(135deg, rgba(24, 144, 255, 0.05) 0%, rgba(24, 144, 255, 0.02) 100%)",
+                                background: "rgba(255, 255, 255, 0.8)",
+                                backdropFilter: "blur(10px)",
                                 borderRadius: "20px",
-                                border: "1px solid rgba(24, 144, 255, 0.1)",
+                                border: "1px solid rgba(24, 144, 255, 0.2)",
                                 position: "relative",
+                                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
                             }}
                             className="step-card"
                         >
@@ -1427,18 +1712,16 @@ export default function CustomerDashboard({
                                 style={{
                                     width: "60px",
                                     height: "60px",
-                                    background:
-                                        "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
+                                    background: "rgba(24, 144, 255, 0.1)",
                                     borderRadius: "50%",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
                                     margin: "0 auto 24px auto",
                                     fontSize: "24px",
-                                    color: "#ffffff",
+                                    color: "#1890ff",
                                     fontWeight: "bold",
-                                    boxShadow:
-                                        "0 4px 12px rgba(24, 144, 255, 0.3)",
+                                    border: "2px solid rgba(24, 144, 255, 0.3)",
                                 }}
                             >
                                 1
@@ -1471,11 +1754,12 @@ export default function CustomerDashboard({
                             style={{
                                 textAlign: "center",
                                 padding: "32px 24px",
-                                background:
-                                    "linear-gradient(135deg, rgba(82, 196, 26, 0.05) 0%, rgba(82, 196, 26, 0.02) 100%)",
+                                background: "rgba(255, 255, 255, 0.8)",
+                                backdropFilter: "blur(10px)",
                                 borderRadius: "20px",
-                                border: "1px solid rgba(82, 196, 26, 0.1)",
+                                border: "1px solid rgba(24, 144, 255, 0.2)",
                                 position: "relative",
+                                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
                             }}
                             className="step-card"
                         >
@@ -1483,18 +1767,16 @@ export default function CustomerDashboard({
                                 style={{
                                     width: "60px",
                                     height: "60px",
-                                    background:
-                                        "linear-gradient(135deg, #52c41a 0%, #389e0d 100%)",
+                                    background: "rgba(24, 144, 255, 0.1)",
                                     borderRadius: "50%",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
                                     margin: "0 auto 24px auto",
                                     fontSize: "24px",
-                                    color: "#ffffff",
+                                    color: "#1890ff",
                                     fontWeight: "bold",
-                                    boxShadow:
-                                        "0 4px 12px rgba(82, 196, 26, 0.3)",
+                                    border: "2px solid rgba(24, 144, 255, 0.3)",
                                 }}
                             >
                                 2
@@ -1527,11 +1809,12 @@ export default function CustomerDashboard({
                             style={{
                                 textAlign: "center",
                                 padding: "32px 24px",
-                                background:
-                                    "linear-gradient(135deg, rgba(250, 173, 20, 0.05) 0%, rgba(250, 173, 20, 0.02) 100%)",
+                                background: "rgba(255, 255, 255, 0.8)",
+                                backdropFilter: "blur(10px)",
                                 borderRadius: "20px",
-                                border: "1px solid rgba(250, 173, 20, 0.1)",
+                                border: "1px solid rgba(24, 144, 255, 0.2)",
                                 position: "relative",
+                                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
                             }}
                             className="step-card"
                         >
@@ -1539,18 +1822,16 @@ export default function CustomerDashboard({
                                 style={{
                                     width: "60px",
                                     height: "60px",
-                                    background:
-                                        "linear-gradient(135deg, #faad14 0%, #d48806 100%)",
+                                    background: "rgba(24, 144, 255, 0.1)",
                                     borderRadius: "50%",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
                                     margin: "0 auto 24px auto",
                                     fontSize: "24px",
-                                    color: "#ffffff",
+                                    color: "#1890ff",
                                     fontWeight: "bold",
-                                    boxShadow:
-                                        "0 4px 12px rgba(250, 173, 20, 0.3)",
+                                    border: "2px solid rgba(24, 144, 255, 0.3)",
                                 }}
                             >
                                 3
@@ -1619,12 +1900,44 @@ export default function CustomerDashboard({
                     className="trust-section"
                 >
                     <div style={{ textAlign: "center", marginBottom: 48 }}>
+                        {/* WHY FAMILIES TRUST Label */}
+                        <div
+                            style={{
+                                display: "inline-block",
+                                padding: "8px 16px",
+                                background: "transparent",
+                                border: "1px solid #d9d9d9",
+                                borderRadius: "20px",
+                                marginBottom: "16px",
+                            }}
+                        >
+                            <Text
+                                style={{
+                                    color: "#1a1a1a",
+                                    fontSize: "12px",
+                                    fontWeight: 600,
+                                    textTransform: "uppercase",
+                                    letterSpacing: "1px",
+                                }}
+                            >
+                                WHY FAMILIES TRUST
+                            </Text>
+                        </div>
+
                         <Title
                             level={2}
-                            style={{ color: "#1a1a1a", marginBottom: 16 }}
+                            style={{
+                                color: "#1a1a1a",
+                                marginBottom: 16,
+                                fontSize:
+                                    windowWidth >= 768 ? "2.5rem" : "2rem",
+                                fontWeight: 700,
+                                lineHeight: 1.2,
+                            }}
                         >
                             Why Families Trust HospiPal
                         </Title>
+
                         <Paragraph
                             style={{ color: "#666", fontSize: 18, margin: 0 }}
                         >
@@ -1666,15 +1979,14 @@ export default function CustomerDashboard({
                                 style={{
                                     width: "48px",
                                     height: "48px",
-                                    background:
-                                        "linear-gradient(135deg, #52c41a 0%, #389e0d 100%)",
+                                    background: "rgba(24, 144, 255, 0.1)",
                                     borderRadius: "12px",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
                                     flexShrink: 0,
                                     fontSize: "20px",
-                                    color: "#ffffff",
+                                    color: "#1890ff",
                                 }}
                             >
                                 🛡️
@@ -1722,15 +2034,14 @@ export default function CustomerDashboard({
                                 style={{
                                     width: "48px",
                                     height: "48px",
-                                    background:
-                                        "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
+                                    background: "rgba(24, 144, 255, 0.1)",
                                     borderRadius: "12px",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
                                     flexShrink: 0,
                                     fontSize: "20px",
-                                    color: "#ffffff",
+                                    color: "#1890ff",
                                 }}
                             >
                                 🤝
@@ -1778,15 +2089,14 @@ export default function CustomerDashboard({
                                 style={{
                                     width: "48px",
                                     height: "48px",
-                                    background:
-                                        "linear-gradient(135deg, #faad14 0%, #d48806 100%)",
+                                    background: "rgba(24, 144, 255, 0.1)",
                                     borderRadius: "12px",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
                                     flexShrink: 0,
                                     fontSize: "20px",
-                                    color: "#ffffff",
+                                    color: "#1890ff",
                                 }}
                             >
                                 💙
@@ -1834,15 +2144,14 @@ export default function CustomerDashboard({
                                 style={{
                                     width: "48px",
                                     height: "48px",
-                                    background:
-                                        "linear-gradient(135deg, #722ed1 0%, #531dab 100%)",
+                                    background: "rgba(24, 144, 255, 0.1)",
                                     borderRadius: "12px",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
                                     flexShrink: 0,
                                     fontSize: "20px",
-                                    color: "#ffffff",
+                                    color: "#1890ff",
                                 }}
                             >
                                 📋
@@ -1877,14 +2186,17 @@ export default function CustomerDashboard({
                 {/* Footer Section */}
                 <footer
                     style={{
-                        background: "#1a1a1a",
-                        padding: "32px 24px 24px",
+                        background: "rgba(26, 26, 26, 0.95)",
+                        backdropFilter: "blur(10px)",
+                        padding: "28px 24px 24px",
                         marginTop: "48px",
                         color: "#ffffff",
                         width: "100vw",
                         marginLeft: "calc(-50vw + 50%)",
                         marginRight: "calc(-50vw + 50%)",
                         borderRadius: "24px 24px 0 0",
+                        border: "1px solid rgba(255, 255, 255, 0.1)",
+                        boxShadow: "0 4px 16px rgba(0, 0, 0, 0.15)",
                         fontFamily:
                             "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                     }}
@@ -1900,10 +2212,10 @@ export default function CustomerDashboard({
                         {/* Footer Links */}
                         <div
                             style={{
-                                marginBottom: "24px",
-                                paddingBottom: "20px",
+                                marginBottom: "20px",
+                                paddingBottom: "16px",
                                 borderBottom:
-                                    "1px solid rgba(255, 255, 255, 0.12)",
+                                    "1px solid rgba(255, 255, 255, 0.15)",
                             }}
                         >
                             <div
@@ -1917,27 +2229,39 @@ export default function CustomerDashboard({
                             >
                                 <Text
                                     style={{
-                                        color: "rgba(255, 255, 255, 0.85)",
+                                        color: "rgba(255, 255, 255, 0.9)",
                                         fontSize: "14px",
                                         cursor: "pointer",
-                                        transition: "color 0.2s ease",
+                                        transition: "all 0.2s ease",
                                         fontWeight: 500,
                                         letterSpacing: "0.01em",
+                                        padding: "6px 12px",
+                                        borderRadius: "6px",
+                                        background: "rgba(255, 255, 255, 0.05)",
+                                        border: "1px solid rgba(255, 255, 255, 0.1)",
                                     }}
                                     className="footer-link"
-                                    onMouseEnter={(e) =>
-                                        (e.target.style.color = "#ffffff")
-                                    }
-                                    onMouseLeave={(e) =>
-                                        (e.target.style.color =
-                                            "rgba(255, 255, 255, 0.85)")
-                                    }
+                                    onMouseEnter={(e) => {
+                                        e.target.style.background =
+                                            "rgba(255, 255, 255, 0.15)";
+                                        e.target.style.borderColor =
+                                            "rgba(255, 255, 255, 0.25)";
+                                        e.target.style.color = "#ffffff";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.background =
+                                            "rgba(255, 255, 255, 0.05)";
+                                        e.target.style.borderColor =
+                                            "rgba(255, 255, 255, 0.1)";
+                                        e.target.style.color =
+                                            "rgba(255, 255, 255, 0.9)";
+                                    }}
                                 >
                                     Terms & Conditions
                                 </Text>
                                 <Text
                                     style={{
-                                        color: "rgba(255, 255, 255, 0.4)",
+                                        color: "rgba(24, 144, 255, 0.4)",
                                         fontSize: "14px",
                                         fontWeight: 300,
                                     }}
@@ -1946,28 +2270,40 @@ export default function CustomerDashboard({
                                 </Text>
                                 <Text
                                     style={{
-                                        color: "rgba(255, 255, 255, 0.85)",
+                                        color: "rgba(255, 255, 255, 0.9)",
                                         fontSize: "14px",
                                         cursor: "pointer",
-                                        transition: "color 0.2s ease",
+                                        transition: "all 0.2s ease",
                                         fontWeight: 500,
                                         letterSpacing: "0.01em",
+                                        padding: "6px 12px",
+                                        borderRadius: "6px",
+                                        background: "rgba(255, 255, 255, 0.05)",
+                                        border: "1px solid rgba(255, 255, 255, 0.1)",
                                     }}
                                     className="footer-link"
                                     onClick={handlePrivacyPolicy}
-                                    onMouseEnter={(e) =>
-                                        (e.target.style.color = "#ffffff")
-                                    }
-                                    onMouseLeave={(e) =>
-                                        (e.target.style.color =
-                                            "rgba(255, 255, 255, 0.85)")
-                                    }
+                                    onMouseEnter={(e) => {
+                                        e.target.style.background =
+                                            "rgba(255, 255, 255, 0.15)";
+                                        e.target.style.borderColor =
+                                            "rgba(255, 255, 255, 0.25)";
+                                        e.target.style.color = "#ffffff";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.background =
+                                            "rgba(255, 255, 255, 0.05)";
+                                        e.target.style.borderColor =
+                                            "rgba(255, 255, 255, 0.1)";
+                                        e.target.style.color =
+                                            "rgba(255, 255, 255, 0.9)";
+                                    }}
                                 >
                                     Privacy Policy
                                 </Text>
                                 <Text
                                     style={{
-                                        color: "rgba(255, 255, 255, 0.4)",
+                                        color: "rgba(24, 144, 255, 0.4)",
                                         fontSize: "14px",
                                         fontWeight: 300,
                                     }}
@@ -1976,22 +2312,34 @@ export default function CustomerDashboard({
                                 </Text>
                                 <Text
                                     style={{
-                                        color: "rgba(255, 255, 255, 0.85)",
+                                        color: "rgba(255, 255, 255, 0.9)",
                                         fontSize: "14px",
                                         cursor: "pointer",
-                                        transition: "color 0.2s ease",
+                                        transition: "all 0.2s ease",
                                         fontWeight: 500,
                                         letterSpacing: "0.01em",
+                                        padding: "6px 12px",
+                                        borderRadius: "6px",
+                                        background: "rgba(255, 255, 255, 0.05)",
+                                        border: "1px solid rgba(255, 255, 255, 0.1)",
                                     }}
                                     className="footer-link"
                                     onClick={handleBookingConsent}
-                                    onMouseEnter={(e) =>
-                                        (e.target.style.color = "#ffffff")
-                                    }
-                                    onMouseLeave={(e) =>
-                                        (e.target.style.color =
-                                            "rgba(255, 255, 255, 0.85)")
-                                    }
+                                    onMouseEnter={(e) => {
+                                        e.target.style.background =
+                                            "rgba(255, 255, 255, 0.15)";
+                                        e.target.style.borderColor =
+                                            "rgba(255, 255, 255, 0.25)";
+                                        e.target.style.color = "#ffffff";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.background =
+                                            "rgba(255, 255, 255, 0.05)";
+                                        e.target.style.borderColor =
+                                            "rgba(255, 255, 255, 0.1)";
+                                        e.target.style.color =
+                                            "rgba(255, 255, 255, 0.9)";
+                                    }}
                                 >
                                     Booking Consent
                                 </Text>
@@ -2001,10 +2349,10 @@ export default function CustomerDashboard({
                         {/* Contact Information */}
                         <div
                             style={{
-                                marginBottom: "24px",
-                                paddingBottom: "20px",
+                                marginBottom: "20px",
+                                paddingBottom: "16px",
                                 borderBottom:
-                                    "1px solid rgba(255, 255, 255, 0.12)",
+                                    "1px solid rgba(255, 255, 255, 0.15)",
                             }}
                         >
                             <div
@@ -2012,7 +2360,7 @@ export default function CustomerDashboard({
                                     display: "flex",
                                     justifyContent: "center",
                                     alignItems: "center",
-                                    gap: "28px",
+                                    gap: "32px",
                                     flexWrap: "wrap",
                                 }}
                             >
@@ -2020,22 +2368,51 @@ export default function CustomerDashboard({
                                     style={{
                                         display: "flex",
                                         alignItems: "center",
-                                        gap: "6px",
+                                        gap: "10px",
+                                        padding: "10px 16px",
+                                        borderRadius: "10px",
+                                        background: "rgba(255, 255, 255, 0.08)",
+                                        border: "1px solid rgba(255, 255, 255, 0.15)",
+                                        transition: "all 0.2s ease",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.background =
+                                            "rgba(255, 255, 255, 0.12)";
+                                        e.target.style.borderColor =
+                                            "rgba(255, 255, 255, 0.25)";
+                                        e.target.style.transform =
+                                            "translateY(-1px)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.background =
+                                            "rgba(255, 255, 255, 0.08)";
+                                        e.target.style.borderColor =
+                                            "rgba(255, 255, 255, 0.15)";
+                                        e.target.style.transform =
+                                            "translateY(0)";
                                     }}
                                 >
-                                    <Text
+                                    <div
                                         style={{
-                                            color: "rgba(255, 255, 255, 0.85)",
-                                            fontSize: "15px",
+                                            width: "28px",
+                                            height: "28px",
+                                            borderRadius: "6px",
+                                            background:
+                                                "rgba(255, 255, 255, 0.15)",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            fontSize: "14px",
+                                            color: "#ffffff",
                                         }}
                                     >
                                         📞
-                                    </Text>
+                                    </div>
                                     <Text
                                         style={{
-                                            color: "rgba(255, 255, 255, 0.85)",
+                                            color: "rgba(255, 255, 255, 0.9)",
                                             fontSize: "14px",
-                                            fontWeight: 500,
+                                            fontWeight: 600,
                                             letterSpacing: "0.02em",
                                         }}
                                     >
@@ -2046,22 +2423,51 @@ export default function CustomerDashboard({
                                     style={{
                                         display: "flex",
                                         alignItems: "center",
-                                        gap: "6px",
+                                        gap: "10px",
+                                        padding: "10px 16px",
+                                        borderRadius: "10px",
+                                        background: "rgba(255, 255, 255, 0.08)",
+                                        border: "1px solid rgba(255, 255, 255, 0.15)",
+                                        transition: "all 0.2s ease",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.background =
+                                            "rgba(255, 255, 255, 0.12)";
+                                        e.target.style.borderColor =
+                                            "rgba(255, 255, 255, 0.25)";
+                                        e.target.style.transform =
+                                            "translateY(-1px)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.background =
+                                            "rgba(255, 255, 255, 0.08)";
+                                        e.target.style.borderColor =
+                                            "rgba(255, 255, 255, 0.15)";
+                                        e.target.style.transform =
+                                            "translateY(0)";
                                     }}
                                 >
-                                    <Text
+                                    <div
                                         style={{
-                                            color: "rgba(255, 255, 255, 0.85)",
-                                            fontSize: "15px",
+                                            width: "28px",
+                                            height: "28px",
+                                            borderRadius: "6px",
+                                            background:
+                                                "rgba(255, 255, 255, 0.15)",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            fontSize: "14px",
+                                            color: "#ffffff",
                                         }}
                                     >
                                         📧
-                                    </Text>
+                                    </div>
                                     <Text
                                         style={{
-                                            color: "rgba(255, 255, 255, 0.85)",
+                                            color: "rgba(255, 255, 255, 0.9)",
                                             fontSize: "14px",
-                                            fontWeight: 500,
+                                            fontWeight: 600,
                                             letterSpacing: "0.02em",
                                         }}
                                     >
@@ -2075,10 +2481,15 @@ export default function CustomerDashboard({
                         <div>
                             <Text
                                 style={{
-                                    color: "rgba(255, 255, 255, 0.5)",
+                                    color: "rgba(255, 255, 255, 0.6)",
                                     fontSize: "13px",
-                                    fontWeight: 400,
+                                    fontWeight: 500,
                                     letterSpacing: "0.01em",
+                                    padding: "6px 12px",
+                                    borderRadius: "6px",
+                                    background: "rgba(255, 255, 255, 0.05)",
+                                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                                    display: "inline-block",
                                 }}
                             >
                                 © HospiPal Health LLP

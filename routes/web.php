@@ -163,6 +163,14 @@ Route::put('/admin/extras/{id}/update-sort-order', [AdminController::class, 'upd
     Route::patch('/admin/booking-policies/{id}', [AdminController::class, 'updateBookingPolicy'])->name('admin.booking-policies.patch');
     Route::post('/admin/booking-policies/{id}/delete', [AdminController::class, 'deleteBookingPolicy'])->name('admin.booking-policies.delete');
 
+    // Dynamic slots routes
+    Route::get('/admin/dynamic-slots', [AdminController::class, 'dynamicSlots'])->name('admin.dynamic-slots');
+    Route::post('/admin/dynamic-slots', [AdminController::class, 'storeDynamicSlot'])->name('admin.dynamic-slots.store');
+    Route::put('/admin/dynamic-slots/{id}', [AdminController::class, 'updateDynamicSlot'])->name('admin.dynamic-slots.update');
+    Route::patch('/admin/dynamic-slots/{id}', [AdminController::class, 'updateDynamicSlot'])->name('admin.dynamic-slots.patch');
+    Route::post('/admin/dynamic-slots/{id}/delete', [AdminController::class, 'deleteDynamicSlot'])->name('admin.dynamic-slots.delete');
+    Route::put('/admin/dynamic-slots/{id}/update-sort-order', [AdminController::class, 'updateDynamicSlotSortOrder'])->name('admin.dynamic-slots.update-sort-order');
+
     Route::get('/admin/custom-fields', [AdminController::class, 'customFields'])->name('admin.custom-fields');
     Route::get('/admin/times', [AdminController::class, 'times'])->name('admin.times');
     Route::get('/admin/calendar', [AdminController::class, 'calendar'])->name('admin.calendar');

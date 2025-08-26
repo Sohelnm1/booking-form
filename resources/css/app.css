@@ -9,6 +9,192 @@ body {
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
     width: 100%;
+    background: #fafbfc;
+    background-image: linear-gradient(
+            rgba(24, 144, 255, 0.02) 1px,
+            transparent 1px
+        ),
+        linear-gradient(90deg, rgba(24, 144, 255, 0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: -1px -1px;
+    position: relative;
+}
+
+/* Add a subtle overlay to enhance the pattern */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(
+            circle at 25% 25%,
+            rgba(24, 144, 255, 0.03) 0%,
+            transparent 50%
+        ),
+        radial-gradient(
+            circle at 75% 75%,
+            rgba(82, 196, 26, 0.02) 0%,
+            transparent 50%
+        );
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* Enhanced background for better visual hierarchy */
+.ant-layout {
+    background: transparent !important;
+}
+
+/* Add subtle pattern to main content areas */
+.ant-layout-content {
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Enhanced card backgrounds */
+.ant-card {
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Enhanced dynamic slots to blend with new background */
+.dynamic-slots-carousel {
+    background: transparent !important;
+}
+
+.dynamic-slots-carousel .carousel .slide {
+    background: transparent !important;
+}
+
+/* Enhanced service cards */
+.services-carousel .carousel .slide .ant-card {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+    transition: all 0.3s ease;
+}
+
+.services-carousel .carousel .slide .ant-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Fix for showing all cards in a row on desktop */
+@media (min-width: 1200px) {
+    .services-carousel .carousel .slider-wrapper {
+        overflow: visible !important;
+    }
+
+    .services-carousel .carousel .slider {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: stretch !important;
+    }
+
+    .services-carousel .carousel .slide {
+        flex: 1 !important;
+        max-width: calc(25% - 16px) !important;
+        margin: 0 8px !important;
+        padding: 0 !important;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+    .services-carousel .carousel .slide {
+        max-width: calc(50% - 16px) !important;
+        margin: 0 8px !important;
+        padding: 0 !important;
+    }
+}
+
+/* Enhanced hero section */
+.hero-section {
+    background: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(15px);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    margin-bottom: 32px;
+    padding: 40px 24px;
+}
+
+/* Enhanced key features section */
+.key-features-section {
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    margin-bottom: 32px;
+    padding: 32px 24px;
+}
+
+/* Enhanced services section */
+.services-section {
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    margin-bottom: 32px;
+    padding: 32px 24px;
+}
+
+/* Enhanced extras section */
+.extras-section {
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    margin-bottom: 32px;
+    padding: 32px 24px;
+}
+
+/* Enhanced header background */
+.ant-layout-header {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(24, 144, 255, 0.1);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Enhanced footer background */
+.ant-layout-footer {
+    background: rgba(240, 242, 245, 0.9) !important;
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(24, 144, 255, 0.1);
+}
+
+/* Admin layout specific enhancements */
+.ant-layout-sider {
+    background: linear-gradient(180deg, #001529 0%, #003a70 100%) !important;
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Enhanced admin content area */
+.ant-layout .ant-layout-content {
+    background: rgba(240, 242, 245, 0.8) !important;
+    backdrop-filter: blur(12px);
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Enhanced admin header */
+.ant-layout .ant-layout-header {
+    background: rgba(255, 255, 255, 0.98) !important;
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(24, 144, 255, 0.15);
+    box-shadow: 0 2px 24px rgba(0, 0, 0, 0.1);
 }
 
 * {
@@ -269,6 +455,7 @@ body {
     padding: 0 20px !important;
     font-size: 14px !important;
     transition: all 0.3s ease !important;
+    color: #ffffff !important;
 }
 
 .header-signin-btn:hover {
@@ -372,6 +559,19 @@ body {
     .services-carousel .carousel .slider {
         align-items: stretch;
     }
+
+    /* Mobile background pattern adjustments */
+    body {
+        background-size: 20px 20px;
+    }
+
+    /* Reduce backdrop blur on mobile for better performance */
+    .ant-layout-content,
+    .ant-card,
+    .ant-layout-header,
+    .ant-layout-footer {
+        backdrop-filter: blur(5px);
+    }
 }
 
 /* Extras horizontal scroll styling */
@@ -408,4 +608,68 @@ body {
     .extras-scroll-container::-webkit-scrollbar {
         display: none;
     }
+}
+
+/* Force dotted borders for extra cards */
+.extra-card {
+    border-style: dashed !important;
+    border-width: 2px !important;
+}
+
+/* Override Ant Design's default card borders */
+.ant-card.extra-card {
+    border-style: dashed !important;
+    border-width: 2px !important;
+}
+
+/* Ensure the border shows up even with Ant Design overrides */
+.extras-scroll-container .ant-card {
+    border-style: dashed !important;
+    border-width: 2px !important;
+}
+
+/* Active card styling */
+.extras-scroll-container .ant-card.active-extra {
+    border-color: #91d5ff !important;
+    background-color: #e6f7ff !important;
+}
+
+/* Default card styling */
+.extras-scroll-container .ant-card:not(.active-extra) {
+    border-color: #d9d9d9 !important;
+    background-color: #ffffff !important;
+}
+
+/* Ensure text truncation works properly */
+.extra-title {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    max-width: 100% !important;
+}
+
+.extra-description {
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    text-overflow: ellipsis !important;
+    max-height: 42px !important;
+}
+
+/* Service card text truncation */
+.service-title {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    max-width: 100% !important;
+}
+
+.service-description {
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    text-overflow: ellipsis !important;
+    max-height: 42px !important;
 }

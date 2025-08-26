@@ -11,6 +11,7 @@ use App\Models\ScheduleSetting;
 use App\Models\ServicePricingTier;
 use Carbon\Carbon;
 use App\Models\Service; // Added this import
+use App\Models\DynamicSlot;
 
 class CustomerController extends Controller
 {
@@ -68,12 +69,68 @@ class CustomerController extends Controller
                 ];
             });
 
+        // Debug: Check if DynamicSlot model exists and count total slots
+        \Log::info('DynamicSlot Debug:', [
+            'model_exists' => class_exists('App\Models\DynamicSlot'),
+            'total_slots' => DynamicSlot::count(),
+            'active_slots' => DynamicSlot::where('is_active', true)->count(),
+            'mobile_slots' => DynamicSlot::where('show_on_mobile', true)->count(),
+            'desktop_slots' => DynamicSlot::where('show_on_desktop', true)->count(),
+            'all_slots_data' => DynamicSlot::all()->toArray(),
+        ]);
+
+        // Test query step by step
+        $testQuery1 = DynamicSlot::where('is_active', true)->get();
+        $testQuery2 = DynamicSlot::where('show_on_mobile', true)->get();
+        $testQuery3 = DynamicSlot::where('show_on_desktop', true)->get();
+        
+        \Log::info('Test Queries:', [
+            'test1_active_count' => $testQuery1->count(),
+            'test2_mobile_count' => $testQuery2->count(),
+            'test3_desktop_count' => $testQuery3->count(),
+        ]);
+
+        // Fetch active dynamic slots for the dashboard (simplified query to debug)
+        $dynamicSlots = DynamicSlot::where('is_active', true)
+            ->where(function($query) {
+                $query->where('show_on_mobile', true)
+                      ->orWhere('show_on_desktop', true);
+            })
+            ->orderBy('priority', 'desc')
+            ->orderBy('sort_order', 'asc')
+            ->get()
+            ->map(function($slot) {
+                return [
+                    'id' => $slot->id,
+                    'title' => $slot->title,
+                    'content' => $slot->content,
+                    'type' => $slot->type,
+                    'icon' => $slot->icon,
+                    'background_color' => $slot->background_color,
+                    'text_color' => $slot->text_color,
+                    'action_url' => $slot->action_url,
+                    'action_text' => $slot->action_text,
+                    'display_duration' => $slot->display_duration,
+                    'priority' => $slot->priority,
+                    'show_on_mobile' => $slot->show_on_mobile,
+                    'show_on_desktop' => $slot->show_on_desktop,
+                    'is_active' => $slot->is_active,
+                ];
+            });
+
+        \Log::info('DynamicSlots Query Result:', [
+            'query_result_count' => $dynamicSlots->count(),
+            'query_result' => $dynamicSlots->toArray(),
+        ]);
+
         // Debug: Log the services and extras being fetched
         \Log::info('Data fetched for dashboard:', [
             'total_services' => $services->count(),
             'total_extras' => $extras->count(),
+            'total_dynamic_slots' => $dynamicSlots->count(),
             'services' => $services->toArray(),
-            'extras' => $extras->toArray()
+            'extras' => $extras->toArray(),
+            'dynamic_slots' => $dynamicSlots->toArray()
         ]);
 
         return Inertia::render('Customer/Dashboard', [
@@ -83,6 +140,7 @@ class CustomerController extends Controller
             'bookings' => $bookings,
             'services' => $services,
             'extras' => $extras,
+            'dynamicSlots' => $dynamicSlots,
         ]);
     }
 

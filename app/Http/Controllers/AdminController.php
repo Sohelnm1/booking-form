@@ -24,6 +24,7 @@ use App\Models\BookingPolicySetting;
 use App\Models\Duration;
 use App\Models\BookingSetting;
 use App\Models\ServicePricingTier;
+use App\Models\DynamicSlot;
 
 class AdminController extends Controller
 {
@@ -2344,6 +2345,159 @@ class AdminController extends Controller
     {
         $pricingTier = ServicePricingTier::findOrFail($id);
         $pricingTier->update(['sort_order' => $request->sort_order]);
+        
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
+        
+        return redirect()->back();
+    }
+
+    /**
+     * Show dynamic slots page
+     */
+    public function dynamicSlots()
+    {
+        $dynamicSlots = DynamicSlot::ordered()->get();
+
+        return Inertia::render('Admin/DynamicSlots', [
+            'auth' => [
+                'user' => Auth::user(),
+            ],
+            'dynamicSlots' => $dynamicSlots,
+        ]);
+    }
+
+    /**
+     * Store dynamic slot
+     */
+    public function storeDynamicSlot(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'type' => 'required|in:offer,promotion,announcement,festival,news',
+            'icon' => 'nullable|string|max:255',
+            'background_color' => 'nullable|string|max:7',
+            'text_color' => 'nullable|string|max:7',
+            'action_url' => 'nullable|string|max:500',
+            'action_text' => 'nullable|string|max:255',
+            'is_active' => 'nullable|boolean',
+            'sort_order' => 'nullable|integer|min:0',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after:start_date',
+            'show_on_mobile' => 'nullable|boolean',
+            'show_on_desktop' => 'nullable|boolean',
+            'display_duration' => 'nullable|integer|min:1',
+            'priority' => 'nullable|integer|min:1|max:10',
+        ]);
+
+        $data = $request->only([
+            'title', 'content', 'type', 'icon', 'background_color', 'text_color',
+            'action_url', 'action_text', 'is_active', 'sort_order', 'start_date',
+            'end_date', 'show_on_mobile', 'show_on_desktop', 'display_duration', 'priority'
+        ]);
+
+        // Ensure icon field is explicitly set to null if not provided
+        if (!array_key_exists('icon', $data)) {
+            $data['icon'] = null;
+        }
+
+        // Convert boolean fields
+        $booleanFields = ['is_active', 'show_on_mobile', 'show_on_desktop'];
+        foreach ($booleanFields as $field) {
+            if (isset($data[$field])) {
+                $data[$field] = in_array($data[$field], ['1', 'true', true], true);
+            }
+        }
+
+        // Set default sort order if not provided
+        if (!isset($data['sort_order'])) {
+            $data['sort_order'] = DynamicSlot::max('sort_order') + 1;
+        }
+
+        // Set default priority if not provided
+        if (!isset($data['priority'])) {
+            $data['priority'] = 1;
+        }
+
+        DynamicSlot::create($data);
+
+        return redirect()->back()->with('success', 'Dynamic slot created successfully');
+    }
+
+    /**
+     * Update dynamic slot
+     */
+    public function updateDynamicSlot(Request $request, $id)
+    {
+        $dynamicSlot = DynamicSlot::findOrFail($id);
+
+        // Debug logging
+        \Log::info('Dynamic slot update request data:', $request->all());
+        \Log::info('Icon field value:', ['icon' => $request->input('icon')]);
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'type' => 'required|in:offer,promotion,announcement,festival,news',
+            'icon' => 'nullable|string|max:255',
+            'background_color' => 'nullable|string|max:7',
+            'text_color' => 'nullable|string|max:7',
+            'action_url' => 'nullable|string|max:500',
+            'action_text' => 'nullable|string|max:255',
+            'is_active' => 'nullable|boolean',
+            'sort_order' => 'nullable|integer|min:0',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after:start_date',
+            'show_on_mobile' => 'nullable|boolean',
+            'show_on_desktop' => 'nullable|boolean',
+            'display_duration' => 'nullable|integer|min:1',
+            'priority' => 'nullable|integer|min:1|max:10',
+        ]);
+
+        $data = $request->only([
+            'title', 'content', 'type', 'icon', 'background_color', 'text_color',
+            'action_url', 'action_text', 'is_active', 'sort_order', 'start_date',
+            'end_date', 'show_on_mobile', 'show_on_desktop', 'display_duration', 'priority'
+        ]);
+
+        // Ensure icon field is explicitly set to null if not provided
+        if (!array_key_exists('icon', $data)) {
+            $data['icon'] = null;
+        }
+
+        // Convert boolean fields
+        $booleanFields = ['is_active', 'show_on_mobile', 'show_on_desktop'];
+        foreach ($booleanFields as $field) {
+            if (isset($data[$field])) {
+                $data[$field] = in_array($data[$field], ['1', 'true', true], true);
+            }
+        }
+
+        $dynamicSlot->update($data);
+
+        return redirect()->back()->with('success', 'Dynamic slot updated successfully');
+    }
+
+    /**
+     * Delete dynamic slot
+     */
+    public function deleteDynamicSlot($id)
+    {
+        $dynamicSlot = DynamicSlot::findOrFail($id);
+        $dynamicSlot->delete();
+
+        return redirect()->back()->with('success', 'Dynamic slot deleted successfully');
+    }
+
+    /**
+     * Update dynamic slot sort order
+     */
+    public function updateDynamicSlotSortOrder(Request $request, $id)
+    {
+        $dynamicSlot = DynamicSlot::findOrFail($id);
+        $dynamicSlot->update(['sort_order' => $request->sort_order]);
         
         if ($request->wantsJson()) {
             return response()->json(['success' => true]);

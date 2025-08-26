@@ -28,6 +28,7 @@ import {
     FileTextOutlined,
     GiftOutlined,
     DollarOutlined,
+    FireOutlined,
 } from "@ant-design/icons";
 import { router } from "@inertiajs/react";
 import Logo from "../Components/Logo";
@@ -121,6 +122,11 @@ export default function AdminLayout({ children, auth }) {
                 currentPath.startsWith("/admin/booking-policies/")
             ) {
                 newSelectedKey = "booking-policies";
+            } else if (
+                currentPath === "/admin/dynamic-slots" ||
+                currentPath.startsWith("/admin/dynamic-slots/")
+            ) {
+                newSelectedKey = "dynamic-slots";
             } else if (
                 currentPath === "/admin/times" ||
                 currentPath.startsWith("/admin/times/")
@@ -317,6 +323,17 @@ export default function AdminLayout({ children, auth }) {
             onClick: () => {
                 setSelectedKey("booking-policies");
                 router.visit(route("admin.booking-policies"), {
+                    replace: true,
+                });
+            },
+        },
+        {
+            key: "dynamic-slots",
+            icon: <FireOutlined />,
+            label: "Dynamic Slots",
+            onClick: () => {
+                setSelectedKey("dynamic-slots");
+                router.visit(route("admin.dynamic-slots"), {
                     replace: true,
                 });
             },
