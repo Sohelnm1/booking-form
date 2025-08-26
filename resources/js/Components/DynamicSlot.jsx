@@ -293,10 +293,10 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                             level={windowWidth >= 768 ? 4 : 5}
                             style={{
                                 color: colors.text,
-                                margin: "0 0 10px 0",
+                                margin: "0 0 8px 0",
                                 fontWeight: 700,
-                                lineHeight: 1.3,
-                                fontSize: windowWidth >= 768 ? "20px" : "16px",
+                                lineHeight: 1.2,
+                                fontSize: windowWidth >= 768 ? "20px" : "14px",
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
                                 whiteSpace: "nowrap",
@@ -305,7 +305,7 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                         >
                             {truncateText(
                                 slot.title,
-                                windowWidth >= 768 ? 60 : 40
+                                windowWidth >= 768 ? 60 : 35
                             )}
                         </Title>
 
@@ -313,9 +313,9 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                         <Paragraph
                             style={{
                                 color: colors.text,
-                                fontSize: windowWidth >= 768 ? "15px" : "13px",
-                                margin: "0 0 18px 0",
-                                lineHeight: 1.5,
+                                fontSize: windowWidth >= 768 ? "15px" : "12px",
+                                margin: "0 0 12px 0",
+                                lineHeight: 1.4,
                                 opacity: 0.9,
                                 fontWeight: 400,
                                 overflow: "hidden",
@@ -323,13 +323,13 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                                 display: "-webkit-box",
                                 WebkitLineClamp: 2,
                                 WebkitBoxOrient: "vertical",
-                                maxHeight: windowWidth >= 768 ? "45px" : "40px",
+                                maxHeight: windowWidth >= 768 ? "45px" : "34px",
                             }}
                             title={slot.content}
                         >
                             {truncateText(
                                 slot.content,
-                                windowWidth >= 768 ? 120 : 80
+                                windowWidth >= 768 ? 120 : 70
                             )}
                         </Paragraph>
 
@@ -383,7 +383,7 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
             <Carousel
                 autoPlay={true}
                 interval={8000}
-                showArrows={true}
+                showArrows={false}
                 showStatus={false}
                 showIndicators={false}
                 showThumbs={false}
@@ -398,6 +398,8 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                 width="100%"
                 onChange={handleSlideChange}
                 className="dynamic-slots-carousel"
+                centerSlidePercentage={windowWidth >= 768 ? 100 : 90}
+                swipeScrollTolerance={50}
             >
                 {slotsToShow.map((slot, index) => {
                     const colors = getProfessionalColors(
@@ -538,13 +540,13 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                                             level={windowWidth >= 768 ? 4 : 5}
                                             style={{
                                                 color: colors.text,
-                                                margin: "0 0 10px 0",
+                                                margin: "0 0 8px 0",
                                                 fontWeight: 700,
-                                                lineHeight: 1.3,
+                                                lineHeight: 1.2,
                                                 fontSize:
                                                     windowWidth >= 768
                                                         ? "20px"
-                                                        : "16px",
+                                                        : "14px",
                                                 overflow: "hidden",
                                                 textOverflow: "ellipsis",
                                                 whiteSpace: "nowrap",
@@ -553,7 +555,7 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                                         >
                                             {truncateText(
                                                 slot.title,
-                                                windowWidth >= 768 ? 60 : 40
+                                                windowWidth >= 768 ? 60 : 35
                                             )}
                                         </Title>
 
@@ -564,9 +566,9 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                                                 fontSize:
                                                     windowWidth >= 768
                                                         ? "15px"
-                                                        : "13px",
-                                                margin: "0 0 18px 0",
-                                                lineHeight: 1.5,
+                                                        : "12px",
+                                                margin: "0 0 12px 0",
+                                                lineHeight: 1.4,
                                                 opacity: 0.9,
                                                 fontWeight: 400,
                                                 overflow: "hidden",
@@ -577,13 +579,13 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                                                 maxHeight:
                                                     windowWidth >= 768
                                                         ? "45px"
-                                                        : "40px",
+                                                        : "34px",
                                             }}
                                             title={slot.content}
                                         >
                                             {truncateText(
                                                 slot.content,
-                                                windowWidth >= 768 ? 120 : 80
+                                                windowWidth >= 768 ? 120 : 70
                                             )}
                                         </Paragraph>
 

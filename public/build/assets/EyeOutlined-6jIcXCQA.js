@@ -1,0 +1,1 @@
+import{j as o,k as n}from"./Logo-pMTbWeYE.js";import{r as e}from"./app-CqYo-92z.js";import{E as a}from"./EyeOutlined-Bmd706kk.js";var i=function(r,t){return e.createElement(o,n({},r,{ref:t,icon:a}))},E=e.forwardRef(i);export{E as R};

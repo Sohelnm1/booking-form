@@ -673,3 +673,74 @@ body::before {
     text-overflow: ellipsis !important;
     max-height: 42px !important;
 }
+
+/* Dynamic Slots Carousel Improvements */
+.dynamic-slots-carousel .carousel .slide {
+    padding: 0 8px !important;
+}
+
+.dynamic-slots-carousel .carousel .slide > div {
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+/* Mobile specific improvements */
+@media (max-width: 767px) {
+    .dynamic-slots-carousel .carousel .slide {
+        padding: 0 4px !important;
+    }
+
+    .dynamic-slots-carousel .carousel .slide > div {
+        margin: 0 2px;
+    }
+
+    /* Improve carousel arrows on mobile */
+    .dynamic-slots-carousel .carousel .control-arrow {
+        width: 32px !important;
+        height: 32px !important;
+        background: rgba(255, 255, 255, 0.9) !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .dynamic-slots-carousel .carousel .control-arrow:before {
+        border-width: 2px !important;
+        border-color: #1a1a1a !important;
+    }
+
+    .dynamic-slots-carousel .carousel .control-arrow:hover {
+        background: rgba(255, 255, 255, 1) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    }
+}
+
+/* Desktop carousel improvements */
+@media (min-width: 768px) {
+    .dynamic-slots-carousel .carousel .slide {
+        padding: 0 12px !important;
+    }
+
+    .dynamic-slots-carousel .carousel .control-arrow {
+        width: 40px !important;
+        height: 40px !important;
+        background: rgba(255, 255, 255, 0.9) !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .dynamic-slots-carousel .carousel .control-arrow:before {
+        border-width: 2px !important;
+        border-color: #1a1a1a !important;
+    }
+
+    .dynamic-slots-carousel .carousel .control-arrow:hover {
+        background: rgba(255, 255, 255, 1) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    }
+}
