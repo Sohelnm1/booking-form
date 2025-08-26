@@ -19,6 +19,12 @@ import "react-responsive-carousel/lib/styles/carousel.min.css";
 const { Title, Paragraph, Text } = Typography;
 
 export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
+    // Helper function to truncate text
+    const truncateText = (text, maxLength) => {
+        if (!text) return "";
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + "...";
+    };
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isVisible, setIsVisible] = useState(true);
 
@@ -204,6 +210,10 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                     position: "relative",
                     cursor: "default",
                     boxShadow: colors.boxShadow,
+                    height: windowWidth >= 768 ? "200px" : "180px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
                 }}
             >
                 <div
@@ -287,9 +297,16 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                                 fontWeight: 700,
                                 lineHeight: 1.3,
                                 fontSize: windowWidth >= 768 ? "20px" : "16px",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
                             }}
+                            title={slot.title}
                         >
-                            {slot.title}
+                            {truncateText(
+                                slot.title,
+                                windowWidth >= 768 ? 60 : 40
+                            )}
                         </Title>
 
                         {/* Description */}
@@ -301,9 +318,19 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                                 lineHeight: 1.5,
                                 opacity: 0.9,
                                 fontWeight: 400,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                maxHeight: windowWidth >= 768 ? "45px" : "40px",
                             }}
+                            title={slot.content}
                         >
-                            {slot.content}
+                            {truncateText(
+                                slot.content,
+                                windowWidth >= 768 ? 120 : 80
+                            )}
                         </Paragraph>
 
                         {/* Action button */}
@@ -394,8 +421,11 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                                     cursor: "default",
                                     boxShadow: colors.boxShadow,
                                     position: "relative",
-                                    minHeight:
-                                        windowWidth >= 768 ? "180px" : "160px",
+                                    height:
+                                        windowWidth >= 768 ? "200px" : "180px",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    justifyContent: "space-between",
                                 }}
                             >
                                 <div
@@ -515,9 +545,16 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                                                     windowWidth >= 768
                                                         ? "20px"
                                                         : "16px",
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
+                                                whiteSpace: "nowrap",
                                             }}
+                                            title={slot.title}
                                         >
-                                            {slot.title}
+                                            {truncateText(
+                                                slot.title,
+                                                windowWidth >= 768 ? 60 : 40
+                                            )}
                                         </Title>
 
                                         {/* Description */}
@@ -532,9 +569,22 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                                                 lineHeight: 1.5,
                                                 opacity: 0.9,
                                                 fontWeight: 400,
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
+                                                display: "-webkit-box",
+                                                WebkitLineClamp: 2,
+                                                WebkitBoxOrient: "vertical",
+                                                maxHeight:
+                                                    windowWidth >= 768
+                                                        ? "45px"
+                                                        : "40px",
                                             }}
+                                            title={slot.content}
                                         >
-                                            {slot.content}
+                                            {truncateText(
+                                                slot.content,
+                                                windowWidth >= 768 ? 120 : 80
+                                            )}
                                         </Paragraph>
 
                                         {/* Action button */}
