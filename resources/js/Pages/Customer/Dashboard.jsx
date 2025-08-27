@@ -510,7 +510,7 @@ export default function CustomerDashboard({
                                 },
                                 {
                                     icon: <MapPin size={20} color="#1890ff" />,
-                                    title: "Local care, delivered",
+                                    title: "Local support, by HospiPals",
                                     caption:
                                         "Trusted HospiPals at your hospital",
                                 },
