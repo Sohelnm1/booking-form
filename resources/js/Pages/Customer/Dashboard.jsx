@@ -375,8 +375,7 @@ export default function CustomerDashboard({
                                     fontSize: windowWidth >= 768 ? 16 : 16,
                                     fontWeight: 600,
                                     borderRadius: "12px",
-                                    boxShadow:
-                                        "0 6px 16px rgba(24, 144, 255, 0.25)",
+
                                     display: "inline-flex",
                                     alignItems: "center",
                                     justifyContent: "center",
@@ -397,14 +396,12 @@ export default function CustomerDashboard({
                                 onMouseEnter={(e) => {
                                     e.target.style.transform =
                                         "translateY(-2px)";
-                                    e.target.style.boxShadow =
-                                        "0 8px 24px rgba(24, 144, 255, 0.35)";
+
                                     e.target.style.background = "#40a9ff";
                                 }}
                                 onMouseLeave={(e) => {
                                     e.target.style.transform = "translateY(0)";
-                                    e.target.style.boxShadow =
-                                        "0 6px 16px rgba(24, 144, 255, 0.25)";
+
                                     e.target.style.background = "#1890ff";
                                 }}
                             >
@@ -434,8 +431,7 @@ export default function CustomerDashboard({
                                         windowWidth >= 768 ? "240px" : "280px",
                                     transition:
                                         "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                                    boxShadow:
-                                        "0 2px 8px rgba(37, 211, 102, 0.15)",
+
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
@@ -447,16 +443,13 @@ export default function CustomerDashboard({
                                 onMouseEnter={(e) => {
                                     e.target.style.transform =
                                         "translateY(-2px)";
-                                    e.target.style.boxShadow =
-                                        "0 4px 12px rgba(37, 211, 102, 0.25)";
                                     e.target.style.background =
                                         "rgba(37, 211, 102, 0.05)";
                                     e.target.style.borderColor = "#22C55E";
                                 }}
                                 onMouseLeave={(e) => {
                                     e.target.style.transform = "translateY(0)";
-                                    e.target.style.boxShadow =
-                                        "0 2px 8px rgba(37, 211, 102, 0.15)";
+
                                     e.target.style.background = "#ffffff";
                                     e.target.style.borderColor = "#25D366";
                                 }}
