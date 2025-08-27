@@ -13,6 +13,19 @@ import {
     CustomerServiceOutlined,
     LoginOutlined,
 } from "@ant-design/icons";
+// Import Lucide React icons
+import {
+    Home,
+    BookOpen,
+    Gift,
+    HelpCircle,
+    Headphones,
+    LogOut,
+    User,
+    Calendar,
+    Menu as MenuIcon,
+    LogIn,
+} from "lucide-react";
 import Logo from "./Logo";
 import CustomerLoginModal from "./CustomerLoginModal";
 
@@ -67,7 +80,7 @@ export default function BookingHeader({ auth }) {
     const menuItems = [
         {
             key: "home",
-            icon: <HomeOutlined />,
+            icon: <Home size={16} />,
             label: "Home",
             onClick: () => {
                 router.visit("/");
@@ -76,7 +89,7 @@ export default function BookingHeader({ auth }) {
         },
         {
             key: "book-hospipal",
-            icon: <BookOutlined />,
+            icon: <BookOpen size={16} />,
             label: "Book a HospiPal",
             onClick: () => {
                 router.visit(route("booking.select-service"));
@@ -85,7 +98,7 @@ export default function BookingHeader({ auth }) {
         },
         {
             key: "services",
-            icon: <BookOutlined />,
+            icon: <BookOpen size={16} />,
             label: "Services",
             onClick: () => {
                 router.visit(route("booking.select-service"));
@@ -94,7 +107,7 @@ export default function BookingHeader({ auth }) {
         },
         {
             key: "extras",
-            icon: <GiftOutlined />,
+            icon: <Gift size={16} />,
             label: "Extras",
             onClick: () => {
                 message.info("Extras page coming soon");
@@ -103,7 +116,7 @@ export default function BookingHeader({ auth }) {
         },
         {
             key: "how-it-works",
-            icon: <QuestionCircleOutlined />,
+            icon: <HelpCircle size={16} />,
             label: "How It Works",
             onClick: () => {
                 message.info("How It Works page coming soon");
@@ -112,7 +125,7 @@ export default function BookingHeader({ auth }) {
         },
         {
             key: "support",
-            icon: <CustomerServiceOutlined />,
+            icon: <Headphones size={16} />,
             label: "Support",
             onClick: () => {
                 window.open("https://wa.me/917979911483", "_blank");
@@ -123,7 +136,7 @@ export default function BookingHeader({ auth }) {
             ? [
                   {
                       key: "bookings",
-                      icon: <CalendarOutlined />,
+                      icon: <Calendar size={16} />,
                       label: "My Bookings",
                       onClick: () => {
                           router.visit(route("customer.bookings"));
@@ -132,7 +145,7 @@ export default function BookingHeader({ auth }) {
                   },
                   {
                       key: "profile",
-                      icon: <UserOutlined />,
+                      icon: <User size={16} />,
                       label: "Profile",
                       onClick: () => {
                           message.info("Profile settings coming soon");
@@ -146,7 +159,7 @@ export default function BookingHeader({ auth }) {
             ? [
                   {
                       key: "login",
-                      icon: <LoginOutlined />,
+                      icon: <LogIn size={16} />,
                       label: "Sign In",
                       className: "mobile-login-button",
                       onClick: () => {
@@ -214,7 +227,7 @@ export default function BookingHeader({ auth }) {
                 <Button
                     type="primary"
                     size="middle"
-                    icon={<BookOutlined />}
+                    icon={<BookOpen size={16} />}
                     onClick={() =>
                         router.visit(route("booking.select-service"))
                     }
@@ -245,7 +258,7 @@ export default function BookingHeader({ auth }) {
                         </Avatar>
                         <Button
                             type="text"
-                            icon={<LogoutOutlined />}
+                            icon={<LogOut size={16} />}
                             onClick={handleLogout}
                             size="small"
                         >
@@ -267,7 +280,7 @@ export default function BookingHeader({ auth }) {
                 {/* Hamburger menu - Always visible */}
                 <Button
                     type="text"
-                    icon={<MenuOutlined />}
+                    icon={<MenuIcon size={18} />}
                     onClick={() => setIsDrawerVisible(true)}
                     size="middle"
                     style={{
@@ -373,7 +386,7 @@ export default function BookingHeader({ auth }) {
                             </div>
                             <Button
                                 type="text"
-                                icon={<LogoutOutlined />}
+                                icon={<LogOut />}
                                 onClick={() => {
                                     handleLogout();
                                     setIsDrawerVisible(false);

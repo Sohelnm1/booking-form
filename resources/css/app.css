@@ -406,9 +406,15 @@ body::before {
         width: auto !important;
         min-width: 160px;
         max-width: 180px;
-        height: 40px !important;
+        height: 48px !important;
         padding: 0 24px !important;
         font-size: 14px !important;
+    }
+
+    /* Fix WhatsApp button height to account for border */
+    .hero-whatsapp-button {
+        height: 48px !important;
+        box-sizing: border-box !important;
     }
 }
 
@@ -427,6 +433,12 @@ body::before {
         padding: 0 32px !important;
         font-size: 16px !important;
         font-weight: 500 !important;
+    }
+
+    /* Fix WhatsApp button height to account for border */
+    .hero-whatsapp-button {
+        height: 48px !important;
+        box-sizing: border-box !important;
     }
 }
 
@@ -498,6 +510,19 @@ body::before {
     justify-content: center !important;
 }
 
+/* Icon alignment for all button types */
+.ant-layout-header .ant-btn svg,
+.ant-layout-header .ant-btn .anticon {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    vertical-align: middle !important;
+    margin-right: 6px !important;
+    font-size: 16px !important;
+    width: 16px !important;
+    height: 16px !important;
+}
+
 /* Primary Button (Book) */
 .ant-layout-header .ant-btn[type="primary"] {
     background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%) !important;
@@ -505,6 +530,12 @@ body::before {
     font-weight: 600 !important;
     box-shadow: 0 2px 4px rgba(82, 196, 26, 0.2) !important;
     padding: 0 20px !important;
+}
+
+.ant-layout-header .ant-btn[type="primary"] svg,
+.ant-layout-header .ant-btn[type="primary"] .anticon {
+    color: #ffffff !important;
+    margin-right: 8px !important;
 }
 
 .ant-layout-header .ant-btn[type="primary"]:hover {
@@ -525,6 +556,14 @@ body::before {
     padding: 0 !important;
     border-radius: 6px !important;
     font-size: 18px !important;
+}
+
+.ant-layout-header .ant-btn[type="text"] svg,
+.ant-layout-header .ant-btn[type="text"] .anticon {
+    margin-right: 0 !important;
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
 }
 
 .ant-layout-header .ant-btn[type="text"]:hover {
@@ -672,6 +711,31 @@ body::before {
     .ant-menu-vertical .ant-menu-item .anticon {
         font-size: 16px !important;
         margin-right: 12px !important;
+    }
+
+    /* Icon alignment for Lucide React icons in mobile menu */
+    .ant-menu-vertical .ant-menu-item svg {
+        font-size: 16px !important;
+        margin-right: 12px !important;
+        width: 16px !important;
+        height: 16px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        vertical-align: middle !important;
+    }
+
+    /* Ensure menu items have proper alignment */
+    .ant-menu-vertical .ant-menu-item {
+        display: flex !important;
+        align-items: center !important;
+        padding: 0 24px !important;
+    }
+
+    /* Ensure icon and text are properly aligned */
+    .ant-menu-vertical .ant-menu-item .ant-menu-title-content {
+        display: flex !important;
+        align-items: center !important;
     }
 
     /* Style for login button in mobile menu */

@@ -28,6 +28,29 @@ import {
     TrophyOutlined,
     StarOutlined,
 } from "@ant-design/icons";
+// Import Lucide React icons
+import {
+    Shield,
+    Clock,
+    MapPin,
+    Heart,
+    Users,
+    Award,
+    Star,
+    Phone,
+    Mail,
+    MessageCircle,
+    CheckCircle,
+    BookOpen,
+    Calendar,
+    Globe,
+    FileText,
+    Lock,
+    Zap,
+    UserCheck,
+    HandHeart,
+    ClipboardList,
+} from "lucide-react";
 import { Carousel } from "react-responsive-carousel";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 import BookingHeader from "../../Components/BookingHeader";
@@ -306,8 +329,8 @@ export default function CustomerDashboard({
                                     height: windowWidth >= 768 ? 60 : 48,
                                     padding:
                                         windowWidth >= 768
-                                            ? "0 48px"
-                                            : "0 24px",
+                                            ? "0 32px"
+                                            : "0 20px",
                                     fontSize: windowWidth >= 768 ? 16 : 14,
                                     fontWeight: 600,
                                     borderRadius: "12px",
@@ -317,10 +340,12 @@ export default function CustomerDashboard({
                                     alignItems: "center",
                                     justifyContent: "center",
                                     gap: "8px",
+                                    width:
+                                        windowWidth >= 768 ? "240px" : "auto",
                                     minWidth:
-                                        windowWidth >= 768 ? "280px" : "auto",
+                                        windowWidth >= 768 ? "240px" : "auto",
                                     maxWidth:
-                                        windowWidth >= 768 ? "none" : "280px",
+                                        windowWidth >= 768 ? "240px" : "280px",
                                     whiteSpace: "nowrap",
                                     overflow: "hidden",
                                     textOverflow: "ellipsis",
@@ -345,52 +370,76 @@ export default function CustomerDashboard({
                                 Book a HospiPal
                             </Button>
 
-                            {/* Secondary CTA */}
+                            {/* Secondary CTA - WhatsApp */}
                             <Button
                                 type="default"
                                 size="large"
-                                icon={<MessageOutlined />}
                                 onClick={handleChatWithUs}
                                 style={{
-                                    height: windowWidth >= 768 ? 60 : 48,
+                                    height: windowWidth >= 768 ? 56 : 48,
                                     padding:
                                         windowWidth >= 768
-                                            ? "0 40px"
-                                            : "0 24px",
+                                            ? "0 32px"
+                                            : "0 20px",
                                     fontSize: windowWidth >= 768 ? 16 : 14,
-                                    fontWeight: 500,
+                                    fontWeight: 600,
                                     borderRadius: "12px",
-                                    border: "2px solid #1890ff",
-                                    color: "#1890ff",
+                                    border: "2px solid #25D366",
+                                    color: "#25D366",
                                     background: "#ffffff",
                                     minWidth:
-                                        windowWidth >= 768 ? "200px" : "auto",
+                                        windowWidth >= 768 ? "220px" : "auto",
                                     maxWidth:
                                         windowWidth >= 768 ? "none" : "280px",
                                     transition:
                                         "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                                     boxShadow:
-                                        "0 2px 8px rgba(24, 144, 255, 0.1)",
+                                        "0 2px 8px rgba(37, 211, 102, 0.15)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: "8px",
+                                    width:
+                                        windowWidth >= 768 ? "240px" : "auto",
+                                    minWidth:
+                                        windowWidth >= 768 ? "240px" : "auto",
+                                    maxWidth:
+                                        windowWidth >= 768 ? "240px" : "280px",
                                 }}
-                                className="hero-secondary-button"
+                                className="hero-whatsapp-button"
                                 onMouseEnter={(e) => {
                                     e.target.style.transform =
                                         "translateY(-2px)";
                                     e.target.style.boxShadow =
-                                        "0 4px 12px rgba(24, 144, 255, 0.2)";
+                                        "0 4px 12px rgba(37, 211, 102, 0.25)";
                                     e.target.style.background =
-                                        "rgba(24, 144, 255, 0.05)";
-                                    e.target.style.borderColor = "#40a9ff";
+                                        "rgba(37, 211, 102, 0.05)";
+                                    e.target.style.borderColor = "#22C55E";
                                 }}
                                 onMouseLeave={(e) => {
                                     e.target.style.transform = "translateY(0)";
                                     e.target.style.boxShadow =
-                                        "0 2px 8px rgba(24, 144, 255, 0.1)";
+                                        "0 2px 8px rgba(37, 211, 102, 0.15)";
                                     e.target.style.background = "#ffffff";
-                                    e.target.style.borderColor = "#1890ff";
+                                    e.target.style.borderColor = "#25D366";
                                 }}
                             >
-                                💬 Chat with Us
+                                <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 360 362"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    style={{ flexShrink: 0 }}
+                                >
+                                    <path
+                                        fillRule="evenodd"
+                                        clipRule="evenodd"
+                                        d="M307.546 52.5655C273.709 18.685 228.706 0.0171895 180.756 0C81.951 0 1.53846 80.404 1.50408 179.235C1.48689 210.829 9.74646 241.667 25.4319 268.844L0 361.736L95.0236 336.811C121.203 351.096 150.683 358.616 180.679 358.625H180.756C279.544 358.625 359.966 278.212 360 179.381C360.017 131.483 341.392 86.4547 307.546 52.5741V52.5655ZM180.756 328.354H180.696C153.966 328.346 127.744 321.16 104.865 307.589L99.4242 304.358L43.034 319.149L58.0834 264.168L54.5423 258.53C39.6304 234.809 31.749 207.391 31.7662 179.244C31.8006 97.1036 98.6334 30.2707 180.817 30.2707C220.61 30.2879 258.015 45.8015 286.145 73.9665C314.276 102.123 329.755 139.562 329.738 179.364C329.703 261.513 262.871 328.346 180.756 328.346V328.354ZM262.475 216.777C257.997 214.534 235.978 203.704 231.869 202.209C227.761 200.713 224.779 199.966 221.796 204.452C218.814 208.939 210.228 219.029 207.615 222.011C205.002 225.002 202.389 225.372 197.911 223.128C193.434 220.885 179.003 216.158 161.891 200.902C148.578 189.024 139.587 174.362 136.975 169.875C134.362 165.389 136.7 162.965 138.934 160.739C140.945 158.728 143.412 155.505 145.655 152.892C147.899 150.279 148.638 148.406 150.133 145.423C151.629 142.432 150.881 139.82 149.764 137.576C148.646 135.333 139.691 113.287 135.952 104.323C132.316 95.5909 128.621 96.777 125.879 96.6309C123.266 96.5019 120.284 96.4762 117.293 96.4762C114.302 96.4762 109.454 97.5935 105.346 102.08C101.238 106.566 89.6691 117.404 89.6691 139.441C89.6691 161.478 105.716 182.785 107.959 185.776C110.202 188.767 139.544 234.001 184.469 253.408C195.153 258.023 203.498 260.782 210.004 262.845C220.731 266.257 230.494 265.776 238.212 264.624C246.816 263.335 264.71 253.786 268.44 243.326C272.17 232.866 272.17 223.893 271.053 222.028C269.936 220.163 266.945 219.037 262.467 216.794L262.475 216.777Z"
+                                        fill="currentColor"
+                                    />
+                                </svg>
+                                Chat with Us
                             </Button>
                         </div>
 
@@ -458,11 +507,10 @@ export default function CustomerDashboard({
                                     e.target.style.transform = "scale(1)";
                                 }}
                             >
-                                <CheckCircleOutlined
+                                <Shield
                                     style={{
                                         color: "#52c41a",
                                         fontSize: windowWidth >= 768 ? 24 : 20,
-                                        fontWeight: "bold",
                                         transition: "all 0.2s ease",
                                     }}
                                 />
@@ -505,15 +553,13 @@ export default function CustomerDashboard({
                                     e.target.style.transform = "scale(1)";
                                 }}
                             >
-                                <span
+                                <Zap
                                     style={{
                                         color: "#ff4d4f",
                                         fontSize: windowWidth >= 768 ? 20 : 18,
                                         transition: "all 0.2s ease",
                                     }}
-                                >
-                                    📌
-                                </span>
+                                />
                                 <Text
                                     style={{
                                         color: "#4a4a4a",
@@ -553,15 +599,13 @@ export default function CustomerDashboard({
                                     e.target.style.transform = "scale(1)";
                                 }}
                             >
-                                <span
+                                <MapPin
                                     style={{
                                         color: "#1890ff",
                                         fontSize: windowWidth >= 768 ? 20 : 18,
                                         transition: "all 0.2s ease",
                                     }}
-                                >
-                                    🏥
-                                </span>
+                                />
                                 <Text
                                     style={{
                                         color: "#4a4a4a",
@@ -656,7 +700,7 @@ export default function CustomerDashboard({
                                         marginBottom: "4px",
                                     }}
                                 >
-                                    ✅ Trained & Verified Companions
+                                    Trained & Verified Companions
                                 </Text>
                                 <Text
                                     style={{
@@ -715,7 +759,7 @@ export default function CustomerDashboard({
                                         marginBottom: "4px",
                                     }}
                                 >
-                                    ✅ Transparent Pricing
+                                    Transparent Pricing
                                 </Text>
                                 <Text
                                     style={{
@@ -773,7 +817,7 @@ export default function CustomerDashboard({
                                         marginBottom: "4px",
                                     }}
                                 >
-                                    ✅ Flexible Rescheduling
+                                    Flexible Rescheduling
                                 </Text>
                                 <Text
                                     style={{
@@ -831,7 +875,7 @@ export default function CustomerDashboard({
                                         marginBottom: "4px",
                                     }}
                                 >
-                                    ✅ Global Booking. Local Care.
+                                    Global Booking. Local Care.
                                 </Text>
                                 <Text
                                     style={{
@@ -1168,8 +1212,8 @@ export default function CustomerDashboard({
                     >
                         <div
                             style={{
-                                width: "48px",
-                                height: "48px",
+                                width: "40px",
+                                height: "40px",
                                 borderRadius: "50%",
                                 background:
                                     "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
@@ -1181,9 +1225,7 @@ export default function CustomerDashboard({
                                 boxShadow: "0 4px 12px rgba(24, 144, 255, 0.3)",
                             }}
                         >
-                            <span style={{ fontSize: 20, color: "white" }}>
-                                📌
-                            </span>
+                            <MapPin size={16} color="white" />
                         </div>
                         <Text
                             style={{
@@ -1418,7 +1460,7 @@ export default function CustomerDashboard({
                                                     fontSize: "24px",
                                                 }}
                                             >
-                                                ⭐
+                                                <Star size={24} />
                                             </div>
                                         </div>
 
@@ -1615,8 +1657,8 @@ export default function CustomerDashboard({
                                     fontWeight: 500,
                                 }}
                             >
-                                📌 Extras are available only when a main
-                                HospiPal service is booked.
+                                Extras are available only when a main HospiPal
+                                service is booked.
                             </Text>
                         </div>
                     </div>
@@ -1881,7 +1923,7 @@ export default function CustomerDashboard({
                                 fontWeight: 500,
                             }}
                         >
-                            📌 You'll receive booking confirmations and updates
+                            You'll receive booking confirmations and updates
                             through our secure communication channels.
                         </Text>
                     </div>
@@ -1989,7 +2031,7 @@ export default function CustomerDashboard({
                                     color: "#1890ff",
                                 }}
                             >
-                                🛡️
+                                <Shield size={20} />
                             </div>
                             <div>
                                 <Text
@@ -2044,7 +2086,7 @@ export default function CustomerDashboard({
                                     color: "#1890ff",
                                 }}
                             >
-                                🤝
+                                <Users size={20} />
                             </div>
                             <div>
                                 <Text
@@ -2099,7 +2141,7 @@ export default function CustomerDashboard({
                                     color: "#1890ff",
                                 }}
                             >
-                                💙
+                                <Heart size={20} />
                             </div>
                             <div>
                                 <Text
@@ -2154,7 +2196,7 @@ export default function CustomerDashboard({
                                     color: "#1890ff",
                                 }}
                             >
-                                📋
+                                <ClipboardList size={20} />
                             </div>
                             <div>
                                 <Text
@@ -2406,7 +2448,7 @@ export default function CustomerDashboard({
                                             color: "#ffffff",
                                         }}
                                     >
-                                        📞
+                                        <Phone size={16} />
                                     </div>
                                     <Text
                                         style={{
@@ -2461,7 +2503,7 @@ export default function CustomerDashboard({
                                             color: "#ffffff",
                                         }}
                                     >
-                                        📧
+                                        <Mail size={16} />
                                     </div>
                                     <Text
                                         style={{
