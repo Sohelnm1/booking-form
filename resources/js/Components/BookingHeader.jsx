@@ -11,6 +11,7 @@ import {
     QuestionCircleOutlined,
     GiftOutlined,
     CustomerServiceOutlined,
+    LoginOutlined,
 } from "@ant-design/icons";
 import Logo from "./Logo";
 import CustomerLoginModal from "./CustomerLoginModal";
@@ -140,6 +141,21 @@ export default function BookingHeader({ auth }) {
                   },
               ]
             : []),
+        // Add login button to mobile menu for non-logged in users
+        ...(!isLoggedIn
+            ? [
+                  {
+                      key: "login",
+                      icon: <LoginOutlined />,
+                      label: "Sign In",
+                      className: "mobile-login-button",
+                      onClick: () => {
+                          handleLogin();
+                          setIsDrawerVisible(false);
+                      },
+                  },
+              ]
+            : []),
     ];
 
     return (
@@ -215,7 +231,7 @@ export default function BookingHeader({ auth }) {
                 </Button>
 
                 {isLoggedIn && currentUser ? (
-                    <Space size="small">
+                    <Space size="small" className="hidden-xs">
                         <Avatar
                             style={{
                                 backgroundColor: "#1890ff",
@@ -241,23 +257,28 @@ export default function BookingHeader({ auth }) {
                         type="text"
                         onClick={handleLogin}
                         size="middle"
-                        className="header-signin-btn"
+                        className="header-signin-btn hidden-xs"
                     >
                         <span className="hidden-xs">Sign In</span>
                         <span className="visible-xs">Login</span>
                     </Button>
                 )}
 
+                {/* Hamburger menu - Always visible */}
                 <Button
                     type="text"
                     icon={<MenuOutlined />}
                     onClick={() => setIsDrawerVisible(true)}
-                    size="large"
+                    size="middle"
                     style={{
                         fontSize: "18px",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
+                        height: "36px",
+                        width: "36px",
+                        padding: "0",
+                        borderRadius: "6px",
                     }}
                 />
             </div>
