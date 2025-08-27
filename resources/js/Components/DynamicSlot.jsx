@@ -209,11 +209,11 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                     marginBottom: 32,
                     position: "relative",
                     cursor: "default",
-                    boxShadow: colors.boxShadow,
-                    height: windowWidth >= 768 ? "200px" : "180px",
+                    boxShadow: "none",
+                    minHeight: windowWidth >= 768 ? "180px" : "160px",
                     display: "flex",
                     flexDirection: "column",
-                    justifyContent: "space-between",
+                    justifyContent: "center",
                 }}
             >
                 <div
@@ -224,7 +224,7 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                     }}
                 >
                     {/* Icon - Only show if icon is selected */}
-                    {slot.icon && (
+                    {slot.icon && windowWidth >= 768 && (
                         <div
                             style={{
                                 background: colors.iconBg,
@@ -238,7 +238,7 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                                 justifyContent: "center",
                                 fontSize: windowWidth >= 768 ? "24px" : "20px",
                                 flexShrink: 0,
-                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+                                boxShadow: "none",
                             }}
                         >
                             {getProfessionalIcon(slot.type, slot.icon)}
@@ -246,7 +246,14 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                     )}
 
                     {/* Content */}
-                    <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
+                    <div
+                        style={{
+                            flex: 1,
+                            minWidth: 0,
+                            paddingTop: 2,
+                            textAlign: "left",
+                        }}
+                    >
                         {/* Header with tags */}
                         <div
                             style={{
@@ -293,13 +300,15 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                             level={windowWidth >= 768 ? 4 : 5}
                             style={{
                                 color: colors.text,
-                                margin: "0 0 8px 0",
+                                margin: "0 0 6px 0",
                                 fontWeight: 700,
                                 lineHeight: 1.2,
-                                fontSize: windowWidth >= 768 ? "20px" : "14px",
+                                fontSize: windowWidth >= 768 ? "20px" : "15px",
                                 overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                textAlign: "left",
                             }}
                             title={slot.title}
                         >
@@ -313,8 +322,8 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                         <Paragraph
                             style={{
                                 color: colors.text,
-                                fontSize: windowWidth >= 768 ? "15px" : "12px",
-                                margin: "0 0 12px 0",
+                                fontSize: windowWidth >= 768 ? "14px" : "12px",
+                                margin: "0 0 10px 0",
                                 lineHeight: 1.4,
                                 opacity: 0.9,
                                 fontWeight: 400,
@@ -323,7 +332,8 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                                 display: "-webkit-box",
                                 WebkitLineClamp: 2,
                                 WebkitBoxOrient: "vertical",
-                                maxHeight: windowWidth >= 768 ? "45px" : "34px",
+                                maxHeight: windowWidth >= 768 ? "44px" : "32px",
+                                textAlign: "left",
                             }}
                             title={slot.content}
                         >
@@ -352,7 +362,7 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                                             : "0 16px",
                                     fontSize:
                                         windowWidth >= 768 ? "14px" : "13px",
-                                    boxShadow: `0 2px 8px ${colors.accent}30`,
+                                    boxShadow: "none",
                                     transition: "all 0.2s ease",
                                     color: "#ffffff",
                                 }}
@@ -421,7 +431,7 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                                     padding:
                                         windowWidth >= 768 ? "28px" : "24px",
                                     cursor: "default",
-                                    boxShadow: colors.boxShadow,
+                                    boxShadow: "none",
                                     position: "relative",
                                     height:
                                         windowWidth >= 768 ? "200px" : "180px",
@@ -442,7 +452,7 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                                     }}
                                 >
                                     {/* Icon - Only show if icon is selected */}
-                                    {slot.icon && (
+                                    {slot.icon && windowWidth >= 768 && (
                                         <div
                                             style={{
                                                 background: colors.iconBg,
@@ -467,8 +477,7 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                                                         ? "24px"
                                                         : "20px",
                                                 flexShrink: 0,
-                                                boxShadow:
-                                                    "0 2px 8px rgba(0, 0, 0, 0.08)",
+                                                boxShadow: "none",
                                             }}
                                         >
                                             {getProfessionalIcon(
@@ -621,7 +630,7 @@ export default function DynamicSlot({ dynamicSlots = [], windowWidth = 1200 }) {
                                                             windowWidth >= 768
                                                                 ? "14px"
                                                                 : "13px",
-                                                        boxShadow: `0 2px 8px ${colors.accent}30`,
+                                                        boxShadow: "none",
                                                         transition:
                                                             "all 0.2s ease",
                                                         color: "#ffffff",

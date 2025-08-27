@@ -10,6 +10,7 @@ import {
     message,
     Alert,
     Divider,
+    Modal,
 } from "antd";
 import {
     CalendarOutlined,
@@ -72,6 +73,22 @@ export default function CustomerDashboard({
         typeof window !== "undefined" ? window.innerWidth : 1200
     );
     const [activeExtraCard, setActiveExtraCard] = useState(0); // Track which extra card is active
+    // Modal state for service/extra details
+    const [detailModalVisible, setDetailModalVisible] = useState(false);
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [modalType, setModalType] = useState(""); // 'service' or 'extra'
+
+    const showDetailModal = (item, type) => {
+        setSelectedItem(item);
+        setModalType(type);
+        setDetailModalVisible(true);
+    };
+
+    const hideDetailModal = () => {
+        setDetailModalVisible(false);
+        setSelectedItem(null);
+        setModalType("");
+    };
 
     // Handle window resize for responsive carousel
     useEffect(() => {
@@ -135,6 +152,24 @@ export default function CustomerDashboard({
 
     // Use services from database
     const servicesData = services || [];
+    // Filter invalid/empty services to avoid blank cards
+    const validServices = Array.isArray(servicesData)
+        ? servicesData.filter((s) => {
+              if (!s) return false;
+              const hasName =
+                  typeof s.name === "string" && s.name.trim().length > 1;
+              const descOk =
+                  s.description == null ||
+                  (typeof s.description === "string" &&
+                      s.description.replace(/<[^>]*>/g, "").trim().length >= 0);
+              const isActive =
+                  s.is_active === undefined ||
+                  s.is_active === true ||
+                  s.is_active === 1 ||
+                  s.is_active === "1";
+              return hasName && descOk && isActive;
+          })
+        : [];
     const extrasData = extras || [];
 
     // Debug: Log the services and extras being used
@@ -332,12 +367,12 @@ export default function CustomerDashboard({
                                 style={{
                                     background: "#1890ff",
                                     border: "none",
-                                    height: windowWidth >= 768 ? 60 : 48,
+                                    height: windowWidth >= 768 ? 56 : 44,
                                     padding:
                                         windowWidth >= 768
                                             ? "0 32px"
                                             : "0 20px",
-                                    fontSize: windowWidth >= 768 ? 16 : 14,
+                                    fontSize: windowWidth >= 768 ? 16 : 16,
                                     fontWeight: 600,
                                     borderRadius: "12px",
                                     boxShadow:
@@ -347,9 +382,9 @@ export default function CustomerDashboard({
                                     justifyContent: "center",
                                     gap: "8px",
                                     width:
-                                        windowWidth >= 768 ? "240px" : "auto",
+                                        windowWidth >= 768 ? "240px" : "280px",
                                     minWidth:
-                                        windowWidth >= 768 ? "240px" : "auto",
+                                        windowWidth >= 768 ? "240px" : "280px",
                                     maxWidth:
                                         windowWidth >= 768 ? "240px" : "280px",
                                     whiteSpace: "nowrap",
@@ -382,21 +417,21 @@ export default function CustomerDashboard({
                                 size="large"
                                 onClick={handleChatWithUs}
                                 style={{
-                                    height: windowWidth >= 768 ? 56 : 48,
+                                    height: windowWidth >= 768 ? 56 : 44,
                                     padding:
                                         windowWidth >= 768
                                             ? "0 32px"
                                             : "0 20px",
-                                    fontSize: windowWidth >= 768 ? 16 : 14,
+                                    fontSize: windowWidth >= 768 ? 16 : 16,
                                     fontWeight: 600,
                                     borderRadius: "12px",
                                     border: "2px solid #25D366",
                                     color: "#25D366",
                                     background: "#ffffff",
                                     minWidth:
-                                        windowWidth >= 768 ? "220px" : "auto",
+                                        windowWidth >= 768 ? "240px" : "280px",
                                     maxWidth:
-                                        windowWidth >= 768 ? "none" : "280px",
+                                        windowWidth >= 768 ? "240px" : "280px",
                                     transition:
                                         "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                                     boxShadow:
@@ -406,10 +441,6 @@ export default function CustomerDashboard({
                                     justifyContent: "center",
                                     gap: "8px",
                                     width:
-                                        windowWidth >= 768 ? "240px" : "auto",
-                                    minWidth:
-                                        windowWidth >= 768 ? "240px" : "auto",
-                                    maxWidth:
                                         windowWidth >= 768 ? "240px" : "280px",
                                 }}
                                 className="hero-whatsapp-button"
@@ -449,186 +480,120 @@ export default function CustomerDashboard({
                             </Button>
                         </div>
 
-                        {/* Trust Indicators */}
+                        {/* Trust Indicators - Professional symmetric cards */}
                         <div
                             style={{
-                                display:
-                                    windowWidth >= 768 ? "inline-flex" : "flex",
-                                flexDirection:
-                                    windowWidth >= 768 ? "row" : "column",
-                                alignItems: "center",
+                                display: "grid",
+                                gridTemplateColumns:
+                                    windowWidth >= 992
+                                        ? "repeat(3, 1fr)"
+                                        : windowWidth >= 768
+                                        ? "repeat(3, 1fr)"
+                                        : "repeat(1, 1fr)",
                                 gap: windowWidth >= 768 ? 16 : 12,
-                                padding:
-                                    windowWidth >= 768
-                                        ? "24px 40px"
-                                        : "20px 24px",
-                                background:
-                                    "linear-gradient(135deg, rgba(24, 144, 255, 0.08) 0%, rgba(24, 144, 255, 0.04) 100%)",
-                                borderRadius: "20px",
-                                border: "1px solid rgba(24, 144, 255, 0.12)",
-                                maxWidth:
-                                    windowWidth >= 768 ? "fit-content" : "100%",
-                                width: windowWidth < 768 ? "100%" : "auto",
-                                transition:
-                                    "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                                cursor: "pointer",
-                            }}
-                            className="hero-trust-indicator"
-                            onMouseEnter={(e) => {
-                                e.target.style.transform = "translateY(-1px)";
-                                e.target.style.boxShadow =
-                                    "0 4px 16px rgba(24, 144, 255, 0.15)";
-                                e.target.style.background =
-                                    "linear-gradient(135deg, rgba(24, 144, 255, 0.12) 0%, rgba(24, 144, 255, 0.06) 100%)";
-                                e.target.style.borderColor =
-                                    "rgba(24, 144, 255, 0.2)";
-                            }}
-                            onMouseLeave={(e) => {
-                                e.target.style.transform = "translateY(0)";
-                                e.target.style.boxShadow = "none";
-                                e.target.style.background =
-                                    "linear-gradient(135deg, rgba(24, 144, 255, 0.08) 0%, rgba(24, 144, 255, 0.04) 100%)";
-                                e.target.style.borderColor =
-                                    "rgba(24, 144, 255, 0.12)";
+                                width: "100%",
+                                maxWidth: 1000,
+                                margin: "0 auto",
                             }}
                         >
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 8,
-                                    flexWrap: "wrap",
-                                    justifyContent: "center",
-                                    padding: "8px 12px",
-                                    borderRadius: "8px",
-                                    transition: "all 0.2s ease",
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.target.style.background =
-                                        "rgba(82, 196, 26, 0.08)";
-                                    e.target.style.transform = "scale(1.02)";
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.target.style.background = "transparent";
-                                    e.target.style.transform = "scale(1)";
-                                }}
-                            >
-                                <Shield
+                            {[
+                                {
+                                    icon: <Shield size={20} color="#52c41a" />,
+                                    title: "Secure global booking",
+                                    caption:
+                                        "Bank-grade security for every transaction",
+                                },
+                                {
+                                    icon: <Zap size={20} color="#ff4d4f" />,
+                                    title: "Instant confirmation",
+                                    caption: "Get your booking ID in seconds",
+                                },
+                                {
+                                    icon: <MapPin size={20} color="#1890ff" />,
+                                    title: "Local care, delivered",
+                                    caption:
+                                        "Trusted HospiPals at your hospital",
+                                },
+                            ].map((item, idx) => (
+                                <div
+                                    key={idx}
                                     style={{
-                                        color: "#52c41a",
-                                        fontSize: windowWidth >= 768 ? 24 : 20,
-                                        transition: "all 0.2s ease",
-                                    }}
-                                />
-                                <Text
-                                    style={{
-                                        color: "#4a4a4a",
-                                        fontSize: windowWidth >= 768 ? 16 : 14,
-                                        fontWeight: 500,
-                                        lineHeight: 1.4,
-                                        textAlign:
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent:
                                             windowWidth >= 768
-                                                ? "left"
-                                                : "center",
-                                        transition: "all 0.2s ease",
-                                    }}
-                                    className="hero-trust-text"
-                                >
-                                    Secure global booking.
-                                </Text>
-                            </div>
-
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 8,
-                                    flexWrap: "wrap",
-                                    justifyContent: "center",
-                                    padding: "8px 12px",
-                                    borderRadius: "8px",
-                                    transition: "all 0.2s ease",
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.target.style.background =
-                                        "rgba(255, 77, 79, 0.08)";
-                                    e.target.style.transform = "scale(1.02)";
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.target.style.background = "transparent";
-                                    e.target.style.transform = "scale(1)";
-                                }}
-                            >
-                                <Zap
-                                    style={{
-                                        color: "#ff4d4f",
-                                        fontSize: windowWidth >= 768 ? 20 : 18,
-                                        transition: "all 0.2s ease",
-                                    }}
-                                />
-                                <Text
-                                    style={{
-                                        color: "#4a4a4a",
-                                        fontSize: windowWidth >= 768 ? 16 : 14,
-                                        fontWeight: 500,
-                                        lineHeight: 1.4,
-                                        textAlign:
+                                                ? "center"
+                                                : "flex-start",
+                                        gap: 12,
+                                        padding:
                                             windowWidth >= 768
-                                                ? "left"
-                                                : "center",
-                                        transition: "all 0.2s ease",
+                                                ? "14px 16px"
+                                                : "12px 14px",
+                                        background:
+                                            "linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.8) 100%)",
+                                        border: "1px solid #eaeaea",
+                                        borderRadius: 12,
+                                        boxShadow:
+                                            "0 2px 10px rgba(0,0,0,0.05)",
+                                        minHeight: 64,
                                     }}
-                                    className="hero-trust-text"
                                 >
-                                    Instant confirmation.
-                                </Text>
-                            </div>
-
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 8,
-                                    flexWrap: "wrap",
-                                    justifyContent: "center",
-                                    padding: "8px 12px",
-                                    borderRadius: "8px",
-                                    transition: "all 0.2s ease",
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.target.style.background =
-                                        "rgba(24, 144, 255, 0.08)";
-                                    e.target.style.transform = "scale(1.02)";
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.target.style.background = "transparent";
-                                    e.target.style.transform = "scale(1)";
-                                }}
-                            >
-                                <MapPin
-                                    style={{
-                                        color: "#1890ff",
-                                        fontSize: windowWidth >= 768 ? 20 : 18,
-                                        transition: "all 0.2s ease",
-                                    }}
-                                />
-                                <Text
-                                    style={{
-                                        color: "#4a4a4a",
-                                        fontSize: windowWidth >= 768 ? 16 : 14,
-                                        fontWeight: 500,
-                                        lineHeight: 1.4,
-                                        textAlign:
-                                            windowWidth >= 768
-                                                ? "left"
-                                                : "center",
-                                        transition: "all 0.2s ease",
-                                    }}
-                                    className="hero-trust-text"
-                                >
-                                    Local support delivered by HospiPals.
-                                </Text>
-                            </div>
+                                    <div
+                                        style={{
+                                            width: 36,
+                                            height: 36,
+                                            borderRadius: "50%",
+                                            background: "#ffffff",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            boxShadow:
+                                                "inset 0 0 0 1px rgba(0,0,0,0.06)",
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        {item.icon}
+                                    </div>
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            justifyContent: "center",
+                                            textAlign: "left",
+                                            alignItems:
+                                                windowWidth >= 768
+                                                    ? "center"
+                                                    : "flex-start",
+                                        }}
+                                    >
+                                        <Text
+                                            style={{
+                                                color: "#1a1a1a",
+                                                fontSize:
+                                                    windowWidth >= 768
+                                                        ? 16
+                                                        : 15,
+                                                fontWeight: 600,
+                                                lineHeight: 1.3,
+                                            }}
+                                        >
+                                            {item.title}
+                                        </Text>
+                                        <Text
+                                            style={{
+                                                color: "#666",
+                                                fontSize:
+                                                    windowWidth >= 768
+                                                        ? 13
+                                                        : 12,
+                                                lineHeight: 1.4,
+                                            }}
+                                        >
+                                            {item.caption}
+                                        </Text>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -960,7 +925,7 @@ export default function CustomerDashboard({
                             swipeable={true}
                             emulateTouch={true}
                             dynamicHeight={false}
-                            centerMode={carouselSettings.centerMode}
+                            centerMode={false}
                             centerSlidePercentage={
                                 carouselSettings.centerSlidePercentage
                             }
@@ -969,8 +934,8 @@ export default function CustomerDashboard({
                             width="100%"
                             className="services-carousel"
                         >
-                            {servicesData && servicesData.length > 0 ? (
-                                servicesData.map((service, index) => (
+                            {validServices && validServices.length > 0 ? (
+                                validServices.map((service, index) => (
                                     <div
                                         key={service.id || index}
                                         className="service-slide"
@@ -980,14 +945,8 @@ export default function CustomerDashboard({
                                                 handleServiceClick(service)
                                             }
                                             style={{
-                                                background:
-                                                    index === 0
-                                                        ? "#1890ff"
-                                                        : "#ffffff",
-                                                border:
-                                                    index === 0
-                                                        ? "2px dashed #40a9ff"
-                                                        : "2px dashed #d9d9d9",
+                                                background: "#ffffff",
+                                                border: "2px dashed #d9d9d9",
                                                 borderRadius: "16px",
                                                 overflow: "hidden",
                                                 cursor: "pointer",
@@ -997,9 +956,7 @@ export default function CustomerDashboard({
                                                 display: "flex",
                                                 flexDirection: "column",
                                                 boxShadow:
-                                                    index === 0
-                                                        ? "0 8px 24px rgba(24, 144, 255, 0.2)"
-                                                        : "0 4px 12px rgba(0, 0, 0, 0.06)",
+                                                    "0 4px 12px rgba(0, 0, 0, 0.06)",
                                                 position: "relative",
                                             }}
                                             hoverable
@@ -1027,17 +984,12 @@ export default function CustomerDashboard({
                                                         height: "48px",
                                                         borderRadius: "12px",
                                                         background:
-                                                            index === 0
-                                                                ? "rgba(255, 255, 255, 0.2)"
-                                                                : "rgba(24, 144, 255, 0.1)",
+                                                            "rgba(24, 144, 255, 0.1)",
                                                         display: "flex",
                                                         alignItems: "center",
                                                         justifyContent:
                                                             "center",
-                                                        color:
-                                                            index === 0
-                                                                ? "#ffffff"
-                                                                : "#1890ff",
+                                                        color: "#1890ff",
                                                         fontSize: "24px",
                                                     }}
                                                 >
@@ -1075,10 +1027,7 @@ export default function CustomerDashboard({
                                                     level={4}
                                                     className="service-title"
                                                     style={{
-                                                        color:
-                                                            index === 0
-                                                                ? "#ffffff"
-                                                                : "#1a1a1a",
+                                                        color: "#1a1a1a",
                                                         fontSize: "18px",
                                                         fontWeight: 700,
                                                         lineHeight: 1.3,
@@ -1101,60 +1050,89 @@ export default function CustomerDashboard({
                                                 </Title>
 
                                                 {/* Service Description */}
-                                                <Text
-                                                    className="service-description"
-                                                    style={{
-                                                        color:
-                                                            index === 0
-                                                                ? "rgba(255, 255, 255, 0.9)"
-                                                                : "#4a4a4a",
-                                                        fontSize: "14px",
-                                                        lineHeight: 1.5,
-                                                        textAlign: "left",
-                                                        fontWeight: 400,
-                                                        letterSpacing: "0.01em",
-                                                        overflow: "hidden",
-                                                        display: "-webkit-box",
-                                                        WebkitLineClamp: 2,
-                                                        WebkitBoxOrient:
-                                                            "vertical",
-                                                        textOverflow:
-                                                            "ellipsis",
-                                                        maxHeight: "42px",
-                                                    }}
-                                                    title={
-                                                        service.description &&
-                                                        service.description.trim() !==
-                                                            ""
-                                                            ? service.description
-                                                                  .replace(
-                                                                      /<[^>]*>/g,
-                                                                      ""
-                                                                  )
-                                                                  .trim()
-                                                            : `Professional ${
-                                                                  service.name ||
-                                                                  "service"
-                                                              } support for your needs.`
-                                                    }
-                                                >
-                                                    {truncateText(
-                                                        service.description &&
+                                                <div>
+                                                    <Text
+                                                        className="service-description"
+                                                        style={{
+                                                            color: "#4a4a4a",
+                                                            fontSize: "14px",
+                                                            lineHeight: 1.5,
+                                                            textAlign: "left",
+                                                            fontWeight: 400,
+                                                            letterSpacing:
+                                                                "0.01em",
+                                                            overflow: "hidden",
+                                                            display:
+                                                                "-webkit-box",
+                                                            WebkitLineClamp: 2,
+                                                            WebkitBoxOrient:
+                                                                "vertical",
+                                                            textOverflow:
+                                                                "ellipsis",
+                                                            maxHeight: "42px",
+                                                        }}
+                                                        title={
+                                                            service.description &&
                                                             service.description.trim() !==
                                                                 ""
-                                                            ? service.description
-                                                                  .replace(
-                                                                      /<[^>]*>/g,
-                                                                      ""
-                                                                  )
-                                                                  .trim()
-                                                            : `Professional ${
-                                                                  service.name ||
-                                                                  "service"
-                                                              } support for your needs.`,
-                                                        80
+                                                                ? service.description
+                                                                      .replace(
+                                                                          /<[^>]*>/g,
+                                                                          ""
+                                                                      )
+                                                                      .trim()
+                                                                : `Professional ${
+                                                                      service.name ||
+                                                                      "service"
+                                                                  } support for your needs.`
+                                                        }
+                                                    >
+                                                        {truncateText(
+                                                            service.description &&
+                                                                service.description.trim() !==
+                                                                    ""
+                                                                ? service.description
+                                                                      .replace(
+                                                                          /<[^>]*>/g,
+                                                                          ""
+                                                                      )
+                                                                      .trim()
+                                                                : `Professional ${
+                                                                      service.name ||
+                                                                      "service"
+                                                                  } support for your needs.`,
+                                                            80
+                                                        )}
+                                                    </Text>
+                                                    {((service.description &&
+                                                        service.description
+                                                            .replace(
+                                                                /<[^>]*>/g,
+                                                                ""
+                                                            )
+                                                            .trim().length >
+                                                            80) ||
+                                                        false) && (
+                                                        <Button
+                                                            type="link"
+                                                            size="small"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                showDetailModal(
+                                                                    service,
+                                                                    "service"
+                                                                );
+                                                            }}
+                                                            style={{
+                                                                padding: 0,
+                                                                marginTop: 8,
+                                                                fontWeight: 600,
+                                                            }}
+                                                        >
+                                                            Read more
+                                                        </Button>
                                                     )}
-                                                </Text>
+                                                </div>
                                             </div>
                                         </Card>
                                     </div>
@@ -1177,11 +1155,11 @@ export default function CustomerDashboard({
                                             fontWeight: 500,
                                         }}
                                     >
-                                        {servicesData.length === 0
+                                        {validServices.length === 0
                                             ? "No services available at the moment. Please check back later."
                                             : "Loading services..."}
                                     </Text>
-                                    {servicesData.length === 0 && (
+                                    {validServices.length === 0 && (
                                         <Text
                                             style={{
                                                 color: "#999",
@@ -1253,21 +1231,24 @@ export default function CustomerDashboard({
                         <Button
                             type="primary"
                             size="middle"
-                            icon={<BookOutlined style={{ fontSize: 14 }} />}
+                            icon={<BookOutlined style={{ fontSize: 16 }} />}
                             onClick={handleBookAppointment}
                             style={{
                                 background:
                                     "linear-gradient(135deg, #1890ff 0%, #096dd9 100%)",
                                 border: "none",
-                                height: 44,
-                                padding: "0 28px",
-                                fontSize: "15px",
-                                fontWeight: 500,
-                                borderRadius: "10px",
+                                height: windowWidth >= 768 ? 48 : 44,
+                                padding:
+                                    windowWidth >= 768 ? "0 32px" : "0 20px",
+                                fontSize: 16,
+                                fontWeight: 600,
+                                borderRadius: "12px",
                                 boxShadow: "0 6px 20px rgba(24, 144, 255, 0.2)",
-                                minWidth: "240px",
-                                maxWidth: "280px",
-                                width: "auto",
+                                width: windowWidth >= 768 ? "240px" : "280px",
+                                minWidth:
+                                    windowWidth >= 768 ? "240px" : "280px",
+                                maxWidth:
+                                    windowWidth >= 768 ? "240px" : "280px",
                                 whiteSpace: "nowrap",
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
@@ -1506,62 +1487,78 @@ export default function CustomerDashboard({
                                             {extra.description &&
                                                 extra.description.trim() !==
                                                     "" && (
-                                                    <Text
-                                                        className="extra-description"
-                                                        style={{
-                                                            color: "#4a4a4a",
-                                                            fontSize: "14px",
-                                                            lineHeight: 1.5,
-                                                            textAlign: "left",
-                                                            fontWeight: 400,
-                                                            letterSpacing:
-                                                                "0.01em",
-                                                            marginBottom:
-                                                                "16px",
-                                                            overflow: "hidden",
-                                                            display:
-                                                                "-webkit-box",
-                                                            WebkitLineClamp: 2,
-                                                            WebkitBoxOrient:
-                                                                "vertical",
-                                                            textOverflow:
-                                                                "ellipsis",
-                                                            maxHeight: "42px",
-                                                        }}
-                                                        title={extra.description
-                                                            .replace(
-                                                                /<[^>]*>/g,
-                                                                ""
-                                                            )
-                                                            .trim()}
-                                                    >
-                                                        {truncateText(
-                                                            extra.description,
-                                                            80
-                                                        )}
-                                                    </Text>
+                                                    <div>
+                                                        <Text
+                                                            className="extra-description"
+                                                            style={{
+                                                                color: "#4a4a4a",
+                                                                fontSize:
+                                                                    "14px",
+                                                                lineHeight: 1.5,
+                                                                textAlign:
+                                                                    "left",
+                                                                fontWeight: 400,
+                                                                letterSpacing:
+                                                                    "0.01em",
+                                                                marginBottom:
+                                                                    "16px",
+                                                                overflow:
+                                                                    "hidden",
+                                                                display:
+                                                                    "-webkit-box",
+                                                                WebkitLineClamp: 2,
+                                                                WebkitBoxOrient:
+                                                                    "vertical",
+                                                                textOverflow:
+                                                                    "ellipsis",
+                                                                maxHeight:
+                                                                    "42px",
+                                                            }}
+                                                            title={extra.description
+                                                                .replace(
+                                                                    /<[^>]*>/g,
+                                                                    ""
+                                                                )
+                                                                .trim()}
+                                                        >
+                                                            {truncateText(
+                                                                extra.description,
+                                                                80
+                                                            )}
+                                                        </Text>
+                                                        {extra.description &&
+                                                            extra.description
+                                                                .replace(
+                                                                    /<[^>]*>/g,
+                                                                    ""
+                                                                )
+                                                                .trim().length >
+                                                                80 && (
+                                                                <Button
+                                                                    type="link"
+                                                                    size="small"
+                                                                    onClick={(
+                                                                        e
+                                                                    ) => {
+                                                                        e.stopPropagation();
+                                                                        showDetailModal(
+                                                                            extra,
+                                                                            "extra"
+                                                                        );
+                                                                    }}
+                                                                    style={{
+                                                                        padding: 0,
+                                                                        marginTop: 4,
+                                                                        fontWeight: 600,
+                                                                    }}
+                                                                >
+                                                                    Read more
+                                                                </Button>
+                                                            )}
+                                                    </div>
                                                 )}
 
-                                            {/* Extra Price */}
-                                            <div
-                                                style={{
-                                                    textAlign: "left",
-                                                }}
-                                            >
-                                                <Text
-                                                    style={{
-                                                        color: "#1890ff",
-                                                        fontSize: "20px",
-                                                        fontWeight: 700,
-                                                        lineHeight: 1,
-                                                    }}
-                                                >
-                                                    ₹
-                                                    {parseFloat(
-                                                        extra.price
-                                                    ).toFixed(2)}
-                                                </Text>
-                                            </div>
+                                            {/* Extra Price removed on landing page cards */}
                                         </div>
                                     </Card>
                                 ))}
@@ -2552,6 +2549,287 @@ export default function CustomerDashboard({
                     onClose={() => setIsLoginModalVisible(false)}
                     onSuccess={handleLoginSuccess}
                 />
+
+                {/* Service/Extra Detail Modal */}
+                <Modal
+                    title={
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 12,
+                            }}
+                        >
+                            <div
+                                style={{
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: 8,
+                                    background:
+                                        modalType === "service"
+                                            ? "rgba(24, 144, 255, 0.1)"
+                                            : "rgba(82, 196, 26, 0.1)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    color:
+                                        modalType === "service"
+                                            ? "#1890ff"
+                                            : "#52c41a",
+                                }}
+                            >
+                                {modalType === "service" ? (
+                                    <UserOutlined />
+                                ) : (
+                                    <Star size={20} />
+                                )}
+                            </div>
+                            <span style={{ fontSize: 18, fontWeight: 600 }}>
+                                {selectedItem?.name || "Details"}
+                            </span>
+                        </div>
+                    }
+                    open={detailModalVisible}
+                    onCancel={hideDetailModal}
+                    footer={null}
+                    width={windowWidth >= 768 ? 600 : "90%"}
+                    style={{ top: 20 }}
+                >
+                    {selectedItem && (
+                        <div style={{ padding: "8px 0" }}>
+                            {/* Description */}
+                            <div style={{ marginBottom: 24 }}>
+                                <Text
+                                    style={{
+                                        fontSize: 16,
+                                        fontWeight: 600,
+                                        marginBottom: 8,
+                                        display: "block",
+                                    }}
+                                >
+                                    Description
+                                </Text>
+                                <Text
+                                    style={{
+                                        fontSize: 14,
+                                        lineHeight: 1.6,
+                                        color: "#4a4a4a",
+                                    }}
+                                >
+                                    {selectedItem.description
+                                        ? selectedItem.description
+                                              .replace(/<[^>]*>/g, "")
+                                              .trim()
+                                        : `Professional ${selectedItem.name} support for your needs.`}
+                                </Text>
+                            </div>
+
+                            {/* Pricing & Duration */}
+                            <div
+                                style={{
+                                    background: "#f8f9fa",
+                                    padding: 16,
+                                    borderRadius: 12,
+                                    border: "1px solid #e9ecef",
+                                    marginBottom: 24,
+                                }}
+                            >
+                                <Text
+                                    style={{
+                                        fontSize: 16,
+                                        fontWeight: 600,
+                                        marginBottom: 12,
+                                        display: "block",
+                                    }}
+                                >
+                                    Pricing & Duration
+                                </Text>
+
+                                {modalType === "service" ? (
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: 8,
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                            }}
+                                        >
+                                            <Text
+                                                style={{
+                                                    fontSize: 14,
+                                                    color: "#666",
+                                                }}
+                                            >
+                                                Base Price:
+                                            </Text>
+                                            <Text
+                                                style={{
+                                                    fontSize: 16,
+                                                    fontWeight: 600,
+                                                    color: "#1890ff",
+                                                }}
+                                            >
+                                                ₹
+                                                {selectedItem.price
+                                                    ? parseFloat(
+                                                          selectedItem.price
+                                                      ).toFixed(2)
+                                                    : "Contact for pricing"}
+                                            </Text>
+                                        </div>
+                                        {selectedItem.duration && (
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent:
+                                                        "space-between",
+                                                    alignItems: "center",
+                                                }}
+                                            >
+                                                <Text
+                                                    style={{
+                                                        fontSize: 14,
+                                                        color: "#666",
+                                                    }}
+                                                >
+                                                    Duration:
+                                                </Text>
+                                                <Text
+                                                    style={{
+                                                        fontSize: 14,
+                                                        fontWeight: 500,
+                                                    }}
+                                                >
+                                                    {selectedItem.duration}{" "}
+                                                    hours
+                                                </Text>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: 8,
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                            }}
+                                        >
+                                            <Text
+                                                style={{
+                                                    fontSize: 14,
+                                                    color: "#666",
+                                                }}
+                                            >
+                                                Price:
+                                            </Text>
+                                            <Text
+                                                style={{
+                                                    fontSize: 16,
+                                                    fontWeight: 600,
+                                                    color: "#52c41a",
+                                                }}
+                                            >
+                                                ₹
+                                                {selectedItem.price
+                                                    ? parseFloat(
+                                                          selectedItem.price
+                                                      ).toFixed(2)
+                                                    : "Contact for pricing"}
+                                            </Text>
+                                        </div>
+                                        {selectedItem.duration && (
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent:
+                                                        "space-between",
+                                                    alignItems: "center",
+                                                }}
+                                            >
+                                                <Text
+                                                    style={{
+                                                        fontSize: 14,
+                                                        color: "#666",
+                                                    }}
+                                                >
+                                                    Duration:
+                                                </Text>
+                                                <Text
+                                                    style={{
+                                                        fontSize: 14,
+                                                        fontWeight: 500,
+                                                    }}
+                                                >
+                                                    {selectedItem.duration}{" "}
+                                                    hours
+                                                </Text>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Additional Info */}
+                            {selectedItem.additional_info && (
+                                <div style={{ marginBottom: 24 }}>
+                                    <Text
+                                        style={{
+                                            fontSize: 16,
+                                            fontWeight: 600,
+                                            marginBottom: 8,
+                                            display: "block",
+                                        }}
+                                    >
+                                        Additional Information
+                                    </Text>
+                                    <Text
+                                        style={{
+                                            fontSize: 14,
+                                            lineHeight: 1.6,
+                                            color: "#4a4a4a",
+                                        }}
+                                    >
+                                        {selectedItem.additional_info}
+                                    </Text>
+                                </div>
+                            )}
+
+                            {/* Action Buttons */}
+                            <div
+                                style={{
+                                    display: "flex",
+                                    gap: 12,
+                                    justifyContent: "flex-end",
+                                }}
+                            >
+                                <Button onClick={hideDetailModal}>Close</Button>
+                                <Button
+                                    type="primary"
+                                    onClick={() => {
+                                        hideDetailModal();
+                                        handleBookAppointment();
+                                    }}
+                                    icon={<BookOutlined />}
+                                >
+                                    Book Now
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </Modal>
             </div>
         </div>
     );
