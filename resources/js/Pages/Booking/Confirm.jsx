@@ -25,19 +25,21 @@ import {
     message,
     Spin,
 } from "antd";
+import { ArrowLeftOutlined } from "@ant-design/icons";
 import {
-    UserOutlined,
-    PhoneOutlined,
-    MailOutlined,
-    CreditCardOutlined,
-    CheckCircleOutlined,
-    ArrowLeftOutlined,
-    CalendarOutlined,
-    ClockCircleOutlined,
-    DollarOutlined,
-    GiftOutlined,
-    CheckOutlined,
-} from "@ant-design/icons";
+    User,
+    Phone,
+    Mail,
+    CreditCard,
+    CheckCircle,
+    Calendar,
+    Clock,
+    DollarSign,
+    Gift,
+    Check,
+    Smartphone,
+    MapPin,
+} from "lucide-react";
 import dayjs from "dayjs";
 import BookingHeader from "../../Components/BookingHeader";
 import Logo from "../../Components/Logo";
@@ -612,9 +614,9 @@ export default function Confirm({
             case "text":
                 return <Input {...commonProps} />;
             case "email":
-                return <Input {...commonProps} prefix={<MailOutlined />} />;
+                return <Input {...commonProps} prefix={<Mail size={16} />} />;
             case "phone":
-                return <Input {...commonProps} prefix={<PhoneOutlined />} />;
+                return <Input {...commonProps} prefix={<Phone size={16} />} />;
             case "number":
                 return (
                     <InputNumber {...commonProps} style={{ width: "100%" }} />
@@ -793,9 +795,7 @@ export default function Confirm({
                                         marginRight: "16px",
                                     }}
                                 >
-                                    <CheckCircleOutlined
-                                        style={{ fontSize: 24, color: "white" }}
-                                    />
+                                    <CheckCircle size={24} color="white" />
                                 </div>
                                 <div>
                                     <Title
@@ -905,14 +905,16 @@ export default function Confirm({
                                 )}
 
                                 <Descriptions.Item label="Appointment Date">
-                                    <CalendarOutlined
+                                    <Calendar
+                                        size={16}
                                         style={{ marginRight: 8 }}
                                     />
                                     {formatDate(date)}
                                 </Descriptions.Item>
 
                                 <Descriptions.Item label="Appointment Time">
-                                    <ClockCircleOutlined
+                                    <Clock
+                                        size={16}
                                         style={{ marginRight: 8 }}
                                     />
                                     {formatTime(time)}
@@ -990,7 +992,8 @@ export default function Confirm({
                                 {appliedCoupon && (
                                     <Descriptions.Item label="Original Price">
                                         <Text delete style={{ fontSize: 16 }}>
-                                            <DollarOutlined
+                                            <DollarSign
+                                                size={16}
                                                 style={{ marginRight: 8 }}
                                             />
                                             {formatPrice(totalPrice)}
@@ -1041,9 +1044,6 @@ export default function Confirm({
                                             color: "#52c41a",
                                         }}
                                     >
-                                        <DollarOutlined
-                                            style={{ marginRight: 8 }}
-                                        />
                                         {formatPrice(finalPrice)}
                                     </Text>
                                 </Descriptions.Item>
@@ -1080,9 +1080,7 @@ export default function Confirm({
                                         marginRight: "16px",
                                     }}
                                 >
-                                    <GiftOutlined
-                                        style={{ fontSize: 24, color: "white" }}
-                                    />
+                                    <Gift size={24} color="white" />
                                 </div>
                                 <div>
                                     <Title
@@ -1194,9 +1192,7 @@ export default function Confirm({
                                         marginRight: "16px",
                                     }}
                                 >
-                                    <UserOutlined
-                                        style={{ fontSize: 24, color: "white" }}
-                                    />
+                                    <User size={24} color="white" />
                                 </div>
                                 <div>
                                     <Title
@@ -1321,11 +1317,9 @@ export default function Confirm({
                                                                     "center",
                                                             }}
                                                         >
-                                                            <CreditCardOutlined
-                                                                style={{
-                                                                    color: "white",
-                                                                    fontSize: 14,
-                                                                }}
+                                                            <CreditCard
+                                                                size={14}
+                                                                color="white"
                                                             />
                                                         </div>
                                                         <div>
@@ -1461,7 +1455,7 @@ export default function Confirm({
                                                 >
                                                     <Input
                                                         prefix={
-                                                            <UserOutlined />
+                                                            <User size={16} />
                                                         }
                                                         placeholder="Enter your full name"
                                                         size="large"
@@ -1499,9 +1493,15 @@ export default function Confirm({
                                                                         : "inherit",
                                                                 }}
                                                             >
-                                                                {verifiedPhone
-                                                                    ? "✓ Verified"
-                                                                    : "📱"}
+                                                                {verifiedPhone ? (
+                                                                    "✓ Verified"
+                                                                ) : (
+                                                                    <Smartphone
+                                                                        size={
+                                                                            16
+                                                                        }
+                                                                    />
+                                                                )}
                                                             </span>
                                                         }
                                                     />
@@ -1555,7 +1555,7 @@ export default function Confirm({
                                             ]}
                                         >
                                             <Input
-                                                prefix={<MailOutlined />}
+                                                prefix={<Mail size={16} />}
                                                 placeholder="Enter your email address"
                                                 size="large"
                                             />
@@ -1619,11 +1619,9 @@ export default function Confirm({
                                                                     "center",
                                                             }}
                                                         >
-                                                            <CreditCardOutlined
-                                                                style={{
-                                                                    color: "white",
-                                                                    fontSize: 14,
-                                                                }}
+                                                            <CreditCard
+                                                                size={14}
+                                                                color="white"
                                                             />
                                                         </div>
                                                         <div>
@@ -1778,12 +1776,7 @@ export default function Confirm({
                                                 gap: "8px",
                                             }}
                                         >
-                                            <CheckOutlined
-                                                style={{
-                                                    color: "#52c41a",
-                                                    fontSize: 16,
-                                                }}
-                                            />
+                                            <Check size={16} color="#52c41a" />
                                             <Text
                                                 style={{
                                                     fontSize: 14,
@@ -1801,12 +1794,7 @@ export default function Confirm({
                                                 gap: "8px",
                                             }}
                                         >
-                                            <CheckOutlined
-                                                style={{
-                                                    color: "#52c41a",
-                                                    fontSize: 16,
-                                                }}
-                                            />
+                                            <Check size={16} color="#52c41a" />
                                             <Text
                                                 style={{
                                                     fontSize: 14,
@@ -1823,12 +1811,7 @@ export default function Confirm({
                                                 gap: "8px",
                                             }}
                                         >
-                                            <CheckOutlined
-                                                style={{
-                                                    color: "#52c41a",
-                                                    fontSize: 16,
-                                                }}
-                                            />
+                                            <Check size={16} color="#52c41a" />
                                             <Text
                                                 style={{
                                                     fontSize: 14,
@@ -1874,7 +1857,7 @@ export default function Confirm({
                                         size="large"
                                         htmlType="submit"
                                         loading={loading}
-                                        icon={<CheckCircleOutlined />}
+                                        icon={<CheckCircle size={16} />}
                                         style={{ width: "100%" }}
                                     >
                                         <span className="hidden-xs">
@@ -1922,9 +1905,7 @@ export default function Confirm({
                                         marginRight: "16px",
                                     }}
                                 >
-                                    <CheckCircleOutlined
-                                        style={{ fontSize: 24, color: "white" }}
-                                    />
+                                    <CheckCircle size={24} color="white" />
                                 </div>
                                 <div>
                                     <Title
@@ -2272,9 +2253,10 @@ export default function Confirm({
                                 flexShrink: 0,
                             }}
                         >
-                            <span style={{ fontSize: 20, color: "white" }}>
-                                📌
-                            </span>
+                            <MapPin
+                                size={window.innerWidth <= 768 ? 16 : 20}
+                                color="white"
+                            />
                         </div>
                         <Text
                             style={{

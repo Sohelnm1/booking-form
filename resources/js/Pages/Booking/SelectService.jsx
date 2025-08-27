@@ -18,6 +18,7 @@ import {
     CheckOutlined,
     InfoCircleOutlined,
 } from "@ant-design/icons";
+import { Building2, MessageCircle } from "lucide-react";
 import BookingHeader from "../../Components/BookingHeader";
 import Logo from "../../Components/Logo";
 import ServiceIcon from "../../Components/ServiceIcon";
@@ -157,7 +158,14 @@ export default function SelectService({ services, upcomingServices, auth }) {
                             level={2}
                             style={{ marginTop: 24, marginBottom: 8 }}
                         >
-                            Choose Your HospiPal Service 🏥
+                            Choose Your HospiPal Service{" "}
+                            <Building2
+                                size={24}
+                                style={{
+                                    verticalAlign: "middle",
+                                    marginLeft: "8px",
+                                }}
+                            />
                         </Title>
                         <Text type="secondary" style={{ fontSize: 16 }}>
                             Trained, caring HospiPals by your side — for OPD
@@ -1150,9 +1158,13 @@ export default function SelectService({ services, upcomingServices, auth }) {
                                     fontSize: 16,
                                     color: "#1890ff",
                                     fontWeight: 500,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
                                 }}
                             >
-                                Need help choosing? 💬 Chat with us on WhatsApp
+                                <MessageCircle size={18} />
+                                Need help choosing? Chat with us on WhatsApp
                                 anytime.
                             </Text>
                         </div>

@@ -222,7 +222,13 @@ export default function CustomerDashboard({
             <Head title="HospiPal - Customer Dashboard" />
             <BookingHeader auth={auth} />
 
-            <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px" }}>
+            <div
+                style={{
+                    maxWidth: 1200,
+                    margin: "0 auto",
+                    padding: "24px 24px 0px",
+                }}
+            >
                 {/* Add responsive top spacing for mobile */}
                 <div className="mobile-top-spacing" />
 

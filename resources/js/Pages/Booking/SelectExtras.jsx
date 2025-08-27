@@ -26,6 +26,7 @@ import {
     CheckOutlined,
     CheckCircleOutlined,
 } from "@ant-design/icons";
+import { MessageCircle, Sparkles, CheckCircle } from "lucide-react";
 import BookingHeader from "../../Components/BookingHeader";
 import Logo from "../../Components/Logo";
 
@@ -251,7 +252,14 @@ export default function SelectExtras({
                         size="large"
                     />
                     <Title level={2} style={{ marginTop: 24, marginBottom: 8 }}>
-                        Add HospiPal Extras ✨
+                        Add HospiPal Extras{" "}
+                        <Sparkles
+                            size={24}
+                            style={{
+                                verticalAlign: "middle",
+                                marginLeft: "8px",
+                            }}
+                        />
                     </Title>
                     <Text type="secondary" style={{ fontSize: 16 }}>
                         Make your booking smoother, safer, and stress-free with
@@ -621,9 +629,7 @@ export default function SelectExtras({
                                         marginRight: "16px",
                                     }}
                                 >
-                                    <CheckCircleOutlined
-                                        style={{ fontSize: 24, color: "white" }}
-                                    />
+                                    <CheckCircle size={24} color="white" />
                                 </div>
                                 <div>
                                     <Title
@@ -886,9 +892,13 @@ export default function SelectExtras({
                                 fontSize: 16,
                                 color: "#1890ff",
                                 fontWeight: 500,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "8px",
                             }}
                         >
-                            Need help with extras? 💬 Chat with us on WhatsApp
+                            <MessageCircle size={18} />
+                            Need help with extras? Chat with us on WhatsApp
                             anytime.
                         </Text>
                     </div>

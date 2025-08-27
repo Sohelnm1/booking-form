@@ -21,8 +21,19 @@ import {
     ArrowLeftOutlined,
     ArrowRightOutlined,
     CheckOutlined,
-    CheckCircleOutlined,
 } from "@ant-design/icons";
+import {
+    Clock,
+    Calendar,
+    Clock3,
+    CalendarDays,
+    Users,
+    Handshake,
+    User,
+    UserCheck,
+    CheckCircle,
+    MessageCircle,
+} from "lucide-react";
 import dayjs from "dayjs";
 
 import BookingHeader from "../../Components/BookingHeader";
@@ -382,24 +393,61 @@ export default function SelectDateTime({
                         background="white"
                         size="large"
                     />
-                    <Title level={2} style={{ marginTop: 24, marginBottom: 8 }}>
-                        Choose Your Date & Time ⏰
+                    <Title
+                        level={2}
+                        style={{
+                            marginTop: 24,
+                            marginBottom: 8,
+                            textAlign: "center",
+                        }}
+                    >
+                        Choose Your Date & Time{" "}
+                        <Clock
+                            size={24}
+                            style={{
+                                verticalAlign: "middle",
+                                marginLeft: "8px",
+                            }}
+                        />
                     </Title>
-                    <Text type="secondary" style={{ fontSize: 16 }}>
+                    <Text
+                        type="secondary"
+                        style={{
+                            fontSize: 16,
+                            textAlign: "center",
+                            display: "block",
+                        }}
+                    >
                         Book your HospiPal at the time you need most — secure
                         your slot now before it fills.
                     </Text>
                     {scheduleSettings && scheduleSettings.length > 0 && (
-                        <div style={{ marginTop: 8 }}>
-                            <Text type="secondary" style={{ fontSize: "12px" }}>
-                                📅 Booking window:{" "}
+                        <div style={{ marginTop: 8, textAlign: "center" }}>
+                            <Text
+                                type="secondary"
+                                style={{
+                                    fontSize: "12px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "4px",
+                                    flexWrap: "wrap",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <Calendar size={14} />
+                                Booking window:{" "}
                                 {scheduleSettings[0].booking_window_days} days
-                                ahead • ⏰ Min advance:{" "}
+                                ahead • <Clock size={14} />
+                                Min advance:{" "}
                                 {scheduleSettings[0].min_advance_hours} hours •
-                                🕐 Working hours:{" "}
-                                {scheduleSettings[0].start_time} -{" "}
-                                {scheduleSettings[0].end_time} • 📆 Working
-                                days: {scheduleSettings[0].working_days_text}
+                                <Clock3 size={14} />
+                                Working hours: {
+                                    scheduleSettings[0].start_time
+                                }{" "}
+                                - {scheduleSettings[0].end_time} •{" "}
+                                <CalendarDays size={14} />
+                                Working days:{" "}
+                                {scheduleSettings[0].working_days_text}
                             </Text>
                         </div>
                     )}
@@ -745,14 +793,7 @@ export default function SelectDateTime({
                                                 marginRight: 12,
                                             }}
                                         >
-                                            <span
-                                                style={{
-                                                    fontSize: 18,
-                                                    color: "#666",
-                                                }}
-                                            >
-                                                👥
-                                            </span>
+                                            <Users size={18} color="#666" />
                                         </div>
                                         <Title
                                             level={4}
@@ -846,7 +887,10 @@ export default function SelectDateTime({
                                                         fontSize: 24,
                                                     }}
                                                 >
-                                                    🤝
+                                                    <Handshake
+                                                        size={24}
+                                                        color="#faad14"
+                                                    />
                                                 </div>
                                                 <div
                                                     style={{
@@ -910,7 +954,10 @@ export default function SelectDateTime({
                                                         fontSize: 12,
                                                     }}
                                                 >
-                                                    ✓
+                                                    <CheckCircle
+                                                        size={12}
+                                                        color="white"
+                                                    />
                                                 </div>
                                             )}
                                             <div
@@ -931,7 +978,10 @@ export default function SelectDateTime({
                                                         fontSize: 24,
                                                     }}
                                                 >
-                                                    👨
+                                                    <User
+                                                        size={24}
+                                                        color="#1890ff"
+                                                    />
                                                 </div>
                                                 <div
                                                     style={{
@@ -999,7 +1049,10 @@ export default function SelectDateTime({
                                                         fontSize: 12,
                                                     }}
                                                 >
-                                                    ✓
+                                                    <CheckCircle
+                                                        size={12}
+                                                        color="white"
+                                                    />
                                                 </div>
                                             )}
                                             <div
@@ -1020,7 +1073,10 @@ export default function SelectDateTime({
                                                         fontSize: 24,
                                                     }}
                                                 >
-                                                    👩
+                                                    <UserCheck
+                                                        size={24}
+                                                        color="#eb2f96"
+                                                    />
                                                 </div>
                                                 <div
                                                     style={{
@@ -1322,9 +1378,7 @@ export default function SelectDateTime({
                                         marginRight: "16px",
                                     }}
                                 >
-                                    <CheckCircleOutlined
-                                        style={{ fontSize: 24, color: "white" }}
-                                    />
+                                    <CheckCircle size={24} color="white" />
                                 </div>
                                 <div>
                                     <Title
@@ -1633,9 +1687,7 @@ export default function SelectDateTime({
                                 gap: 8,
                             }}
                         >
-                            <CheckOutlined
-                                style={{ color: "#52c41a", fontSize: 16 }}
-                            />
+                            <CheckCircle size={16} color="#52c41a" />
                             <Text style={{ fontSize: 14, color: "#666" }}>
                                 Flexible rescheduling available
                             </Text>
@@ -1647,9 +1699,7 @@ export default function SelectDateTime({
                                 gap: 8,
                             }}
                         >
-                            <CheckOutlined
-                                style={{ color: "#52c41a", fontSize: 16 }}
-                            />
+                            <CheckCircle size={16} color="#52c41a" />
                             <Text style={{ fontSize: 14, color: "#666" }}>
                                 Reliable on-time arrival by your HospiPal
                             </Text>
@@ -1661,9 +1711,7 @@ export default function SelectDateTime({
                                 gap: 8,
                             }}
                         >
-                            <CheckOutlined
-                                style={{ color: "#52c41a", fontSize: 16 }}
-                            />
+                            <CheckCircle size={16} color="#52c41a" />
                             <Text style={{ fontSize: 14, color: "#666" }}>
                                 Families trust us for critical moments
                             </Text>
@@ -1694,10 +1742,15 @@ export default function SelectDateTime({
                                 fontSize: 16,
                                 color: "#1890ff",
                                 fontWeight: 500,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "8px",
+                                justifyContent: "center",
                             }}
                         >
-                            Not sure what time to book? 💬 Chat with us on
-                            WhatsApp for quick guidance.
+                            <MessageCircle size={18} />
+                            Not sure what time to book? Chat with us on WhatsApp
+                            for quick guidance.
                         </Text>
                     </div>
                 </div>

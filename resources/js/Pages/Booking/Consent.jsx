@@ -21,8 +21,6 @@ import {
     Layout,
 } from "antd";
 import {
-    FileTextOutlined,
-    CheckCircleOutlined,
     ArrowLeftOutlined,
     ArrowRightOutlined,
     EyeOutlined,
@@ -30,6 +28,7 @@ import {
     SendOutlined,
     CheckOutlined,
 } from "@ant-design/icons";
+import { Shield, MapPin, CheckCircle, FileText } from "lucide-react";
 import dayjs from "dayjs";
 import BookingHeader from "../../Components/BookingHeader";
 import Logo from "../../Components/Logo";
@@ -425,7 +424,7 @@ export default function Consent({
                     style={{
                         maxWidth: 1200,
                         margin: "0 auto",
-                        padding: "24px",
+                        padding: "16px",
                     }}
                 >
                     {/* Add responsive top spacing for mobile */}
@@ -607,14 +606,7 @@ export default function Consent({
                                         minWidth: "24px",
                                     }}
                                 >
-                                    <span
-                                        style={{
-                                            fontSize: "12px",
-                                            color: "white",
-                                        }}
-                                    >
-                                        🛡️
-                                    </span>
+                                    <Shield size={12} color="white" />
                                 </div>
                                 <Text
                                     style={{
@@ -697,13 +689,7 @@ export default function Consent({
                                                 minWidth: "52px",
                                             }}
                                         >
-                                            <FileTextOutlined
-                                                style={{
-                                                    fontSize:
-                                                        "clamp(20px, 3vw, 24px)",
-                                                    color: "white",
-                                                }}
-                                            />
+                                            <FileText size={24} color="white" />
                                         </div>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <Title
@@ -885,11 +871,10 @@ export default function Consent({
                                         level={4}
                                         style={{ marginBottom: 16 }}
                                     >
-                                        <FileTextOutlined
-                                            style={{
-                                                marginRight: 8,
-                                                color: "#1890ff",
-                                            }}
+                                        <FileText
+                                            size={16}
+                                            color="#1890ff"
+                                            style={{ marginRight: 8 }}
                                         />
                                         Optional Agreements
                                     </Title>
@@ -1038,13 +1023,7 @@ export default function Consent({
                                             minWidth: "52px",
                                         }}
                                     >
-                                        <CheckCircleOutlined
-                                            style={{
-                                                fontSize:
-                                                    "clamp(20px, 3vw, 24px)",
-                                                color: "white",
-                                            }}
-                                        />
+                                        <CheckCircle size={24} color="white" />
                                     </div>
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <Title
@@ -1458,14 +1437,10 @@ export default function Consent({
                                     minWidth: "clamp(40px, 6vw, 48px)",
                                 }}
                             >
-                                <span
-                                    style={{
-                                        fontSize: "clamp(16px, 2.5vw, 20px)",
-                                        color: "white",
-                                    }}
-                                >
-                                    📌
-                                </span>
+                                <MapPin
+                                    size={window.innerWidth <= 768 ? 16 : 20}
+                                    color="white"
+                                />
                             </div>
                             <Text
                                 style={{
