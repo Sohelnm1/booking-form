@@ -367,6 +367,33 @@ body::before {
     .ant-col {
         padding: 0 8px !important;
     }
+
+    /* Mobile Header Button Enhancements */
+    .ant-layout-header .ant-btn-primary {
+        height: 44px !important;
+        padding: 0 16px !important;
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+    }
+
+    .ant-layout-header .ant-btn-primary .anticon {
+        font-size: 18px !important;
+    }
+
+    /* Mobile Hamburger Menu Enhancement */
+    .ant-layout-header .ant-btn[aria-label="menu"] {
+        height: 44px !important;
+        width: 44px !important;
+        border-radius: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .ant-layout-header .ant-btn[aria-label="menu"] .anticon {
+        font-size: 20px !important;
+    }
 }
 
 @media (max-width: 992px) {
@@ -579,7 +606,7 @@ body::before {
 
     .ant-layout-header .ant-btn {
         height: 32px !important;
-        font-size: 12px !important;
+        font-size: 14px !important;
     }
 
     .ant-layout-header .ant-btn[type="primary"] {

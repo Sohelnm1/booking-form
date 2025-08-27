@@ -227,7 +227,9 @@ export default function BookingHeader({ auth }) {
                 <Button
                     type="primary"
                     size="middle"
-                    icon={<BookOpen size={16} />}
+                    icon={
+                        <BookOpen size={window.innerWidth <= 768 ? 18 : 16} />
+                    }
                     onClick={() =>
                         router.visit(route("booking.select-service"))
                     }
@@ -237,6 +239,10 @@ export default function BookingHeader({ auth }) {
                         border: "none",
                         fontWeight: 600,
                         borderRadius: "6px",
+                        height: window.innerWidth <= 768 ? "44px" : "32px",
+                        padding:
+                            window.innerWidth <= 768 ? "0 16px" : "4px 15px",
+                        fontSize: window.innerWidth <= 768 ? "16px" : "14px",
                     }}
                 >
                     <span className="hidden-xs">Book a HospiPal</span>
@@ -280,16 +286,19 @@ export default function BookingHeader({ auth }) {
                 {/* Hamburger menu - Always visible */}
                 <Button
                     type="text"
-                    icon={<MenuIcon size={18} />}
+                    icon={
+                        <MenuIcon size={window.innerWidth <= 768 ? 20 : 18} />
+                    }
                     onClick={() => setIsDrawerVisible(true)}
                     size="middle"
+                    aria-label="menu"
                     style={{
                         fontSize: "18px",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        height: "36px",
-                        width: "36px",
+                        height: window.innerWidth <= 768 ? "44px" : "36px",
+                        width: window.innerWidth <= 768 ? "44px" : "36px",
                         padding: "0",
                         borderRadius: "6px",
                     }}
