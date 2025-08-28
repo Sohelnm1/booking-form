@@ -1,5 +1,5 @@
 import React from "react";
-import { Layout, Typography, Row, Col, Divider } from "antd";
+import { Layout, Typography, Row, Col, Divider, Image } from "antd";
 import {
     PhoneOutlined,
     MailOutlined,
@@ -43,11 +43,15 @@ const ProfessionalFooter = () => {
                 <Row gutter={[32, 32]}>
                     <Col xs={24} sm={12} md={6}>
                         <div style={{ marginBottom: "24px" }}>
-                            <Title
-                                level={4}
-                                style={{ color: "#fff", marginBottom: "16px" }}
-                            >
-                                HospiPal Health
+                            <Title level={4} style={{ marginBottom: "16px" }}>
+                                <Image
+                                    src={"/PNG/colordrakbackground.png"}
+                                    alt="HospiPal Health"
+                                    preview={false}
+                                    style={{
+                                        maxWidth: "170px",
+                                    }}
+                                />
                             </Title>
                             <Text
                                 style={{
