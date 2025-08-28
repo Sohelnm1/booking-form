@@ -57,6 +57,7 @@ import "react-responsive-carousel/lib/styles/carousel.min.css";
 import BookingHeader from "../../Components/BookingHeader";
 import CustomerLoginModal from "../../Components/CustomerLoginModal";
 import DynamicSlot from "../../Components/DynamicSlot";
+import ProfessionalFooter from "./ProfessionalFooter";
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -918,7 +919,7 @@ export default function CustomerDashboard({
                             swipeable={true}
                             emulateTouch={true}
                             dynamicHeight={false}
-                            centerMode={false}
+                            centerMode={true}
                             centerSlidePercentage={
                                 carouselSettings.centerSlidePercentage
                             }
@@ -2221,320 +2222,7 @@ export default function CustomerDashboard({
                     </div>
                 </div>
 
-                {/* Footer Section */}
-                <footer
-                    style={{
-                        background: "rgba(26, 26, 26, 0.95)",
-                        backdropFilter: "blur(10px)",
-                        padding: "28px 24px 24px",
-                        marginTop: "48px",
-                        color: "#ffffff",
-                        width: "100vw",
-                        marginLeft: "calc(-50vw + 50%)",
-                        marginRight: "calc(-50vw + 50%)",
-                        borderRadius: "24px 24px 0 0",
-                        border: "1px solid rgba(255, 255, 255, 0.1)",
-                        boxShadow: "0 4px 16px rgba(0, 0, 0, 0.15)",
-                        fontFamily:
-                            "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-                    }}
-                    className="footer-section"
-                >
-                    <div
-                        style={{
-                            maxWidth: "1000px",
-                            margin: "0 auto",
-                            textAlign: "center",
-                        }}
-                    >
-                        {/* Footer Links */}
-                        <div
-                            style={{
-                                marginBottom: "20px",
-                                paddingBottom: "16px",
-                                borderBottom:
-                                    "1px solid rgba(255, 255, 255, 0.15)",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    display: "flex",
-                                    justifyContent: "center",
-                                    alignItems: "center",
-                                    gap: "20px",
-                                    flexWrap: "wrap",
-                                }}
-                            >
-                                <Text
-                                    style={{
-                                        color: "rgba(255, 255, 255, 0.9)",
-                                        fontSize: "14px",
-                                        cursor: "pointer",
-                                        transition: "all 0.2s ease",
-                                        fontWeight: 500,
-                                        letterSpacing: "0.01em",
-                                        padding: "6px 12px",
-                                        borderRadius: "6px",
-                                        background: "rgba(255, 255, 255, 0.05)",
-                                        border: "1px solid rgba(255, 255, 255, 0.1)",
-                                    }}
-                                    className="footer-link"
-                                    onMouseEnter={(e) => {
-                                        e.target.style.background =
-                                            "rgba(255, 255, 255, 0.15)";
-                                        e.target.style.borderColor =
-                                            "rgba(255, 255, 255, 0.25)";
-                                        e.target.style.color = "#ffffff";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.target.style.background =
-                                            "rgba(255, 255, 255, 0.05)";
-                                        e.target.style.borderColor =
-                                            "rgba(255, 255, 255, 0.1)";
-                                        e.target.style.color =
-                                            "rgba(255, 255, 255, 0.9)";
-                                    }}
-                                >
-                                    Terms & Conditions
-                                </Text>
-                                <Text
-                                    style={{
-                                        color: "rgba(24, 144, 255, 0.4)",
-                                        fontSize: "14px",
-                                        fontWeight: 300,
-                                    }}
-                                >
-                                    |
-                                </Text>
-                                <Text
-                                    style={{
-                                        color: "rgba(255, 255, 255, 0.9)",
-                                        fontSize: "14px",
-                                        cursor: "pointer",
-                                        transition: "all 0.2s ease",
-                                        fontWeight: 500,
-                                        letterSpacing: "0.01em",
-                                        padding: "6px 12px",
-                                        borderRadius: "6px",
-                                        background: "rgba(255, 255, 255, 0.05)",
-                                        border: "1px solid rgba(255, 255, 255, 0.1)",
-                                    }}
-                                    className="footer-link"
-                                    onClick={handlePrivacyPolicy}
-                                    onMouseEnter={(e) => {
-                                        e.target.style.background =
-                                            "rgba(255, 255, 255, 0.15)";
-                                        e.target.style.borderColor =
-                                            "rgba(255, 255, 255, 0.25)";
-                                        e.target.style.color = "#ffffff";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.target.style.background =
-                                            "rgba(255, 255, 255, 0.05)";
-                                        e.target.style.borderColor =
-                                            "rgba(255, 255, 255, 0.1)";
-                                        e.target.style.color =
-                                            "rgba(255, 255, 255, 0.9)";
-                                    }}
-                                >
-                                    Privacy Policy
-                                </Text>
-                                <Text
-                                    style={{
-                                        color: "rgba(24, 144, 255, 0.4)",
-                                        fontSize: "14px",
-                                        fontWeight: 300,
-                                    }}
-                                >
-                                    |
-                                </Text>
-                                <Text
-                                    style={{
-                                        color: "rgba(255, 255, 255, 0.9)",
-                                        fontSize: "14px",
-                                        cursor: "pointer",
-                                        transition: "all 0.2s ease",
-                                        fontWeight: 500,
-                                        letterSpacing: "0.01em",
-                                        padding: "6px 12px",
-                                        borderRadius: "6px",
-                                        background: "rgba(255, 255, 255, 0.05)",
-                                        border: "1px solid rgba(255, 255, 255, 0.1)",
-                                    }}
-                                    className="footer-link"
-                                    onClick={handleBookingConsent}
-                                    onMouseEnter={(e) => {
-                                        e.target.style.background =
-                                            "rgba(255, 255, 255, 0.15)";
-                                        e.target.style.borderColor =
-                                            "rgba(255, 255, 255, 0.25)";
-                                        e.target.style.color = "#ffffff";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.target.style.background =
-                                            "rgba(255, 255, 255, 0.05)";
-                                        e.target.style.borderColor =
-                                            "rgba(255, 255, 255, 0.1)";
-                                        e.target.style.color =
-                                            "rgba(255, 255, 255, 0.9)";
-                                    }}
-                                >
-                                    Booking Consent
-                                </Text>
-                            </div>
-                        </div>
-
-                        {/* Contact Information */}
-                        <div
-                            style={{
-                                marginBottom: "20px",
-                                paddingBottom: "16px",
-                                borderBottom:
-                                    "1px solid rgba(255, 255, 255, 0.15)",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    display: "flex",
-                                    justifyContent: "center",
-                                    alignItems: "center",
-                                    gap: "32px",
-                                    flexWrap: "wrap",
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "10px",
-                                        padding: "10px 16px",
-                                        borderRadius: "10px",
-                                        background: "rgba(255, 255, 255, 0.08)",
-                                        border: "1px solid rgba(255, 255, 255, 0.15)",
-                                        transition: "all 0.2s ease",
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.target.style.background =
-                                            "rgba(255, 255, 255, 0.12)";
-                                        e.target.style.borderColor =
-                                            "rgba(255, 255, 255, 0.25)";
-                                        e.target.style.transform =
-                                            "translateY(-1px)";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.target.style.background =
-                                            "rgba(255, 255, 255, 0.08)";
-                                        e.target.style.borderColor =
-                                            "rgba(255, 255, 255, 0.15)";
-                                        e.target.style.transform =
-                                            "translateY(0)";
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            width: "28px",
-                                            height: "28px",
-                                            borderRadius: "6px",
-                                            background:
-                                                "rgba(255, 255, 255, 0.15)",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            fontSize: "14px",
-                                            color: "#ffffff",
-                                        }}
-                                    >
-                                        <Phone size={16} />
-                                    </div>
-                                    <Text
-                                        style={{
-                                            color: "rgba(255, 255, 255, 0.9)",
-                                            fontSize: "14px",
-                                            fontWeight: 600,
-                                            letterSpacing: "0.02em",
-                                        }}
-                                    >
-                                        99872 49625
-                                    </Text>
-                                </div>
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "10px",
-                                        padding: "10px 16px",
-                                        borderRadius: "10px",
-                                        background: "rgba(255, 255, 255, 0.08)",
-                                        border: "1px solid rgba(255, 255, 255, 0.15)",
-                                        transition: "all 0.2s ease",
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.target.style.background =
-                                            "rgba(255, 255, 255, 0.12)";
-                                        e.target.style.borderColor =
-                                            "rgba(255, 255, 255, 0.25)";
-                                        e.target.style.transform =
-                                            "translateY(-1px)";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.target.style.background =
-                                            "rgba(255, 255, 255, 0.08)";
-                                        e.target.style.borderColor =
-                                            "rgba(255, 255, 255, 0.15)";
-                                        e.target.style.transform =
-                                            "translateY(0)";
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            width: "28px",
-                                            height: "28px",
-                                            borderRadius: "6px",
-                                            background:
-                                                "rgba(255, 255, 255, 0.15)",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            fontSize: "14px",
-                                            color: "#ffffff",
-                                        }}
-                                    >
-                                        <Mail size={16} />
-                                    </div>
-                                    <Text
-                                        style={{
-                                            color: "rgba(255, 255, 255, 0.9)",
-                                            fontSize: "14px",
-                                            fontWeight: 600,
-                                            letterSpacing: "0.02em",
-                                        }}
-                                    >
-                                        support@hospipalhealth.com
-                                    </Text>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Copyright */}
-                        <div>
-                            <Text
-                                style={{
-                                    color: "rgba(255, 255, 255, 0.6)",
-                                    fontSize: "13px",
-                                    fontWeight: 500,
-                                    letterSpacing: "0.01em",
-                                    padding: "6px 12px",
-                                    borderRadius: "6px",
-                                    background: "rgba(255, 255, 255, 0.05)",
-                                    border: "1px solid rgba(255, 255, 255, 0.1)",
-                                    display: "inline-block",
-                                }}
-                            >
-                                © HospiPal Health LLP
-                            </Text>
-                        </div>
-                    </div>
-                </footer>
+                <ProfessionalFooter />
 
                 {/* Customer Login Modal */}
                 <CustomerLoginModal
@@ -2587,6 +2275,7 @@ export default function CustomerDashboard({
                     footer={null}
                     width={windowWidth >= 768 ? 600 : "90%"}
                     style={{ top: 20 }}
+                    centered
                 >
                     {selectedItem && (
                         <div style={{ padding: "8px 0" }}>
@@ -2700,7 +2389,7 @@ export default function CustomerDashboard({
                                                     }}
                                                 >
                                                     {selectedItem.duration}{" "}
-                                                    hours
+                                                    minutes
                                                 </Text>
                                             </div>
                                         )}
@@ -2767,7 +2456,7 @@ export default function CustomerDashboard({
                                                     }}
                                                 >
                                                     {selectedItem.duration}{" "}
-                                                    hours
+                                                    minutes
                                                 </Text>
                                             </div>
                                         )}
